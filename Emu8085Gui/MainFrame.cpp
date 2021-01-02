@@ -17,9 +17,11 @@ EVT_MENU(wxID_SAVE, MainFrame::OnSave)
 EVT_MENU(wxID_SAVEAS, MainFrame::OnSaveAs)
 EVT_MENU(wxID_EXIT, MainFrame::OnExit)
 EVT_MENU(wxID_EXECUTE, MainFrame::OnRun)
+EVT_BUTTON(ButtonID::SET_BUTTON, MainFrame::OnSet)
+EVT_BUTTON(ButtonID::VIEW_BUTTON, MainFrame::OnView)
 END_EVENT_TABLE()
 
-MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30, 30), wxSize(600, 600))
+MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30, 30), wxSize(600, 650))
 {
 	this->CreateStatusBar();
 
@@ -69,28 +71,53 @@ MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30,
 		std::string label= reg[i] + std::string(" :");
 		m_MainRegisterLabel[reg[i]] = new wxStaticText(m_RegisterPanelStaticBox, wxID_ANY, label, wxPoint(10, 22 + i * 25), wxSize(20, 20));
 		m_MainRegister[reg[i]] = new wxTextCtrl(m_RegisterPanelStaticBox, wxID_ANY, "00", wxPoint(30, 20 + i * 25), wxSize(20, 20), wxTE_READONLY);
+		m_MainRegister[reg[i]]->SetMaxLength(2);
 	}
 	m_RegisterPanel->SetSizer(m_RegisterPanelStaticBoxSizer);
 
-	m_MemoryPanel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(200, 200));
-	m_MemoryPanelStaticBox = new wxStaticBox(m_MemoryPanel, wxID_ANY, "MEMORY MANAGER");
-	m_MemoryPanelStaticBoxSizer = new wxStaticBoxSizer(m_MemoryPanelStaticBox, wxHORIZONTAL);
-	wxButton* button = new wxButton(m_MemoryPanelStaticBox, wxID_ANY, "Button");
-	m_MemoryPanel->SetSizer(m_MemoryPanelStaticBoxSizer);
+	m_MemoryInitPanel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(200, 200));
+	m_MemoryInitPanelStaticBox = new wxStaticBox(m_MemoryInitPanel, wxID_ANY, "MEMORY INITIALIZER");
+	m_MemoryInitPanelStaticBoxSizer = new wxStaticBoxSizer(m_MemoryInitPanelStaticBox, wxHORIZONTAL);
+	m_MemoryLocationLabel = new wxStaticText(m_MemoryInitPanelStaticBox, wxID_ANY, "Address :", wxPoint(5, 35));
+	m_MemoryAddressTextCtrl = new wxTextCtrl(m_MemoryInitPanelStaticBox, wxID_ANY, "0000", wxPoint(55, 30), wxSize(35, 20));
+	m_MemoryAddressTextCtrl->SetMaxLength(4);
+	m_DataLabel = new wxStaticText(m_MemoryInitPanelStaticBox, wxID_ANY, "Data :", wxPoint(110, 35));
+	m_DataTextCtrl = new wxTextCtrl(m_MemoryInitPanelStaticBox, wxID_ANY, "00", wxPoint(145, 30), wxSize(20, 20));
+	m_DataTextCtrl->SetMaxLength(2);
+	m_SetButton = new wxButton(m_MemoryInitPanelStaticBox, ButtonID::SET_BUTTON, "Set", wxPoint(58, 60));
+	m_MemoryInitPanel->SetSizer(m_MemoryInitPanelStaticBoxSizer);
 
 
 
-	m_PanelSizer = new wxBoxSizer(wxVERTICAL);
-	m_PanelSizer->Add(m_FlagPanel, 1, wxEXPAND);
-	m_PanelSizer->Add(m_RegisterPanel, 1, wxEXPAND);
+	m_MemoryViewPanel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(200, 200));
+	m_MemoryViewPanelStaticBox = new wxStaticBox(m_MemoryViewPanel, wxID_ANY, "MEMORY VIEWER");
+	m_MemoryViewPanelStaticBoxSizer = new wxStaticBoxSizer(m_MemoryViewPanelStaticBox, wxHORIZONTAL);
+	m_FromLabel = new wxStaticText(m_MemoryViewPanelStaticBox, wxID_ANY, "From :", wxPoint(5, 35));
+	m_FromMemoryAddressTextCtrl = new wxTextCtrl(m_MemoryViewPanelStaticBox, wxID_ANY, "0000", wxPoint(40, 30), wxSize(35, 20));
+	m_FromMemoryAddressTextCtrl->SetMaxLength(4);
+	m_CountLabel = new wxStaticText(m_MemoryViewPanelStaticBox, wxID_ANY, "Count :", wxPoint(110, 35));
+	m_CountTextCtrl = new wxTextCtrl(m_MemoryViewPanelStaticBox, wxID_ANY, "00", wxPoint(150, 30), wxSize(20, 20));
+	m_CountTextCtrl->SetMaxLength(2);
+	m_ViewButton = new wxButton(m_MemoryViewPanelStaticBox, ButtonID::VIEW_BUTTON, "View", wxPoint(58, 60));
+	m_MemoryViewPanel->SetSizer(m_MemoryViewPanelStaticBoxSizer);
+
+
+	m_LeftPanelSizer = new wxBoxSizer(wxVERTICAL);
+	m_LeftPanelSizer->Add(m_FlagPanel, 1, wxEXPAND);
+	m_LeftPanelSizer->Add(m_RegisterPanel, 1, wxEXPAND);
+	m_RightPanelSizer = new wxBoxSizer(wxVERTICAL);
+	m_RightPanelSizer->Add(m_MemoryInitPanel, 1, wxEXPAND);
+	m_RightPanelSizer->Add(m_MemoryViewPanel, 2, wxEXPAND);
 
 	m_MainSizer = new wxBoxSizer(wxHORIZONTAL);
-	m_MainSizer->Add(m_PanelSizer, 1, wxEXPAND|wxALL, 1);
+	m_MainSizer->Add(m_LeftPanelSizer, 1, wxEXPAND|wxALL, 1);
 	m_MainSizer->Add(m_EditBox, 1, wxEXPAND);
-	m_MainSizer->Add(m_MemoryPanel, 1, wxEXPAND|wxALL, 1);
+	m_MainSizer->Add(m_RightPanelSizer, 1, wxEXPAND|wxALL, 1);
 	this->SetSizerAndFit(m_MainSizer);
 
-
+	m_MemoryViewList = new wxListView(m_MemoryViewPanel, wxID_ANY, wxPoint(5, 90), wxSize(190, 300));
+	m_MemoryViewList->AppendColumn("Address");
+	m_MemoryViewList->AppendColumn("Data");
 }
 
 MainFrame::~MainFrame()
@@ -135,6 +162,11 @@ void MainFrame::OnExit(wxCommandEvent& event)
 	this->Close();
 }
 
+void MainFrame::Init()
+{
+	Mnemonic::LoadInsctructionSet();
+}
+
 void MainFrame::OnRun(wxCommandEvent& event)
 {
 	
@@ -143,22 +175,49 @@ void MainFrame::OnRun(wxCommandEvent& event)
 		OnSaveAs(event);
 		if (!m_currentFilePath.empty())
 		{
-			Init8085();
+			Run8085(ToString(m_currentFilePath));
 			UpdateFlagRegister();
 			UpdateRegisters();
 		}
 	}
 	else
 	{
-		Init8085();
+		Run8085(ToString(m_currentFilePath));
 		UpdateFlagRegister();
 		UpdateRegisters();
 	}
 }
 
+void MainFrame::OnSet(wxCommandEvent& envet)
+{
+	MemoryManager::SetMemory(ToString(m_MemoryAddressTextCtrl->GetValue()), ToString(m_DataTextCtrl->GetValue()));
+	m_MemoryAddressTextCtrl->Clear();
+	m_DataTextCtrl->Clear();
+	m_MemoryAddressTextCtrl->AppendText("0000");
+	m_DataTextCtrl->AppendText("00");
+}
+
+void MainFrame::OnView(wxCommandEvent& envet)
+{
+	m_MemoryViewList->ClearAll();
+	m_MemoryViewList->AppendColumn("Address");
+	m_MemoryViewList->AppendColumn("Data");
+	
+	int from = Converter::HexToDec(ToString(m_FromMemoryAddressTextCtrl->GetValue()));
+	int cnt = std::stoi(ToString(m_CountTextCtrl->GetValue()));
+
+	for (int i = 0; i < cnt; ++i)
+	{
+		std::string address = Converter::DecToHex(from + i, 16);
+		std::string data = Converter::DecToHex(MemoryManager::Memory[from + i]);
+		m_MemoryViewList->InsertItem(i, ToWxString(address));
+		m_MemoryViewList->SetItem(i, 1, ToWxString(data));
+	}
+	m_MemoryViewList->Refresh();
+}
+
 void MainFrame::UpdateFlagRegister()
 {
-	//wxMessageBox(wxString(Converter::DecToHex(Register::Main['A'])));
 	m_FlagRegCheckList->Check(m_FlagRegCheckList->FindString("AC"), Register::Flag::AC);
 	m_FlagRegCheckList->Check(m_FlagRegCheckList->FindString("CY"), Register::Flag::CY);
 	m_FlagRegCheckList->Check(m_FlagRegCheckList->FindString("Z"), Register::Flag::ZF);

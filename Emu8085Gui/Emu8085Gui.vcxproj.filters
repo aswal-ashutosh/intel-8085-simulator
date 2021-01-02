@@ -24,9 +24,6 @@
     <ClInclude Include="8085.cpp">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="8085.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Emulator.cpp">

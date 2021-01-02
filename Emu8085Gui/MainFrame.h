@@ -17,9 +17,11 @@ private:
 	wxToolBar* m_ToolBar = nullptr;
 	wxPanel* m_FlagPanel = nullptr;
 	wxPanel* m_RegisterPanel = nullptr;
-	wxPanel* m_MemoryPanel = nullptr;
+	wxPanel* m_MemoryInitPanel = nullptr;
+	wxPanel* m_MemoryViewPanel = nullptr;
 	wxBoxSizer* m_MainSizer = nullptr;
-	wxBoxSizer* m_PanelSizer = nullptr;
+	wxBoxSizer* m_LeftPanelSizer = nullptr;
+	wxBoxSizer* m_RightPanelSizer = nullptr;
 	wxStyledTextCtrl* m_EditBox = nullptr;
 	wxCheckListBox* m_FlagRegCheckList = nullptr;
 	wxString m_currentFilePath;
@@ -27,11 +29,31 @@ private:
 	wxStaticBoxSizer* m_RegisterPanelStaticBoxSizer = nullptr;
 	wxStaticBox* m_FlagPanelStaticBox = nullptr;
 	wxStaticBoxSizer* m_FlagPanelStaticBoxSizer = nullptr;
-	wxStaticBox* m_MemoryPanelStaticBox = nullptr;
-	wxStaticBoxSizer* m_MemoryPanelStaticBoxSizer = nullptr;
+	wxStaticBox* m_MemoryInitPanelStaticBox = nullptr;
+	wxStaticBoxSizer* m_MemoryInitPanelStaticBoxSizer = nullptr;
+	wxStaticBox* m_MemoryViewPanelStaticBox = nullptr;
+	wxStaticBoxSizer* m_MemoryViewPanelStaticBoxSizer = nullptr;
+
+	wxStaticText* m_MemoryLocationLabel = nullptr;
+	wxTextCtrl* m_MemoryAddressTextCtrl = nullptr;
+	wxStaticText* m_DataLabel = nullptr;
+	wxTextCtrl* m_DataTextCtrl = nullptr;
+
+	wxStaticText* m_FromLabel = nullptr;
+	wxTextCtrl* m_CountTextCtrl = nullptr;
+	wxStaticText* m_CountLabel = nullptr;
+	wxTextCtrl* m_FromMemoryAddressTextCtrl = nullptr;
+	wxButton* m_ViewButton = nullptr;
+	wxButton* m_SetButton = nullptr;
+
+	wxListView* m_MemoryViewList = nullptr;
+
 	std::map<char, wxTextCtrl*> m_MainRegister;
 	std::map<char, wxStaticText*> m_MainRegisterLabel;
 public:
+
+	
+
 	MainFrame();
 	~MainFrame();
 
@@ -40,9 +62,18 @@ public:
 	void OnSaveAs(wxCommandEvent& event);
 	void OnExit(wxCommandEvent& event);
 	void OnRun(wxCommandEvent& envet);
+	void OnSet(wxCommandEvent& envet);
+	void OnView(wxCommandEvent& envet);
 	void UpdateFlagRegister();
 	void UpdateRegisters();
+	void Init();
 	DECLARE_EVENT_TABLE();
+};
+
+enum ButtonID
+{
+	VIEW_BUTTON = 3333, 
+	SET_BUTTON = 6666
 };
 
 

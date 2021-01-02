@@ -1,4 +1,3 @@
-/// <summary>////////////////////////////////////////////////////////////////////////
 #include<string>
 #include<vector>
 #include<fstream>
@@ -39,8 +38,28 @@ public:
 
 //Memory_Start
 
+class MemoryManager 
+{
+public:
+	static std::vector<int> Memory;
+	static void SetMemory(const std::string&, const std::string&);
+	static void ResetMemory();
+};
 
-void SetMemory(std::vector<std::pair<std::string, int>> v);
+std::vector<int> MemoryManager::Memory(1 << 16);
+
+void MemoryManager::SetMemory(const std::string& location, const std::string& data)
+{
+	Memory[Converter::HexToDec(location)] = Converter::HexToDec(data);
+}
+
+void MemoryManager::ResetMemory()
+{
+	Memory.clear();
+	Memory.assign(1 << 16, 0);
+}
+
+
 
 //Memory_END
 
@@ -82,7 +101,7 @@ public:
 	static std::map<std::string, int> Loop;
 	static std::vector<Instruction> program;
 
-	static void Read(std::string program_file_name = "test_program.txt");
+	static void Read(std::string filePath);
 
 	static void Run();
 };
@@ -204,13 +223,6 @@ public:
 };
 
 
-
-void Init8085();
-
-
-
-std::vector<int> Memory(1 << 16);
-
 //Utility
 void Utility::_8Bit(std::string& data)
 {
@@ -299,16 +311,6 @@ std::string Converter::DecToHex(int number, int type)
 		Utility::_16Bit(hex_number);
 	}
 	return hex_number;
-}
-
-//Memory
-
-void SetMemory(std::vector<std::pair<std::string, int>> v)
-{
-	for (std::pair<std::string, int>& mem : v)
-	{
-		Memory[Converter::HexToDec(mem.first)] = mem.second;
-	}
 }
 
 
@@ -441,11 +443,11 @@ void Mnemonic::MOV(const std::pair<std::string, std::string>& operands)
 	char destination = operands.first.front(), source = operands.second.front();
 	if (destination == 'M' && Register::isValid(source))
 	{
-		Memory[Register::HL()] = Register::Main[source];
+		MemoryManager::Memory[Register::HL()] = Register::Main[source];
 	}
 	else if (source == 'M' && Register::isValid(destination))
 	{
-		Register::Main[destination] = Memory[Register::HL()];
+		Register::Main[destination] = MemoryManager::Memory[Register::HL()];
 	}
 	else if (Register::isValid(destination) && Register::isValid(source))
 	{
@@ -471,7 +473,7 @@ void Mnemonic::MVI(const std::pair<std::string, std::string>& operands)
 	}
 	else if (reg == 'M') //@Memory
 	{
-		Memory[Register::HL()] = nValue;
+		MemoryManager::Memory[Register::HL()] = nValue;
 	}
 	else if (Register::isValid(reg))
 	{
@@ -490,7 +492,7 @@ void Mnemonic::LDA(const std::pair<std::string, std::string>& operands)
 	int nAddress = Converter::HexToDec(address);
 	if (nAddress >= 0 && nAddress < (1 << 16))
 	{
-		Register::Main['A'] = Memory[nAddress];
+		Register::Main['A'] = MemoryManager::Memory[nAddress];
 	}
 	else
 	{
@@ -505,7 +507,7 @@ void Mnemonic::STA(const std::pair<std::string, std::string>& operands)
 	int nAddress = Converter::HexToDec(address);
 	if (nAddress >= 0 && nAddress < (1 << 16))
 	{
-		Memory[nAddress] = Register::Main['A'];
+		MemoryManager::Memory[nAddress] = Register::Main['A'];
 	}
 	else
 	{
@@ -520,8 +522,8 @@ void Mnemonic::LHLD(const std::pair<std::string, std::string>& operands)
 	int nAddress = Converter::HexToDec(address);
 	if (nAddress >= 0 && nAddress < (1 << 16) - 1)
 	{
-		Register::Main['L'] = Memory[nAddress];
-		Register::Main['H'] = Memory[nAddress + 1];
+		Register::Main['L'] = MemoryManager::Memory[nAddress];
+		Register::Main['H'] = MemoryManager::Memory[nAddress + 1];
 	}
 	else
 	{
@@ -536,8 +538,8 @@ void Mnemonic::SHLD(const std::pair<std::string, std::string>& operands)
 	int nAddress = Converter::HexToDec(address);
 	if (nAddress >= 0 && nAddress < (1 << 16) - 1)
 	{
-		Memory[nAddress] = Register::Main['L'];
-		Memory[nAddress + 1] = Register::Main['H'];
+		MemoryManager::Memory[nAddress] = Register::Main['L'];
+		MemoryManager::Memory[nAddress + 1] = Register::Main['H'];
 	}
 	else
 	{
@@ -548,16 +550,7 @@ void Mnemonic::SHLD(const std::pair<std::string, std::string>& operands)
 
 void Mnemonic::HLT(const std::pair<std::string, std::string>& operands)
 {
-	//for (const std::pair<const char, int>& reg : Register::Main)
-	//{
-	//	std::cout << reg.first << ": " << Converter::DecToHex(reg.second) << std::endl;
-	//}
 
-	//std::cout << "ZF => " << Register::Flag::ZF << std::endl;
-	//std::cout << "SF => " << Register::Flag::SF << std::endl;
-	//std::cout << "PF => " << Register::Flag::PF << std::endl;
-	//std::cout << "CY => " << Register::Flag::CY << std::endl;
-	//std::cout << "AC => " << Register::Flag::AC << std::endl;
 }
 
 void Mnemonic::LXI(const std::pair<std::string, std::string>& operands)
@@ -592,15 +585,15 @@ void Mnemonic::LDAX(const std::pair<std::string, std::string>& operands)
 	char reg = operands.first.front();
 	if (reg == 'B')
 	{
-		Register::Main['A'] = Memory[Register::BC()];
+		Register::Main['A'] = MemoryManager::Memory[Register::BC()];
 	}
 	else if (reg == 'H')
 	{
-		Register::Main['A'] = Memory[Register::HL()];
+		Register::Main['A'] = MemoryManager::Memory[Register::HL()];
 	}
 	else if (reg == 'D')
 	{
-		Register::Main['A'] = Memory[Register::DE()];
+		Register::Main['A'] = MemoryManager::Memory[Register::DE()];
 	}
 	else
 	{
@@ -614,15 +607,15 @@ void Mnemonic::STAX(const std::pair<std::string, std::string>& operands)
 	char reg = operands.first.front();
 	if (reg == 'B')
 	{
-		Memory[Register::BC()] = Register::Main['A'];
+		MemoryManager::Memory[Register::BC()] = Register::Main['A'];
 	}
 	else if (reg == 'H')
 	{
-		Memory[Register::HL()] = Register::Main['A'];
+		MemoryManager::Memory[Register::HL()] = Register::Main['A'];
 	}
 	else if (reg == 'D')
 	{
-		Memory[Register::DE()] = Register::Main['A'];
+		MemoryManager::Memory[Register::DE()] = Register::Main['A'];
 	}
 	else
 	{
@@ -647,8 +640,8 @@ void Mnemonic::ADD(const std::pair<std::string, std::string>& operands)
 
 	if (reg == 'M')
 	{
-		_4Bit_R = Converter::HexToDec((Converter::DecToHex(Memory[Register::HL()])).back());
-		Register::Main['A'] += Memory[Register::HL()];
+		_4Bit_R = Converter::HexToDec((Converter::DecToHex(MemoryManager::Memory[Register::HL()])).back());
+		Register::Main['A'] += MemoryManager::Memory[Register::HL()];
 
 	}
 	else if (Register::isValid(reg))
@@ -672,8 +665,8 @@ void Mnemonic::ADC(const std::pair<std::string, std::string>& operands)
 
 	if (reg == 'M')
 	{
-		_4Bit_R = Converter::HexToDec((Converter::DecToHex(Memory[Register::HL()])).back());
-		Register::Main['A'] += Memory[Register::HL()] + Register::Flag::CY;
+		_4Bit_R = Converter::HexToDec((Converter::DecToHex(MemoryManager::Memory[Register::HL()])).back());
+		Register::Main['A'] += MemoryManager::Memory[Register::HL()] + Register::Flag::CY;
 
 	}
 	else if (Register::isValid(reg))
@@ -741,10 +734,10 @@ void Mnemonic::SUB(const std::pair<std::string, std::string>& operands)
 	{
 		//@Setting carry flag explicitly
 		int minuend = Register::Main['A'];
-		int subtrahend = Memory[Register::HL()];
+		int subtrahend = MemoryManager::Memory[Register::HL()];
 		Register::Flag::CY = subtrahend > minuend;
 
-		int _2sc = Utility::_8bit_2sc(Memory[Register::HL()]);
+		int _2sc = Utility::_8bit_2sc(MemoryManager::Memory[Register::HL()]);
 		_4Bit_R = Converter::HexToDec((Converter::DecToHex(_2sc)).back());
 		Register::Main['A'] += _2sc;
 	}
@@ -776,7 +769,7 @@ void Mnemonic::SBB(const std::pair<std::string, std::string>& operands)//Not sur
 	if (reg == 'M')
 	{
 
-		int _2sc = Utility::_8bit_2sc(Memory[Register::HL()]);
+		int _2sc = Utility::_8bit_2sc(MemoryManager::Memory[Register::HL()]);
 		_4Bit_R = Converter::HexToDec((Converter::DecToHex(_2sc)).back());
 		Register::Main['A'] += _2sc + Utility::_8bit_2sc(Register::Flag::CY);
 
@@ -843,12 +836,12 @@ void Mnemonic::INR(const std::pair<std::string, std::string>& operands)//CY is n
 
 	if (reg == 'M')
 	{
-		int nValue = Memory[Register::HL()];
+		int nValue = MemoryManager::Memory[Register::HL()];
 		Register::Flag::AC = (Converter::DecToHex(nValue)).back() == 'F';//@Auxiliary carry
-		++Memory[Register::HL()]; // Add overflow checker
-		Register::Flag::PF = !(Utility::_set_bits_count(Memory[Register::HL()]) & 1);//@Parity Flag
-		Register::Flag::SF = Memory[Register::HL()] & (1 << 7);//Sign Flag
-		Register::Flag::ZF = Memory[Register::HL()] == 0;//Zero Flag
+		++MemoryManager::Memory[Register::HL()]; // Add overflow checker
+		Register::Flag::PF = !(Utility::_set_bits_count(MemoryManager::Memory[Register::HL()]) & 1);//@Parity Flag
+		Register::Flag::SF = MemoryManager::Memory[Register::HL()] & (1 << 7);//Sign Flag
+		Register::Flag::ZF = MemoryManager::Memory[Register::HL()] == 0;//Zero Flag
 	}
 	else if (Register::isValid(reg))
 	{
@@ -906,12 +899,12 @@ void Mnemonic::DCR(const std::pair<std::string, std::string>& operands)//CY is n
 
 	if (reg == 'M')
 	{
-		int nValue = Memory[Register::HL()];
+		int nValue = MemoryManager::Memory[Register::HL()];
 		//Register::Flag::AC = (Converter::DecToHex(nValue)).back() == 'F';//@Not sure about auxiliary flag
-		--Memory[Register::HL()]; // Add overflow checker
-		Register::Flag::PF = !(Utility::_set_bits_count(Memory[Register::HL()]) & 1);//@Parity Flag
-		Register::Flag::SF = Memory[Register::HL()] & (1 << 7);//Sign Flag
-		Register::Flag::ZF = Memory[Register::HL()] == 0;//Zero Flag
+		--MemoryManager::Memory[Register::HL()]; // Add overflow checker
+		Register::Flag::PF = !(Utility::_set_bits_count(MemoryManager::Memory[Register::HL()]) & 1);//@Parity Flag
+		Register::Flag::SF = MemoryManager::Memory[Register::HL()] & (1 << 7);//Sign Flag
+		Register::Flag::ZF = MemoryManager::Memory[Register::HL()] == 0;//Zero Flag
 	}
 	else if (Register::isValid(reg))
 	{
@@ -1000,7 +993,7 @@ void Mnemonic::ANA(const std::pair<std::string, std::string>& operands)
 	char reg = operands.first.front();
 	if (reg == 'M')
 	{
-		Register::Main['A'] &= Memory[Register::HL()];
+		Register::Main['A'] &= MemoryManager::Memory[Register::HL()];
 	}
 	else if (Register::isValid(reg))//TODO: Throw error if reg is A
 	{
@@ -1036,7 +1029,7 @@ void Mnemonic::ORA(const std::pair<std::string, std::string>& operands)
 	char reg = operands.first.front();
 	if (reg == 'M')
 	{
-		Register::Main['A'] |= Memory[Register::HL()];
+		Register::Main['A'] |= MemoryManager::Memory[Register::HL()];
 	}
 	else if (Register::isValid(reg))//TODO: Throw error if reg is A
 	{
@@ -1073,7 +1066,7 @@ void Mnemonic::XRA(const std::pair<std::string, std::string>& operands)
 	char reg = operands.first.front();
 	if (reg == 'M')
 	{
-		Register::Main['A'] ^= Memory[Register::HL()];
+		Register::Main['A'] ^= MemoryManager::Memory[Register::HL()];
 	}
 	else if (Register::isValid(reg))//TODO: Throw error if reg is A
 	{
@@ -1167,7 +1160,7 @@ void Mnemonic::CMP(const std::pair<std::string, std::string>& operands)
 	int A = Register::Main['A'], R = 0;
 	if (reg == 'M')
 	{
-		R = Memory[Register::HL()];
+		R = MemoryManager::Memory[Register::HL()];
 	}
 	else if (Register::isValid(reg))
 	{
@@ -1270,10 +1263,10 @@ std::map<std::string, void (*)(const std::pair<std::string, std::string>&)> Mnem
 std::vector<Instruction> Program::program;
 std::map<std::string, int> Program::Loop;
 
-void Program::Read(std::string program_file_name)
+void Program::Read(std::string filePath)
 {
 	std::fstream file;
-	file.open(program_file_name, std::ios::in);
+	file.open(filePath, std::ios::in);
 	int line = 0;
 	while (!file.eof())
 	{
@@ -1325,17 +1318,11 @@ void Program::Run()
 }
 
 
-void Init8085()
+void Run8085(std::string filePath)
 {
 	Program::Loop.clear();
 	Program::program.clear();
-	Mnemonic::LoadInsctructionSet();
-	Program::Read();
-	//Program::DisplayProgram();
-	SetMemory({ { "2040", 0x05 }, { "2041", 0x35 }, { "2042", 0x10 }, { "2043", 0x02 }, { "2044", 0x21 } , { "2045", 0xf0 } });
+	Program::Read(filePath);
 	Program::Run();
-	//DebugMemory("2041", "2042", "2043", "2044", "2045");
 }
-
-
-/// </summary>////////////////////////////////////////////////////////////////////////////////////
+  

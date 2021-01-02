@@ -20,7 +20,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="8085.cpp" />
-    <ClInclude Include="8085.h" />
     <ClInclude Include="Emulator.h" />
     <ClInclude Include="MainFrame.h" />
   </ItemGroup>
