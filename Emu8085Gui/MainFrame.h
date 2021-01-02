@@ -66,6 +66,7 @@ public:
 	void OnView(wxCommandEvent& envet);
 	void UpdateFlagRegister();
 	void UpdateRegisters();
+	void UpdateMemory();
 	void Init();
 	DECLARE_EVENT_TABLE();
 };

@@ -118,6 +118,8 @@ MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30,
 	m_MemoryViewList = new wxListView(m_MemoryViewPanel, wxID_ANY, wxPoint(5, 90), wxSize(190, 300));
 	m_MemoryViewList->AppendColumn("Address");
 	m_MemoryViewList->AppendColumn("Data");
+
+	Init();
 }
 
 MainFrame::~MainFrame()
@@ -178,6 +180,7 @@ void MainFrame::OnRun(wxCommandEvent& event)
 			Run8085(ToString(m_currentFilePath));
 			UpdateFlagRegister();
 			UpdateRegisters();
+			UpdateMemory();
 		}
 	}
 	else
@@ -185,6 +188,7 @@ void MainFrame::OnRun(wxCommandEvent& event)
 		Run8085(ToString(m_currentFilePath));
 		UpdateFlagRegister();
 		UpdateRegisters();
+		UpdateMemory();
 	}
 }
 
@@ -242,4 +246,24 @@ void MainFrame::UpdateRegisters()
 	m_MainRegister['E']->AppendText(ToWxString(Converter::DecToHex(Register::Main['E'])));
 	m_MainRegister['H']->AppendText(ToWxString(Converter::DecToHex(Register::Main['H'])));
 	m_MainRegister['L']->AppendText(ToWxString(Converter::DecToHex(Register::Main['L'])));
+}
+
+
+void MainFrame::UpdateMemory()
+{
+	m_MemoryViewList->ClearAll();
+	m_MemoryViewList->AppendColumn("Address");
+	m_MemoryViewList->AppendColumn("Data");
+
+	int from = Converter::HexToDec(ToString(m_FromMemoryAddressTextCtrl->GetValue()));
+	int cnt = std::stoi(ToString(m_CountTextCtrl->GetValue()));
+
+	for (int i = 0; i < cnt; ++i)
+	{
+		std::string address = Converter::DecToHex(from + i, 16);
+		std::string data = Converter::DecToHex(MemoryManager::Memory[from + i]);
+		m_MemoryViewList->InsertItem(i, ToWxString(address));
+		m_MemoryViewList->SetItem(i, 1, ToWxString(data));
+	}
+	m_MemoryViewList->Refresh();
 }

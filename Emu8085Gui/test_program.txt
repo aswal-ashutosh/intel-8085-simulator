@@ -1,5 +1,5 @@
 STC
-MVI A, 80h
-MVI B, 40h
+MVI A, 80
+MVI B, 40
 SBB B
 HLT

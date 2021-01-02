@@ -67,7 +67,7 @@ class Register
 {
 public:
 	static std::map<char, int> Main;
-	static int SP, PC;
+	static int PC;
 	class Flag
 	{
 	public:
@@ -83,8 +83,82 @@ public:
 	static int DE();
 
 	static void UpdateFlags(int aux);
+
+	static void Clear();
 };
 
+int Register::PC = 0;
+std::map<char, int> Register::Main = { {'A', 0}, {'B', 0}, {'C' ,0}, {'D' ,0}, {'E' ,0}, {'H' ,0}, {'L' ,0} };
+bool Register::Flag::AC;
+bool Register::Flag::CY;
+bool Register::Flag::PF;
+bool Register::Flag::SF;
+bool Register::Flag::ZF;
+
+bool Register::isValid(char reg)
+{
+	return (reg == 'A' || reg == 'B' || reg == 'C' || reg == 'D' || reg == 'E' || reg == 'H' || reg == 'L');
+}
+
+int Register::HL()
+{
+	return Converter::HexToDec(Converter::DecToHex(Main['H']) + Converter::DecToHex(Main['L']));
+}
+
+int Register::BC()
+{
+	return Converter::HexToDec(Converter::DecToHex(Main['B']) + Converter::DecToHex(Main['C']));
+}
+
+int Register::DE()
+{
+	return Converter::HexToDec(Converter::DecToHex(Main['D']) + Converter::DecToHex(Main['E']));
+}
+
+void Register::UpdateFlags(int aux)
+{
+	/*
+		Some calculation also cause carry at 10th bit but all online 8085 sim do not consider that as carry.
+		Considering the above fact, I am doing the same.
+		Eg: CY(1), A(80), B(40)
+		and after executing the SBB B instruction the result should be:
+		2sc(1H)  ------->	1111 1111
+		A(80H)	 ------->	1000 0000
+		2sc(40H) ------->	1100 0000
+						 -------------
+						 10 0011 1111
+						 -------------
+		Here carry is generated from 8th bit(D7) is '10' but because the set bit falls on 10th bit(D9),
+		it is not considered as carry.
+	*/
+	Register::Flag::CY = Register::Main['A'] & (1 << 8); //@Carry Flag
+	Utility::_8Bit_Normalization(Register::Main['A']);
+
+	Register::Flag::SF = Register::Main['A'] & (1 << 7); //@Sign Flag
+
+	Register::Flag::ZF = Register::Main['A'] == 0; //@Zero Flag
+
+	Register::Flag::AC = aux ^ -1 ? aux > 15 : Register::Flag::AC; //@Aux Carry Flag
+
+	Register::Flag::PF = !(Utility::_set_bits_count(Register::Main['A']) & 1); //@Pairty Flag
+}
+
+
+void Register::Clear()
+{
+	Register::PC = 0;
+
+	Register::Flag::AC = false;
+	Register::Flag::CY = false;
+	Register::Flag::PF = false;
+	Register::Flag::SF = false;
+	Register::Flag::ZF = false;
+
+	for (std::pair<const char, int>& reg : Main)
+	{
+		reg.second = 0;
+	}
+}
 
 
 class Instruction
@@ -316,62 +390,6 @@ std::string Converter::DecToHex(int number, int type)
 
 //Register
 
-int Register::PC = 0;
-int Register::SP = 0;
-std::map<char, int> Register::Main = { {'A', 0}, {'B', 0}, {'C' ,0}, {'D' ,0}, {'E' ,0}, {'H' ,0}, {'L' ,0} };
-bool Register::Flag::AC;
-bool Register::Flag::CY;
-bool Register::Flag::PF;
-bool Register::Flag::SF;
-bool Register::Flag::ZF;
-
-bool Register::isValid(char reg)
-{
-	return (reg == 'A' || reg == 'B' || reg == 'C' || reg == 'D' || reg == 'E' || reg == 'H' || reg == 'L');
-}
-
-int Register::HL()
-{
-	return Converter::HexToDec(Converter::DecToHex(Main['H']) + Converter::DecToHex(Main['L']));
-}
-
-int Register::BC()
-{
-	return Converter::HexToDec(Converter::DecToHex(Main['B']) + Converter::DecToHex(Main['C']));
-}
-
-int Register::DE()
-{
-	return Converter::HexToDec(Converter::DecToHex(Main['D']) + Converter::DecToHex(Main['E']));
-}
-
-void Register::UpdateFlags(int aux)
-{
-	/*
-		Some calculation also cause carry at 10th bit but all online 8085 sim do not consider that as carry.
-		Considering the above fact, I am doing the same.
-		Eg: CY(1), A(80), B(40)
-		and after executing the SBB B instruction the result should be:
-		2sc(1H)  ------->	1111 1111
-		A(80H)	 ------->	1000 0000
-		2sc(40H) ------->	1100 0000
-						 -------------
-						 10 0011 1111
-						 -------------
-		Here carry is generated from 8th bit(D7) is '10' but because the set bit falls on 10th bit(D9),
-		it is not considered as carry.
-	*/
-	Register::Flag::CY = Register::Main['A'] & (1 << 8); //@Carry Flag
-	Utility::_8Bit_Normalization(Register::Main['A']);
-
-	Register::Flag::SF = Register::Main['A'] & (1 << 7); //@Sign Flag
-
-	Register::Flag::ZF = Register::Main['A'] == 0; //@Zero Flag
-
-	Register::Flag::AC = aux ^ -1 ? aux > 15 : Register::Flag::AC; //@Aux Carry Flag
-
-	Register::Flag::PF = !(Utility::_set_bits_count(Register::Main['A']) & 1); //@Pairty Flag
-}
 
 
 
@@ -1312,9 +1330,11 @@ void Program::Run()
 	while (!HLT)
 	{
 		const Instruction& instruction = program[Register::PC];
+		//wxMessageBox(instruction.mnemonic);
 		Mnemonic::Execute[instruction.mnemonic](instruction.operands);
 		HLT = instruction.mnemonic == "HLT";
 	}
+
 }
 
 
@@ -1322,6 +1342,7 @@ void Run8085(std::string filePath)
 {
 	Program::Loop.clear();
 	Program::program.clear();
+	Register::Clear();
 	Program::Read(filePath);
 	Program::Run();
 }
