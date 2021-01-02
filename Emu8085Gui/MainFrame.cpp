@@ -19,7 +19,7 @@ EVT_MENU(wxID_EXIT, MainFrame::OnExit)
 EVT_MENU(wxID_EXECUTE, MainFrame::OnRun)
 END_EVENT_TABLE()
 
-MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "Emu8085", wxPoint(30, 30), wxSize(600, 600))
+MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30, 30), wxSize(600, 600))
 {
 	this->CreateStatusBar();
 
@@ -53,27 +53,44 @@ MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "Emu8085", wxPoint(30, 30), w
 	m_EditBox->SetUseHorizontalScrollBar(false);
 
 	m_FlagPanel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(200, 200));
+	m_FlagPanelStaticBox = new wxStaticBox(m_FlagPanel, wxID_ANY, "FLAG REGISTER");
+	m_FlagPanelStaticBoxSizer = new wxStaticBoxSizer(m_FlagPanelStaticBox, wxDEFAULT);
 	const char* flagReg[] = { "Z", "S", "P", "AC", "CY" };
-	m_FlagRegCheckList = new wxCheckListBox(m_FlagPanel, wxID_ANY, wxPoint(0, 0), wxDefaultSize, wxArrayString(5, flagReg), 1, wxDefaultValidator);
+	m_FlagRegCheckList = new wxCheckListBox(m_FlagPanelStaticBox, wxID_ANY, wxPoint(0, 0), wxDefaultSize, wxArrayString(5, flagReg), 1, wxDefaultValidator);
+	m_FlagPanelStaticBoxSizer->Add(m_FlagRegCheckList);
+	m_FlagPanel->SetSizer(m_FlagPanelStaticBoxSizer);
 
 	m_RegisterPanel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(200, 200));
+	m_RegisterPanelStaticBox = new wxStaticBox(m_RegisterPanel, wxID_ANY, "REGISTERS");
+	m_RegisterPanelStaticBoxSizer = new wxStaticBoxSizer(m_RegisterPanelStaticBox, wxDEFAULT);
 	const char reg[] = { 'A', 'B', 'C', 'D', 'E', 'H', 'L' };
 	for (int i = 0; i < 7; ++i)
 	{
 		std::string label= reg[i] + std::string(" :");
-		m_MainRegisterLabel[reg[i]] = new wxStaticText(m_RegisterPanel, wxID_ANY, label, wxPoint(10, 5 + i * 25), wxSize(20, 20));
-		m_MainRegister[reg[i]] = new wxTextCtrl(m_RegisterPanel, wxID_ANY, "00", wxPoint(30, 5 + i * 25), wxSize(20, 20), wxTE_READONLY);
+		m_MainRegisterLabel[reg[i]] = new wxStaticText(m_RegisterPanelStaticBox, wxID_ANY, label, wxPoint(10, 22 + i * 25), wxSize(20, 20));
+		m_MainRegister[reg[i]] = new wxTextCtrl(m_RegisterPanelStaticBox, wxID_ANY, "00", wxPoint(30, 20 + i * 25), wxSize(20, 20), wxTE_READONLY);
 	}
+	m_RegisterPanel->SetSizer(m_RegisterPanelStaticBoxSizer);
+
+	m_MemoryPanel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(200, 200));
+	m_MemoryPanelStaticBox = new wxStaticBox(m_MemoryPanel, wxID_ANY, "MEMORY MANAGER");
+	m_MemoryPanelStaticBoxSizer = new wxStaticBoxSizer(m_MemoryPanelStaticBox, wxHORIZONTAL);
+	wxButton* button = new wxButton(m_MemoryPanelStaticBox, wxID_ANY, "Button");
+	m_MemoryPanel->SetSizer(m_MemoryPanelStaticBoxSizer);
+
+
 
 	m_PanelSizer = new wxBoxSizer(wxVERTICAL);
 	m_PanelSizer->Add(m_FlagPanel, 1, wxEXPAND);
-	m_PanelSizer->AddSpacer(1);
 	m_PanelSizer->Add(m_RegisterPanel, 1, wxEXPAND);
 
 	m_MainSizer = new wxBoxSizer(wxHORIZONTAL);
 	m_MainSizer->Add(m_PanelSizer, 1, wxEXPAND|wxALL, 1);
-	m_MainSizer->Add(m_EditBox, 3, wxEXPAND);
+	m_MainSizer->Add(m_EditBox, 1, wxEXPAND);
+	m_MainSizer->Add(m_MemoryPanel, 1, wxEXPAND|wxALL, 1);
 	this->SetSizerAndFit(m_MainSizer);
+
+
 }
 
 MainFrame::~MainFrame()
