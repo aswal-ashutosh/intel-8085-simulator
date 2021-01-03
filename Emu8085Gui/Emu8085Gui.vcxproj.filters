@@ -21,8 +21,8 @@
     <ClInclude Include="MainFrame.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="8085.cpp">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="8085.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

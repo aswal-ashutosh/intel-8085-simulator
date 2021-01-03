@@ -38,7 +38,6 @@ public:
 	static std::string DecToHex(int number, int type = 8);
 };
 
-//Memory_Start
 
 class MemoryManager 
 {
@@ -62,8 +61,6 @@ void MemoryManager::ResetMemory()
 }
 
 
-
-//Memory_END
 
 class Register
 {
@@ -398,17 +395,6 @@ std::string Converter::DecToHex(int number, int type)
 	return hex_number;
 }
 
-
-//Register
-
-
-
-
-
-//Program
-
-
-//Mnemonic
 
 void Mnemonic::LoadInsctructionSet()
 {
@@ -1349,7 +1335,6 @@ void Program::Run()
 	while (!HLT)
 	{
 		const Instruction& instruction = program[Register::PC];
-		//wxMessageBox(instruction.mnemonic);
 		Mnemonic::Execute[instruction.mnemonic](instruction.operands);
 		HLT = instruction.mnemonic == "HLT";
 	}
