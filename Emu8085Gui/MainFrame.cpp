@@ -60,9 +60,8 @@ MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30,
 	m_TextBoxPanel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(200, 200));
 	m_TextBoxStaticBox = new wxStaticBox(m_TextBoxPanel, wxID_ANY, "");
 	m_TextBoxStaticBoxSizer = new wxStaticBoxSizer(m_TextBoxStaticBox, wxHORIZONTAL);
-	m_EditBox = new wxStyledTextCtrl(m_TextBoxStaticBox, wxID_ANY, wxPoint(0, 20), wxSize(200, 380));
+	m_EditBox = new wxStyledTextCtrl(m_TextBoxStaticBox, wxID_ANY, wxPoint(0, 20), wxSize(200, 800));
 	m_EditBox->SetMarginType(1, wxSTC_MARGIN_NUMBER);
-	//m_EditBox->SetMarginMask(1, 0);
 	m_EditBox->SetMarginWidth(1, 25);
 	m_EditBox->SetLexer(wxSTC_LEX_ASM);
 	m_EditBox->StyleSetForeground(wxSTC_H_TAGUNKNOWN, wxColour(0, 150, 0));
@@ -94,7 +93,7 @@ MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30,
 	m_RegisterPanel->SetSizer(m_RegisterPanelStaticBoxSizer);
 
 	//Memory Init Panel
-	m_MemoryInitPanel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(200, 200));
+	m_MemoryInitPanel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(100, 100));
 	m_MemoryInitPanelStaticBox = new wxStaticBox(m_MemoryInitPanel, wxID_ANY, "MEMORY INITIALIZER");
 	m_MemoryInitPanelStaticBoxSizer = new wxStaticBoxSizer(m_MemoryInitPanelStaticBox, wxVERTICAL);
 	m_MemoryLocationLabel = new wxStaticText(m_MemoryInitPanelStaticBox, wxID_ANY, "Address :", wxPoint(5, 30));
@@ -121,18 +120,17 @@ MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30,
 	m_MemoryViewList = new wxListView(m_MemoryViewPanelStaticBox, wxID_ANY, wxPoint(5, 90), wxSize(190, 300));
 	m_MemoryViewList->AppendColumn("Address");
 	m_MemoryViewList->AppendColumn("Data");
-	m_MemoryViewPanelStaticBoxSizer->Add(m_MemoryViewList, wxEXPAND);
 	m_MemoryViewPanel->SetSizer(m_MemoryViewPanelStaticBoxSizer);
 
 	//Debug Panel
 	m_DebugPanel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(200, 200));
 	m_DebugStaticBox = new wxStaticBox(m_DebugPanel, wxID_ANY, "DEBUGGER");
 	m_DebugStaticBoxSizer = new wxStaticBoxSizer(m_DebugStaticBox, wxVERTICAL);
-	m_CurrentLineLabel = new wxStaticText(m_DebugStaticBox, wxID_ANY, "Current Line Number: ", wxPoint(10, 35));
-	m_CurrentLineTextCtrl = new wxTextCtrl(m_DebugStaticBox, wxID_ANY, "---", wxPoint(130, 30), wxSize(20, 20), wxTE_READONLY);
-	m_ExecuteButton = new wxButton(m_DebugStaticBox, ButtonID::EXECUTE_BUTTON, "Execute", wxPoint(50, 55));
+	m_CurrentLineLabel = new wxStaticText(m_DebugStaticBox, wxID_ANY, "Current Line Number : ", wxPoint(30, 35));
+	m_CurrentLineTextCtrl = new wxTextCtrl(m_DebugStaticBox, wxID_ANY, "---", wxPoint(150, 30), wxSize(20, 20), wxTE_READONLY);
+	m_ExecuteButton = new wxButton(m_DebugStaticBox, ButtonID::EXECUTE_BUTTON, "Execute", wxPoint(65, 55));
 	m_DebugButton = new wxButton(m_DebugStaticBox, ButtonID::DEBUG_BUTTON, "DEBUG", wxPoint(25, 100));
-	m_StopButton = new wxButton(m_DebugStaticBox, ButtonID::STOP_BUTTON, "STOP", wxPoint(100, 100));
+	m_StopButton = new wxButton(m_DebugStaticBox, ButtonID::STOP_BUTTON, "STOP", wxPoint(105, 100));
 	m_ExecuteButton->Disable();
 	m_StopButton->Disable();
 	m_DebugPanel->SetSizer(m_DebugStaticBoxSizer);
@@ -144,14 +142,13 @@ MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30,
 	m_LeftPanelSizer->Add(m_RegisterPanel, 1, wxEXPAND);
 	m_RightPanelSizer = new wxBoxSizer(wxVERTICAL);
 	m_RightPanelSizer->Add(m_MemoryInitPanel, 1, wxEXPAND);
-	m_RightPanelSizer->Add(m_MemoryViewPanel, 2, wxEXPAND);
-	m_MidSizer = new wxBoxSizer(wxVERTICAL);
-	m_MidSizer->Add(m_TextBoxPanel, 2, wxEXPAND);
-	m_MidSizer->Add(m_DebugPanel, 1, wxEXPAND);
+	m_RightPanelSizer->Add(m_MemoryViewPanel, 4, wxEXPAND);
+	m_RightPanelSizer->Add(m_DebugPanel, 1, wxEXPAND);
+
 
 	m_MainSizer = new wxBoxSizer(wxHORIZONTAL);
 	m_MainSizer->Add(m_LeftPanelSizer, 1, wxEXPAND|wxALL, 1);
-	m_MainSizer->Add(m_MidSizer, 2, wxEXPAND|wxTOP|wxBOTTOM, 1);
+	m_MainSizer->Add(m_TextBoxPanel, 2, wxEXPAND|wxTOP|wxBOTTOM, 1);
 	m_MainSizer->Add(m_RightPanelSizer, 1, wxEXPAND|wxALL, 1);
 	this->SetSizerAndFit(m_MainSizer);
 
@@ -235,21 +232,7 @@ void MainFrame::OnSet(wxCommandEvent& envet)
 
 void MainFrame::OnView(wxCommandEvent& envet)
 {
-	m_MemoryViewList->ClearAll();
-	m_MemoryViewList->AppendColumn("Address");
-	m_MemoryViewList->AppendColumn("Data");
-	
-	int from = Converter::HexToDec(ToString(m_FromMemoryAddressTextCtrl->GetValue()));
-	int cnt = std::stoi(ToString(m_CountTextCtrl->GetValue()));
-
-	for (int i = 0; i < cnt; ++i)
-	{
-		std::string address = Converter::DecToHex(from + i, 16);
-		std::string data = Converter::DecToHex(MemoryManager::Memory[from + i]);
-		m_MemoryViewList->InsertItem(i, ToWxString(address));
-		m_MemoryViewList->SetItem(i, 1, ToWxString(data));
-	}
-	m_MemoryViewList->Refresh();
+	UpdateMemory();
 }
 
 void MainFrame::UpdateFlagRegister()
@@ -287,7 +270,6 @@ void MainFrame::UpdateMemory()
 		m_MemoryViewList->InsertItem(i, ToWxString(address));
 		m_MemoryViewList->SetItem(i, 1, ToWxString(data));
 	}
-	m_MemoryViewList->Refresh();
 }
 
 void MainFrame::Clear()

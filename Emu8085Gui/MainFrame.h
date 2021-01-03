@@ -80,7 +80,6 @@ private:
 	wxBoxSizer* m_MainSizer = nullptr;
 	wxBoxSizer* m_LeftPanelSizer = nullptr;
 	wxBoxSizer* m_RightPanelSizer = nullptr;
-	wxBoxSizer* m_MidSizer = nullptr;
 
 
 	//Other
