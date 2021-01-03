@@ -28,7 +28,7 @@
     <ClCompile Include="MainFrame.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="test_program.txt" />
+    <Text Include="sample.txt" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

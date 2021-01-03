@@ -16,6 +16,8 @@ public:
 	static int _set_bits_count(int num);
 
 	static void _8Bit_Normalization(int& num);//function to reset all bits after 8th bit
+
+	static void _16Bit_Normalization(int& num);
 };
 
 
@@ -338,6 +340,15 @@ void Utility::_8Bit_Normalization(int& num)//function to reset all bits after 8t
 		num &= ~(1 << i);
 	}
 }
+
+void Utility::_16Bit_Normalization(int& num)
+{
+	for (int i = 16; i < 32; ++i)
+	{
+		num &= ~(1 << i);
+	}
+}
+
 
 
 
@@ -920,6 +931,7 @@ void Mnemonic::DCR(const std::pair<std::string, std::string>& operands)//CY is n
 		int nValue = MemoryManager::Memory[Register::HL()];
 		//Register::Flag::AC = (Converter::DecToHex(nValue)).back() == 'F';//@Not sure about auxiliary flag
 		--MemoryManager::Memory[Register::HL()]; // Add overflow checker
+		Utility::_8Bit_Normalization(MemoryManager::Memory[Register::HL()]);
 		Register::Flag::PF = !(Utility::_set_bits_count(MemoryManager::Memory[Register::HL()]) & 1);//@Parity Flag
 		Register::Flag::SF = MemoryManager::Memory[Register::HL()] & (1 << 7);//Sign Flag
 		Register::Flag::ZF = MemoryManager::Memory[Register::HL()] == 0;//Zero Flag
@@ -929,6 +941,7 @@ void Mnemonic::DCR(const std::pair<std::string, std::string>& operands)//CY is n
 		int nValue = Register::Main[reg];
 		//Register::Flag::AC = (Converter::DecToHex(nValue)).back() == 'F';//@Not sure about auxiliary flag
 		--Register::Main[reg]; // Add overflow checker
+		Utility::_8Bit_Normalization(Register::Main[reg]);
 		Register::Flag::PF = !(Utility::_set_bits_count(Register::Main[reg]) & 1);//@Parity Flag
 		Register::Flag::SF = Register::Main[reg] & (1 << 7);//Sign Flag
 		Register::Flag::ZF = Register::Main[reg] == 0;//Zero Flag
@@ -948,21 +961,27 @@ void Mnemonic::DCX(const std::pair<std::string, std::string>& operands)//No flag
 	if (reg == 'H')
 	{
 		int DATA = Register::HL();
-		std::string xDATA = Converter::DecToHex(--DATA, 16);
+		--DATA;
+		Utility::_16Bit_Normalization(DATA);
+		std::string xDATA = Converter::DecToHex(DATA, 16);
 		Register::Main['H'] = Converter::HexToDec(xDATA.substr(0, 2));
 		Register::Main['L'] = Converter::HexToDec(xDATA.substr(2, 2));
 	}
 	else if (reg == 'D')
 	{
 		int DATA = Register::DE();
-		std::string xDATA = Converter::DecToHex(--DATA, 16);
+		--DATA;
+		Utility::_16Bit_Normalization(DATA);
+		std::string xDATA = Converter::DecToHex(DATA, 16);
 		Register::Main['D'] = Converter::HexToDec(xDATA.substr(0, 2));
 		Register::Main['E'] = Converter::HexToDec(xDATA.substr(2, 2));
 	}
 	else if (reg == 'B')
 	{
 		int DATA = Register::BC();
-		std::string xDATA = Converter::DecToHex(--DATA, 16);
+		--DATA;
+		Utility::_16Bit_Normalization(DATA);
+		std::string xDATA = Converter::DecToHex(DATA, 16);
 		Register::Main['B'] = Converter::HexToDec(xDATA.substr(0, 2));
 		Register::Main['C'] = Converter::HexToDec(xDATA.substr(2, 2));
 	}
@@ -997,7 +1016,7 @@ void Mnemonic::DAD(const std::pair<std::string, std::string>& operands)//only af
 
 	HL_DATA += Rp_DATA;
 	Register::Flag::CY = HL_DATA & (1 << 16);//@Checking for Carry
-	HL_DATA &= ~(1 << 16);
+	Utility::_16Bit_Normalization(HL_DATA);
 	std::string xDATA = Converter::DecToHex(HL_DATA, 16);
 	Register::Main['H'] = Converter::HexToDec(xDATA.substr(0, 2));
 	Register::Main['L'] = Converter::HexToDec(xDATA.substr(2, 2));

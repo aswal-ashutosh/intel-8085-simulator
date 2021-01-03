@@ -59,7 +59,7 @@ MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30,
 
 	//EditBox
 	m_TextBoxPanel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(200, 200));
-	m_TextBoxStaticBox = new wxStaticBox(m_TextBoxPanel, wxID_ANY, "Sample.txt");
+	m_TextBoxStaticBox = new wxStaticBox(m_TextBoxPanel, wxID_ANY, "");
 	m_TextBoxStaticBoxSizer = new wxStaticBoxSizer(m_TextBoxStaticBox, wxVERTICAL);
 	m_EditBox = new wxStyledTextCtrl(m_TextBoxStaticBox, wxID_ANY, wxPoint(0, 20), wxSize(200, 380));
 	m_EditBox->SetMarginType(1, wxSTC_MARGIN_NUMBER);
@@ -170,6 +170,7 @@ void MainFrame::OnOpen(wxCommandEvent& event)
 		return;
 	m_currentFilePath = openFileDialog.GetPath();
 	m_EditBox->LoadFile(m_currentFilePath);
+	m_TextBoxStaticBox->SetLabel(openFileDialog.GetFilename());
 }
 
 void MainFrame::OnSave(wxCommandEvent& event)
@@ -193,6 +194,7 @@ void MainFrame::OnSaveAs(wxCommandEvent& event)
 		return; 
 	m_currentFilePath = saveFileDialog.GetPath();
 	m_EditBox->SaveFile(m_currentFilePath);
+	m_TextBoxStaticBox->SetLabel(saveFileDialog.GetFilename());
 }
 
 void MainFrame::OnExit(wxCommandEvent& event)

@@ -34,7 +34,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="test_program.txt">
+    <Text Include="sample.txt">
       <Filter>Source Files</Filter>
     </Text>
   </ItemGroup>
