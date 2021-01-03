@@ -290,21 +290,24 @@ void MainFrame::UpdateMemory()
 
 void MainFrame::Clear()
 {
-	//Clearing Registers
+	//Clearing Registers(Frontend)
 	for (const char& reg : m_MainRegisterArray)
 	{
 		m_MainRegister[reg]->Clear();
 		m_MainRegister[reg]->AppendText("00");
 	}
 	
-	//Clearing Flag Register
+	//Clearing Flag Register(Frontend)
 	m_FlagRegCheckList->Check(m_FlagRegCheckList->FindString("AC"), false);
 	m_FlagRegCheckList->Check(m_FlagRegCheckList->FindString("CY"), false);
 	m_FlagRegCheckList->Check(m_FlagRegCheckList->FindString("Z"), false);
 	m_FlagRegCheckList->Check(m_FlagRegCheckList->FindString("S"), false);
 	m_FlagRegCheckList->Check(m_FlagRegCheckList->FindString("P"), false);
 
-	
+	//Clearing Backend
+	Program::Loop.clear();
+	Program::program.clear();
+	Register::Clear();
 }
 
 void MainFrame::OnDebug(wxCommandEvent& event)
@@ -325,10 +328,7 @@ void MainFrame::OnDebug(wxCommandEvent& event)
 
 void MainFrame::Run8085(const std::string& filePath)
 {
-	Clear();//Clearing GUI
-	Program::Loop.clear();
-	Program::program.clear();
-	Register::Clear();
+	Clear();//Clearing Front End + Back End
 	Program::Read(filePath);
 	Program::Run();
 	UpdateFlagRegister();
@@ -338,10 +338,7 @@ void MainFrame::Run8085(const std::string& filePath)
 
 void MainFrame::Debug8085(const std::string& filePath)
 {
-	Clear();//Clearing GUI
-	Program::Loop.clear();
-	Program::program.clear();
-	Register::Clear();
+	Clear();//Clearing Front End + Back End
 	Program::Read(filePath);
 	m_ExecuteButton->Enable();
 	m_DebugButton->Disable();
