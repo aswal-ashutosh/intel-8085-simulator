@@ -1,4 +1,4 @@
-#include "MainFrame.h"
+#include"MainFrame.h"
 #include"8085.h"
 
 wxString ToWxString(const std::string& str)

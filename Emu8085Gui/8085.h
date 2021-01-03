@@ -21,11 +21,65 @@ public:
 };
 
 
+void Utility::_8Bit(std::string& data)
+{
+	data = std::string(2 - data.length(), '0') + data;
+}
+
+void Utility::_16Bit(std::string& data)
+{
+	data = std::string(4 - data.length(), '0') + data;
+}
+
+int Utility::_8bit_2sc(int num)
+{
+	for (int i = 0; i < 8; ++i)
+	{
+		num ^= (1 << i);
+	}
+
+	num += 0x01;
+	_8Bit_Normalization(num);
+	return num;
+}
+
+int Utility::_set_bits_count(int num)
+{
+	int set_bits = 0;
+	for (int i = 0; i < 8; ++i)
+	{
+		set_bits += bool(num & (1 << i));
+	}
+
+	return set_bits;
+}
+
+void Utility::_8Bit_Normalization(int& num)//function to reset all bits after 8th bit
+{
+	for (int i = 8; i < 32; ++i)
+	{
+		num &= ~(1 << i);
+	}
+}
+
+void Utility::_16Bit_Normalization(int& num)
+{
+	for (int i = 16; i < 32; ++i)
+	{
+		num &= ~(1 << i);
+	}
+}
+
 class Error
 {
 public:
 	static void Throw(const std::string& e, const int line_number);
 };
+
+void Error::Throw(const std::string& e, const int line_number)
+{
+	exit(0);
+}
 
 
 class Converter
@@ -37,6 +91,45 @@ public:
 
 	static std::string DecToHex(int number, int type = 8);
 };
+
+int Converter::HexToDec(std::string number)
+{
+	std::stringstream ss;
+	ss << number;
+	int decimal_number;
+	ss >> std::hex >> decimal_number;
+	return decimal_number;
+}
+
+int Converter::HexToDec(char number)
+{
+	std::stringstream ss;
+	ss << number;
+	int decimal_number;
+	ss >> std::hex >> decimal_number;
+	return decimal_number;
+}
+
+
+std::string Converter::DecToHex(int number, int type)
+{
+	std::stringstream ss;
+	ss << std::hex << number;
+	std::string hex_number = ss.str();
+	for (char& x : hex_number)
+	{
+		x = toupper(x);
+	}
+	if (type == 8)
+	{
+		Utility::_8Bit(hex_number);
+	}
+	else
+	{
+		Utility::_16Bit(hex_number);
+	}
+	return hex_number;
+}
 
 
 class MemoryManager 
@@ -167,6 +260,7 @@ public:
 	std::pair<std::string, std::string> operands;
 };
 
+
 class Program
 {
 
@@ -178,6 +272,9 @@ public:
 
 	static void Run();
 };
+
+std::vector<Instruction> Program::program;
+std::map<std::string, int> Program::Loop;
 
 
 class Mnemonic
@@ -296,104 +393,6 @@ public:
 };
 
 
-//Utility
-void Utility::_8Bit(std::string& data)
-{
-	data = std::string(2 - data.length(), '0') + data;
-}
-
-void Utility::_16Bit(std::string& data)
-{
-	data = std::string(4 - data.length(), '0') + data;
-}
-
-int Utility::_8bit_2sc(int num)
-{
-	for (int i = 0; i < 8; ++i)
-	{
-		num ^= (1 << i);
-	}
-
-	num += 0x01;
-	_8Bit_Normalization(num);
-	return num;
-}
-
-int Utility::_set_bits_count(int num)
-{
-	int set_bits = 0;
-	for (int i = 0; i < 8; ++i)
-	{
-		set_bits += bool(num & (1 << i));
-	}
-
-	return set_bits;
-}
-
-void Utility::_8Bit_Normalization(int& num)//function to reset all bits after 8th bit
-{
-	for (int i = 8; i < 32; ++i)
-	{
-		num &= ~(1 << i);
-	}
-}
-
-void Utility::_16Bit_Normalization(int& num)
-{
-	for (int i = 16; i < 32; ++i)
-	{
-		num &= ~(1 << i);
-	}
-}
-
-
-
-
-void Error::Throw(const std::string& e, const int line_number)
-{
-	exit(0);
-}
-
-
-//Converter
-int Converter::HexToDec(std::string number)
-{
-	std::stringstream ss;
-	ss << number;
-	int decimal_number;
-	ss >> std::hex >> decimal_number;
-	return decimal_number;
-}
-
-int Converter::HexToDec(char number)
-{
-	std::stringstream ss;
-	ss << number;
-	int decimal_number;
-	ss >> std::hex >> decimal_number;
-	return decimal_number;
-}
-
-
-std::string Converter::DecToHex(int number, int type)
-{
-	std::stringstream ss;
-	ss << std::hex << number;
-	std::string hex_number = ss.str();
-	for (char& x : hex_number)
-	{
-		x = toupper(x);
-	}
-	if (type == 8)
-	{
-		Utility::_8Bit(hex_number);
-	}
-	else
-	{
-		Utility::_16Bit(hex_number);
-	}
-	return hex_number;
-}
 
 
 void Mnemonic::LoadInsctructionSet()
@@ -1282,9 +1281,6 @@ void Mnemonic::JP(const std::pair<std::string, std::string>& operands)
 std::map<std::string, void (*)(const std::pair<std::string, std::string>&)> Mnemonic::Execute;
 
 
-//Program
-std::vector<Instruction> Program::program;
-std::map<std::string, int> Program::Loop;
 
 void Program::Read(std::string filePath)
 {
