@@ -59,7 +59,7 @@ MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30,
 	//EditBox
 	m_TextBoxPanel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(200, 200));
 	m_TextBoxStaticBox = new wxStaticBox(m_TextBoxPanel, wxID_ANY, "");
-	m_TextBoxStaticBoxSizer = new wxStaticBoxSizer(m_TextBoxStaticBox, wxVERTICAL);
+	m_TextBoxStaticBoxSizer = new wxStaticBoxSizer(m_TextBoxStaticBox, wxHORIZONTAL);
 	m_EditBox = new wxStyledTextCtrl(m_TextBoxStaticBox, wxID_ANY, wxPoint(0, 20), wxSize(200, 380));
 	m_EditBox->SetMarginType(1, wxSTC_MARGIN_NUMBER);
 	//m_EditBox->SetMarginMask(1, 0);
@@ -68,7 +68,7 @@ MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30,
 	m_EditBox->StyleSetForeground(wxSTC_H_TAGUNKNOWN, wxColour(0, 150, 0));
 	m_EditBox->SetUseHorizontalScrollBar(false);
 	m_EditBox->SetUseVerticalScrollBar(true);
-	m_EditBox->SetFont(wxFont(100, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD));
+	m_TextBoxStaticBoxSizer->Add(m_EditBox, wxEXPAND);
 	m_TextBoxPanel->SetSizer(m_TextBoxStaticBoxSizer);
 	
 	//FlagPanel
@@ -110,7 +110,7 @@ MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30,
 	//Memory View Panel
 	m_MemoryViewPanel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(200, 200));
 	m_MemoryViewPanelStaticBox = new wxStaticBox(m_MemoryViewPanel, wxID_ANY, "MEMORY VIEWER");
-	m_MemoryViewPanelStaticBoxSizer = new wxStaticBoxSizer(m_MemoryViewPanelStaticBox, wxHORIZONTAL);
+	m_MemoryViewPanelStaticBoxSizer = new wxStaticBoxSizer(m_MemoryViewPanelStaticBox, wxVERTICAL);
 	m_FromLabel = new wxStaticText(m_MemoryViewPanelStaticBox, wxID_ANY, "From :", wxPoint(5, 30));
 	m_FromMemoryAddressTextCtrl = new wxTextCtrl(m_MemoryViewPanelStaticBox, wxID_ANY, "0000", wxPoint(40, 30), wxSize(38, 20));
 	m_FromMemoryAddressTextCtrl->SetMaxLength(4);
@@ -121,6 +121,7 @@ MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30,
 	m_MemoryViewList = new wxListView(m_MemoryViewPanelStaticBox, wxID_ANY, wxPoint(5, 90), wxSize(190, 300));
 	m_MemoryViewList->AppendColumn("Address");
 	m_MemoryViewList->AppendColumn("Data");
+	m_MemoryViewPanelStaticBoxSizer->Add(m_MemoryViewList, wxEXPAND);
 	m_MemoryViewPanel->SetSizer(m_MemoryViewPanelStaticBoxSizer);
 
 	//Debug Panel
@@ -150,7 +151,7 @@ MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30,
 
 	m_MainSizer = new wxBoxSizer(wxHORIZONTAL);
 	m_MainSizer->Add(m_LeftPanelSizer, 1, wxEXPAND|wxALL, 1);
-	m_MainSizer->Add(m_MidSizer, 1, wxEXPAND|wxTOP|wxBOTTOM, 1);
+	m_MainSizer->Add(m_MidSizer, 2, wxEXPAND|wxTOP|wxBOTTOM, 1);
 	m_MainSizer->Add(m_RightPanelSizer, 1, wxEXPAND|wxALL, 1);
 	this->SetSizerAndFit(m_MainSizer);
 
