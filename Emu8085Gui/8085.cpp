@@ -1334,16 +1334,8 @@ void Program::Run()
 		Mnemonic::Execute[instruction.mnemonic](instruction.operands);
 		HLT = instruction.mnemonic == "HLT";
 	}
-
 }
 
 
-void Run8085(std::string filePath)
-{
-	Program::Loop.clear();
-	Program::program.clear();
-	Register::Clear();
-	Program::Read(filePath);
-	Program::Run();
-}
+
   
