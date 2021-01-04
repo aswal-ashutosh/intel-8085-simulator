@@ -230,7 +230,7 @@ void Register::UpdateFlags(int aux)
 
 	Register::Flag::ZF = Register::Main['A'] == 0; //@Zero Flag
 
-	Register::Flag::AC = aux ^ -1 ? aux > 15 : Register::Flag::AC; //@Aux Carry Flag
+	Register::Flag::AC = aux > 0xf; //@Aux Carry Flag
 
 	Register::Flag::PF = !(Utility::_set_bits_count(Register::Main['A']) & 1); //@Pairty Flag
 }
@@ -852,7 +852,8 @@ void Mnemonic::INR(const std::pair<std::string, std::string>& operands)//CY is n
 	{
 		int nValue = MemoryManager::Memory[Register::HL()];
 		Register::Flag::AC = (Converter::DecToHex(nValue)).back() == 'F';//@Auxiliary carry
-		++MemoryManager::Memory[Register::HL()]; // Add overflow checker
+		++MemoryManager::Memory[Register::HL()];
+		Utility::_8Bit_Normalization(MemoryManager::Memory[Register::HL()]);
 		Register::Flag::PF = !(Utility::_set_bits_count(MemoryManager::Memory[Register::HL()]) & 1);//@Parity Flag
 		Register::Flag::SF = MemoryManager::Memory[Register::HL()] & (1 << 7);//Sign Flag
 		Register::Flag::ZF = MemoryManager::Memory[Register::HL()] == 0;//Zero Flag
@@ -861,7 +862,8 @@ void Mnemonic::INR(const std::pair<std::string, std::string>& operands)//CY is n
 	{
 		int nValue = Register::Main[reg];
 		Register::Flag::AC = (Converter::DecToHex(nValue)).back() == 'F';//@Auxiliary carry
-		++Register::Main[reg]; // Add overflow checker
+		++Register::Main[reg];
+		Utility::_8Bit_Normalization(Register::Main[reg]);
 		Register::Flag::PF = !(Utility::_set_bits_count(Register::Main[reg]) & 1);//@Parity Flag
 		Register::Flag::SF = Register::Main[reg] & (1 << 7);//Sign Flag
 		Register::Flag::ZF = Register::Main[reg] == 0;//Zero Flag
@@ -881,21 +883,27 @@ void Mnemonic::INX(const std::pair<std::string, std::string>& operands)//No flag
 	if (reg == 'H')
 	{
 		int DATA = Register::HL();
-		std::string xDATA = Converter::DecToHex(++DATA, 16);
+		++DATA;
+		Utility::_16Bit_Normalization(DATA);
+		std::string xDATA = Converter::DecToHex(DATA, 16);
 		Register::Main['H'] = Converter::HexToDec(xDATA.substr(0, 2));
 		Register::Main['L'] = Converter::HexToDec(xDATA.substr(2, 2));
 	}
 	else if (reg == 'D')
 	{
 		int DATA = Register::DE();
-		std::string xDATA = Converter::DecToHex(++DATA, 16);
+		++DATA;
+		Utility::_16Bit_Normalization(DATA);
+		std::string xDATA = Converter::DecToHex(DATA, 16);
 		Register::Main['D'] = Converter::HexToDec(xDATA.substr(0, 2));
 		Register::Main['E'] = Converter::HexToDec(xDATA.substr(2, 2));
 	}
 	else if (reg == 'B')
 	{
 		int DATA = Register::BC();
-		std::string xDATA = Converter::DecToHex(++DATA, 16);
+		++DATA;
+		Utility::_16Bit_Normalization(DATA);
+		std::string xDATA = Converter::DecToHex(DATA, 16);
 		Register::Main['B'] = Converter::HexToDec(xDATA.substr(0, 2));
 		Register::Main['C'] = Converter::HexToDec(xDATA.substr(2, 2));
 	}
