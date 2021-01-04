@@ -254,6 +254,7 @@ void Register::Clear()
 class Instruction
 {
 public:
+	int line_number;
 	std::string mnemonic;
 	std::pair<std::string, std::string> operands;
 };
@@ -281,15 +282,15 @@ bool Program::HLT;
 class Error
 {
 public:
-	static void Throw(const std::string& e, const int PC);
+	static void Throw(const std::string& e, const int line_number);
 };
 
-void Error::Throw(const std::string& e, const int PC = -1)
+void Error::Throw(const std::string& e, const int line_number = -1)
 {
 	std::string error;
-	if (PC ^ -1)
+	if (line_number ^ -1)
 	{
-		error = "Error: " + e + " [Line Number: " + std::to_string(PC + 1) + "]";
+		error = "Error: " + e + " [Line Number: " + std::to_string(line_number) + "]";
 	}
 	else
 	{
@@ -499,7 +500,7 @@ void Mnemonic::MOV(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 2))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 
@@ -519,7 +520,7 @@ void Mnemonic::MOV(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		Error::Throw("Invalid Register", Register::PC);
+		Error::Throw("Invalid Register", Program::program[Register::PC].line_number);
 	}
 	++Register::PC;
 }
@@ -528,7 +529,7 @@ void Mnemonic::MVI(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 2))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 
@@ -540,7 +541,7 @@ void Mnemonic::MVI(const std::pair<std::string, std::string>& operands)
 
 	if (nValue > 0xFF)
 	{
-		Error::Throw("Expected 8 Bit data", Register::PC);
+		Error::Throw("Expected 8 Bit data", Program::program[Register::PC].line_number);
 	}
 	else if (reg == 'M') //@Memory
 	{
@@ -552,7 +553,7 @@ void Mnemonic::MVI(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		Error::Throw("Invalid Register.", Register::PC);
+		Error::Throw("Invalid Register.", Program::program[Register::PC].line_number);
 	}
 	++Register::PC;
 }
@@ -561,7 +562,7 @@ void Mnemonic::LDA(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 
@@ -573,7 +574,7 @@ void Mnemonic::LDA(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		Error::Throw("Invalid Memory Location", Register::PC);
+		Error::Throw("Invalid Memory Location", Program::program[Register::PC].line_number);
 	}
 	++Register::PC;
 }
@@ -582,7 +583,7 @@ void Mnemonic::STA(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 
@@ -594,7 +595,7 @@ void Mnemonic::STA(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		Error::Throw("Invalid Memory Location", Register::PC);
+		Error::Throw("Invalid Memory Location", Program::program[Register::PC].line_number);
 	}
 	++Register::PC;
 }
@@ -603,7 +604,7 @@ void Mnemonic::LHLD(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 
@@ -616,7 +617,7 @@ void Mnemonic::LHLD(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		Error::Throw("Invalid Memory Location", Register::PC);
+		Error::Throw("Invalid Memory Location", Program::program[Register::PC].line_number);
 	}
 	++Register::PC;
 }
@@ -625,7 +626,7 @@ void Mnemonic::SHLD(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 
@@ -638,7 +639,7 @@ void Mnemonic::SHLD(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		Error::Throw("Invalid Memory Location", Register::PC);
+		Error::Throw("Invalid Memory Location", Program::program[Register::PC].line_number);
 	}
 	++Register::PC;
 }
@@ -649,7 +650,7 @@ void Mnemonic::LXI(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 2))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 
@@ -673,7 +674,7 @@ void Mnemonic::LXI(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		Error::Throw("Invalid Register Pair", Register::PC);
+		Error::Throw("Invalid Register Pair", Program::program[Register::PC].line_number);
 	}
 	++Register::PC;
 }
@@ -682,7 +683,7 @@ void Mnemonic::LDAX(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 
@@ -701,7 +702,7 @@ void Mnemonic::LDAX(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		Error::Throw("Invalid Register Pair", Register::PC);
+		Error::Throw("Invalid Register Pair", Program::program[Register::PC].line_number);
 	}
 	++Register::PC;
 }
@@ -710,7 +711,7 @@ void Mnemonic::STAX(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 
@@ -729,7 +730,7 @@ void Mnemonic::STAX(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		Error::Throw("Invalid Register Pair", Register::PC);
+		Error::Throw("Invalid Register Pair", Program::program[Register::PC].line_number);
 	}
 	++Register::PC;
 }
@@ -738,7 +739,7 @@ void Mnemonic::XCHG(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 0))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 
@@ -752,7 +753,7 @@ void Mnemonic::ADD(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 
@@ -773,7 +774,7 @@ void Mnemonic::ADD(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		Error::Throw("Invalid Register", Register::PC);
+		Error::Throw("Invalid Register", Program::program[Register::PC].line_number);
 	}
 	Register::UpdateFlags(_4Bit_A + _4Bit_R);
 	++Register::PC;
@@ -783,7 +784,7 @@ void Mnemonic::ADC(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 
@@ -804,7 +805,7 @@ void Mnemonic::ADC(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		Error::Throw("Invalid Register", Register::PC);
+		Error::Throw("Invalid Register", Program::program[Register::PC].line_number);
 	}
 	Register::UpdateFlags(_4Bit_A + _4Bit_R);
 	++Register::PC;
@@ -814,7 +815,7 @@ void Mnemonic::ADI(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 
@@ -822,7 +823,7 @@ void Mnemonic::ADI(const std::pair<std::string, std::string>& operands)
 	int _4Bit_A = 0, _4Bit_R = 0;
 	if (nValue > 0xFF)
 	{
-		Error::Throw("Expected 8 Bit data", Register::PC);
+		Error::Throw("Expected 8 Bit data", Program::program[Register::PC].line_number);
 	}
 	else
 	{
@@ -842,7 +843,7 @@ void Mnemonic::ACI(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 
@@ -854,7 +855,7 @@ void Mnemonic::ACI(const std::pair<std::string, std::string>& operands)
 
 	if (nValue > 0xFF)
 	{
-		Error::Throw("Expected 8 Bit data", Register::PC);
+		Error::Throw("Expected 8 Bit data", Program::program[Register::PC].line_number);
 	}
 	else
 	{
@@ -868,7 +869,7 @@ void Mnemonic::SUB(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 
@@ -900,7 +901,7 @@ void Mnemonic::SUB(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		Error::Throw("Invalid Register", Register::PC);
+		Error::Throw("Invalid Register", Program::program[Register::PC].line_number);
 	}
 	Register::UpdateFlags(_4Bit_A + _4Bit_R);
 	++Register::PC;
@@ -910,7 +911,7 @@ void Mnemonic::SBB(const std::pair<std::string, std::string>& operands)//Not sur
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 
@@ -936,7 +937,7 @@ void Mnemonic::SBB(const std::pair<std::string, std::string>& operands)//Not sur
 	}
 	else
 	{
-		Error::Throw("Invalid Register", Register::PC);
+		Error::Throw("Invalid Register", Program::program[Register::PC].line_number);
 	}
 	Register::UpdateFlags(_4Bit_A + _4Bit_R); //Add _4Bit_C if last nibble of Carry is also responsible for AC
 	++Register::PC;
@@ -946,14 +947,14 @@ void Mnemonic::SUI(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 
 	int nValue = Converter::HexToDec(operands.first), _4Bit_A = 0, _4Bit_R = 0;
 	if (nValue > 0xFF)
 	{
-		Error::Throw("Expected 8 Bit data", Register::PC);
+		Error::Throw("Expected 8 Bit data", Program::program[Register::PC].line_number);
 	}
 	else
 	{
@@ -972,7 +973,7 @@ void Mnemonic::SBI(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 
@@ -980,7 +981,7 @@ void Mnemonic::SBI(const std::pair<std::string, std::string>& operands)
 
 	if (nValue > 0xFF)
 	{
-		Error::Throw("Expected 8 Bit data", Register::PC);
+		Error::Throw("Expected 8 Bit data", Program::program[Register::PC].line_number);
 	}
 	else
 	{
@@ -998,7 +999,7 @@ void Mnemonic::INR(const std::pair<std::string, std::string>& operands)//CY is n
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 
@@ -1026,7 +1027,7 @@ void Mnemonic::INR(const std::pair<std::string, std::string>& operands)//CY is n
 	}
 	else
 	{
-		Error::Throw("Invalid Register", Register::PC);
+		Error::Throw("Invalid Register", Program::program[Register::PC].line_number);
 	}
 
 	++Register::PC;
@@ -1036,7 +1037,7 @@ void Mnemonic::INX(const std::pair<std::string, std::string>& operands)//No flag
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 
@@ -1071,7 +1072,7 @@ void Mnemonic::INX(const std::pair<std::string, std::string>& operands)//No flag
 	}
 	else
 	{
-		Error::Throw("Invalid Register", Register::PC);
+		Error::Throw("Invalid Register", Program::program[Register::PC].line_number);
 	}
 
 	++Register::PC;
@@ -1081,7 +1082,7 @@ void Mnemonic::DCR(const std::pair<std::string, std::string>& operands)//CY is n
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 
@@ -1109,7 +1110,7 @@ void Mnemonic::DCR(const std::pair<std::string, std::string>& operands)//CY is n
 	}
 	else
 	{
-		Error::Throw("Invalid Register", Register::PC);
+		Error::Throw("Invalid Register", Program::program[Register::PC].line_number);
 	}
 
 	++Register::PC;
@@ -1119,7 +1120,7 @@ void Mnemonic::DCX(const std::pair<std::string, std::string>& operands)//No flag
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 
@@ -1154,7 +1155,7 @@ void Mnemonic::DCX(const std::pair<std::string, std::string>& operands)//No flag
 	}
 	else
 	{
-		Error::Throw("Invalid Register", Register::PC);
+		Error::Throw("Invalid Register", Program::program[Register::PC].line_number);
 	}
 
 	++Register::PC;
@@ -1164,7 +1165,7 @@ void Mnemonic::DAD(const std::pair<std::string, std::string>& operands)//only af
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 
@@ -1184,7 +1185,7 @@ void Mnemonic::DAD(const std::pair<std::string, std::string>& operands)//only af
 	}
 	else
 	{
-		Error::Throw("Invalid Register", Register::PC);
+		Error::Throw("Invalid Register", Program::program[Register::PC].line_number);
 	}
 
 	HL_DATA += Rp_DATA;
@@ -1202,7 +1203,7 @@ void Mnemonic::ANA(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 
@@ -1217,7 +1218,7 @@ void Mnemonic::ANA(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		Error::Throw("Invalid Register", Register::PC);
+		Error::Throw("Invalid Register", Program::program[Register::PC].line_number);
 	}
 
 	Register::UpdateFlags(16);//16: As after executing AND instruction AC flag become set
@@ -1228,14 +1229,14 @@ void Mnemonic::ANI(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 
 	int nValue = Converter::HexToDec(operands.first);
 	if (nValue > 0xFF)
 	{
-		Error::Throw("Expected 8 Bit data", Register::PC);
+		Error::Throw("Expected 8 Bit data", Program::program[Register::PC].line_number);
 	}
 	else
 	{
@@ -1250,7 +1251,7 @@ void Mnemonic::ORA(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 
@@ -1265,7 +1266,7 @@ void Mnemonic::ORA(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		Error::Throw("Invalid Register", Register::PC);
+		Error::Throw("Invalid Register", Program::program[Register::PC].line_number);
 	}
 
 	Register::UpdateFlags(1);//1: As there can not be any auxiliary carry during bitwise operation
@@ -1276,7 +1277,7 @@ void Mnemonic::ORI(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 
@@ -1284,7 +1285,7 @@ void Mnemonic::ORI(const std::pair<std::string, std::string>& operands)
 
 	if (nValue > 0xFF)
 	{
-		Error::Throw("Expected 8 Bit data", Register::PC);
+		Error::Throw("Expected 8 Bit data", Program::program[Register::PC].line_number);
 	}
 	else
 	{
@@ -1299,7 +1300,7 @@ void Mnemonic::XRA(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 
@@ -1314,7 +1315,7 @@ void Mnemonic::XRA(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		Error::Throw("Invalid Register", Register::PC);
+		Error::Throw("Invalid Register", Program::program[Register::PC].line_number);
 	}
 
 	Register::UpdateFlags(1);
@@ -1325,14 +1326,14 @@ void Mnemonic::XRI(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 
 	int nValue = Converter::HexToDec(operands.first);
 	if (nValue > 0xFF)
 	{
-		Error::Throw("Expected 8 Bit data", Register::PC);
+		Error::Throw("Expected 8 Bit data", Program::program[Register::PC].line_number);
 	}
 	else
 	{
@@ -1347,7 +1348,7 @@ void Mnemonic::CMA(const std::pair<std::string, std::string>& operands)//Flags a
 {
 	if (!Mnemonic::validOperandCount(operands, 0))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 
@@ -1362,7 +1363,7 @@ void Mnemonic::RLC(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 0))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 	Register::Flag::CY = Register::Main['A'] & (1 << 7);
@@ -1376,7 +1377,7 @@ void Mnemonic::RAL(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 0))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 	bool MSB = Register::Main['A'] & (1 << 7);
@@ -1391,7 +1392,7 @@ void Mnemonic::RRC(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 0))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 	Register::Flag::CY = Register::Main['A'] & 1;
@@ -1404,7 +1405,7 @@ void Mnemonic::RAR(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 0))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 	bool LSB = Register::Main['A'] & 1;
@@ -1418,7 +1419,7 @@ void Mnemonic::STC(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 0))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 
@@ -1430,7 +1431,7 @@ void Mnemonic::CMC(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 0))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 	Register::Flag::CY = !Register::Flag::CY;
@@ -1441,7 +1442,7 @@ void Mnemonic::CMP(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 	char reg = operands.first.front();
@@ -1456,7 +1457,7 @@ void Mnemonic::CMP(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		Error::Throw("Invalid Register", Register::PC);
+		Error::Throw("Invalid Register", Program::program[Register::PC].line_number);
 	}
 
 	int temp = A + Utility::_8bit_2sc(R);
@@ -1478,7 +1479,7 @@ void Mnemonic::CPI(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 
@@ -1486,7 +1487,7 @@ void Mnemonic::CPI(const std::pair<std::string, std::string>& operands)
 
 	if (R > 0xFF)
 	{
-		Error::Throw("Expected 8 Bit data", Register::PC);
+		Error::Throw("Expected 8 Bit data", Program::program[Register::PC].line_number);
 	}
 
 	int temp = A + Utility::_8bit_2sc(R);
@@ -1508,7 +1509,7 @@ void Mnemonic::JMP(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 	Register::PC = Program::Loop[operands.first];
@@ -1518,7 +1519,7 @@ void Mnemonic::JC(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 	Register::PC = Register::Flag::CY ? Program::Loop[operands.first] : Register::PC + 1;
@@ -1528,7 +1529,7 @@ void Mnemonic::JNC(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 	Register::PC = Register::Flag::CY ? Register::PC + 1 : Program::Loop[operands.first];
@@ -1538,7 +1539,7 @@ void Mnemonic::JZ(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 	Register::PC = Register::Flag::ZF ? Program::Loop[operands.first] : Register::PC + 1;
@@ -1548,7 +1549,7 @@ void Mnemonic::JNZ(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 	Register::PC = Register::Flag::ZF ? Register::PC + 1 : Program::Loop[operands.first];
@@ -1558,7 +1559,7 @@ void Mnemonic::JPE(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 	Register::PC = Register::Flag::PF ? Program::Loop[operands.first] : Register::PC + 1;
@@ -1568,7 +1569,7 @@ void Mnemonic::JPO(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 	Register::PC = Register::Flag::PF ? Register::PC + 1 : Program::Loop[operands.first];
@@ -1578,7 +1579,7 @@ void Mnemonic::JM(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 	Register::PC = Register::Flag::SF ? Program::Loop[operands.first] : Register::PC + 1;
@@ -1588,7 +1589,7 @@ void Mnemonic::JP(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 	Register::PC = Register::Flag::SF ? Register::PC + 1 : Program::Loop[operands.first];
@@ -1598,7 +1599,7 @@ void Mnemonic::HLT(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 0))
 	{
-		Error::Throw("Invalid Operand Count", Register::PC);
+		Error::Throw("Invalid Operand Count", Program::program[Register::PC].line_number);
 		return;
 	}
 	Program::HLT = true;
@@ -1623,6 +1624,7 @@ bool Program::Read(std::string filePath)
 
 	std::fstream file;
 	file.open(filePath, std::ios::in);
+	int line_number = 1;
 	while (!file.eof())
 	{
 		std::string currentLine;
@@ -1630,6 +1632,7 @@ bool Program::Read(std::string filePath)
 		//Checking for commented line and empty line
 		if (currentLine.empty() || currentLine.front() == '@')
 		{
+			++line_number;
 			continue;
 		}
 
@@ -1646,12 +1649,12 @@ bool Program::Read(std::string filePath)
 		if (token_count > 5)
 		{
 			//We can not have more than 5 tokens in a line
-			Error::Throw("Syntax error", program.size() + 1);
+			Error::Throw("Syntax Error", line_number);
 			return false;
 		}
 	
 		Instruction instruction;
-
+		instruction.line_number = line_number;
 		int token_idx = 0;
 
 		//First token can either be a loop point or a mnemonic
@@ -1672,14 +1675,14 @@ bool Program::Read(std::string filePath)
 			}
 			else
 			{
-				Error::Throw("Invalid Mnemonic", program.size() + 1);
+				Error::Throw("Invalid Mnemonic", line_number);
 				return false;
 			}
 		}
 		else
 		{
 			//This token should have to be a mnemonic
-			Error::Throw("Syntax error", program.size() + 1);
+			Error::Throw("Syntax error", line_number);
 			return false;
 		}
 
@@ -1698,12 +1701,7 @@ bool Program::Read(std::string filePath)
 			instruction.operands.first = operand;
 			++token_idx;
 		}
-		else
-		{
-			program.push_back(instruction);
-			continue;
-			//as if there if no token after mnemonic then it must be a instruction with no operands
-		}
+
 
 		
 		if (token_idx < token_count)
@@ -1729,7 +1727,7 @@ bool Program::Read(std::string filePath)
 					else
 					{
 						//No operand after a comma
-						Error::Throw("Syntax error", program.size() + 1);
+						Error::Throw("Syntax error", line_number);
 						return false;
 					}
 					
@@ -1746,19 +1744,21 @@ bool Program::Read(std::string filePath)
 					else
 					{
 						//There is no comma to serparate the operands	
-						Error::Throw("Syntax Error", program.size() + 1);
+						Error::Throw("Syntax Error", line_number);
 						return false;
 					}
 				}
 			}
 		}
-		else
+		else if (comma_found)
 		{
-			program.push_back(instruction);
-			continue;
-			//as if there if no token after first operand then it must be a instruction with single operand
+			//No operand after comma
+			Error::Throw("Syntax Error", line_number);
+			return false;
 		}
+
 		program.push_back(instruction);
+		++line_number;
 	}
 
 	if (program.back().mnemonic != "HLT")

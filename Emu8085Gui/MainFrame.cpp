@@ -333,7 +333,7 @@ void MainFrame::Debug8085(const std::string& filePath)
 		m_DebugButton->Disable();
 		m_StopButton->Enable();
 		m_CurrentLineTextCtrl->Clear();
-		m_CurrentLineTextCtrl->AppendText(ToWxString(std::to_string(Register::PC + 1)));
+		m_CurrentLineTextCtrl->AppendText(ToWxString(std::to_string(Program::program[Register::PC].line_number)));
 	}
 }
 
@@ -355,7 +355,7 @@ void MainFrame::OnExecute(wxCommandEvent& event)
 	UpdateRegisters();
 	UpdateMemory();
 	m_CurrentLineTextCtrl->Clear();
-	m_CurrentLineTextCtrl->AppendText(ToWxString(std::to_string(Register::PC + 1)));
+	m_CurrentLineTextCtrl->AppendText(ToWxString(std::to_string(Program::program[Register::PC].line_number)));
 }
 
 
