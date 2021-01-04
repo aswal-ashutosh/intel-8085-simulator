@@ -4,6 +4,7 @@
 #include<wx\artprov.h>
 #include<wx/stc/stc.h>
 #include<wx/listctrl.h>
+#include "wx/html/htmlwin.h"
 #include<map>
 
 
@@ -81,6 +82,13 @@ private:
 	wxBoxSizer* m_LeftPanelSizer = nullptr;
 	wxBoxSizer* m_RightPanelSizer = nullptr;
 
+	//About Diaglog
+	wxBoxSizer* m_AboutDialogSizer = nullptr;
+	wxTextCtrl* m_AboutDialogTextCtrl = nullptr;
+
+	//Help Dialog
+	wxBoxSizer* m_HelpDialogSizer = nullptr;
+	wxTextCtrl* m_HelpDialogTextCtrl = nullptr;
 
 	//Other
 	std::map<char, wxTextCtrl*> m_MainRegister;
@@ -110,6 +118,8 @@ public:
 	void OnDebug(wxCommandEvent& event);
 	void OnStopDebug(wxCommandEvent& event);
 	void OnExecute(wxCommandEvent& event);
+	void OnAbout(wxCommandEvent& event);
+	void OnHelp(wxCommandEvent& event);
 	void Clear();//Will be called before running the program(Memory will not be affected)
 	void Run8085(const std::string& filePath);
 	void Debug8085(const std::string& filePath);

@@ -17,6 +17,8 @@ EVT_MENU(wxID_SAVE, MainFrame::OnSave)
 EVT_MENU(wxID_SAVEAS, MainFrame::OnSaveAs)
 EVT_MENU(wxID_EXIT, MainFrame::OnExit)
 EVT_MENU(wxID_EXECUTE, MainFrame::OnRun)
+EVT_MENU(wxID_ABOUT, MainFrame::OnAbout)
+EVT_MENU(wxID_HELP, MainFrame::OnHelp)
 EVT_BUTTON(ButtonID::SET_BUTTON, MainFrame::OnSet)
 EVT_BUTTON(ButtonID::VIEW_BUTTON, MainFrame::OnView)
 EVT_BUTTON(ButtonID::DEBUG_BUTTON, MainFrame::OnDebug)
@@ -229,6 +231,7 @@ void MainFrame::OnSet(wxCommandEvent& envet)
 	m_DataTextCtrl->Clear();
 	m_MemoryAddressTextCtrl->AppendText("0000");
 	m_DataTextCtrl->AppendText("00");
+	UpdateMemory();
 }
 
 void MainFrame::OnView(wxCommandEvent& envet)
@@ -363,4 +366,28 @@ void MainFrame::OnStopDebug(wxCommandEvent& event)
 	m_DebugButton->Enable();
 	m_CurrentLineTextCtrl->Clear();
 	m_CurrentLineTextCtrl->AppendText("---");
+}
+
+void MainFrame::OnAbout(wxCommandEvent& event)
+{
+	wxDialog aboutDialog(this, wxID_ANY, "ABOUT");
+	m_AboutDialogSizer = new wxBoxSizer(wxVERTICAL);
+	m_AboutDialogTextCtrl = new wxTextCtrl(&aboutDialog, wxID_ANY,"", wxDefaultPosition, wxSize(350, 250), wxTE_MULTILINE|wxTE_READONLY| wxTE_AUTO_URL| wxTE_NO_VSCROLL| wxTE_CENTRE);
+	m_AboutDialogTextCtrl->LoadFile("ABOUT.txt");
+	m_AboutDialogSizer->Add(m_AboutDialogTextCtrl, 1, wxALL, 10);
+	aboutDialog.SetSizer(m_AboutDialogSizer);
+	m_AboutDialogSizer->Fit(&aboutDialog);
+	aboutDialog.ShowModal();
+}
+
+void MainFrame::OnHelp(wxCommandEvent& event)
+{
+	wxDialog helpDialog(this, wxID_ANY, "HELP");
+	m_HelpDialogSizer = new wxBoxSizer(wxVERTICAL);
+	m_HelpDialogTextCtrl = new wxTextCtrl(&helpDialog, wxID_ANY, "", wxDefaultPosition, wxSize(450, 500), wxTE_MULTILINE | wxTE_READONLY);
+	m_HelpDialogTextCtrl->LoadFile("HELP.txt");
+	m_HelpDialogSizer->Add(m_HelpDialogTextCtrl, 1, wxALL, 10);
+	helpDialog.SetSizer(m_HelpDialogSizer);
+	m_HelpDialogSizer->Fit(&helpDialog);
+	helpDialog.ShowModal();
 }

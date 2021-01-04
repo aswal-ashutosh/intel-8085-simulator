@@ -1745,7 +1745,8 @@ bool Program::Read(std::string filePath)
 					}
 					else
 					{
-						Error::Throw("Syntax error", program.size() + 1);
+						//There is no comma to serparate the operands	
+						Error::Throw("Syntax Error", program.size() + 1);
 						return false;
 					}
 				}

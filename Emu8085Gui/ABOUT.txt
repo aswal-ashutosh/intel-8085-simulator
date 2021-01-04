@@ -1,0 +1,13 @@
+8085 Simulator is a desktop application for writing Intel 8085 microprocessor code.
+
+It simulate the 8085 microprocessor.
+It can run and debug 8085 assembly code.
+
+It is written in C++. 
+wxWidgets library(C++) is used to create the GUI for the application.
+https://www.wxwidgets.org/
+
+WARNING: The application is in beta state and may have some bugs.
+(Please report any bug on ashu.aswal.333@gmail.com)
+
+8085 Simulator is developed by Ashutosh Aswal.

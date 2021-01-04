@@ -34,11 +34,17 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="sample.txt">
-      <Filter>Source Files</Filter>
-    </Text>
     <Text Include="debug_lex.txt">
-      <Filter>Source Files</Filter>
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="sample.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="ABOUT.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="HELP.txt">
+      <Filter>Resource Files</Filter>
     </Text>
   </ItemGroup>
 </Project>

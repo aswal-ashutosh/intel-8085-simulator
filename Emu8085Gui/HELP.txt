@@ -1,0 +1,79 @@
+[FLAG REGISTER PANEL]
+It will display the status of flag register.
+
+
+[REGISTER PANEL]
+It display the content of A, B, D, D, E, H & L Registers in Hex.
+
+
+[MEMORY INTIALIZER PANEL]
+It is used to set 8 bit hexadecimal data in memory ranging from [0000 - FFFF].
+<DIRECTION TO USE>
+-> Put the address and data in the crossponding block and hit set button.
+
+
+[MEMORY VIEWER PANEL]
+It will display the content of N memory locaton from the provided starting address.
+(N is the value provided to Count)
+<DIRECTION TO USE>
+-> Put the address and the count in the corresponding block and hit the view button.
+
+
+[DEBUGGER PANEL]
+It will allow to debug the code.
+<DIRECTION TO USE>
+-> Open/Write the code.
+-> Make sure to save the file.
+-> Hit Debug button which will enable the Execute and STOP button.
+-> Hit the execute button to execute/run the line number shown in the Debugger Panel.
+-> Hit the STOP button to stop debugging.
+NOTE: 
+->Debugger will stop automatically after executing HLT. 
+->Use STOP button only if it is required to stop deubgging in between.
+
+
+[HOW TO USE LOOP/JUMP]
+In order to jump to a specfic line of code create a loop point.
+Loop point is any string ending with ':', for example:- LOOP:, HERE: etc.
+NOTE: All loop point will be considered in its uppercase form i.e., LOOP:, Loop:,
+loop:, loOP:,...... will be considered as same loop point as
+all have the same uppercase form i.e., LOOP.
+FOR EXAMPLE:-
+LDA 2050
+MOV D, A
+MVI B, 0A
+LXI H, 3050
+MVI C, 00
+LOOP: MOV A, D <---- Loop point created here
+ADD C
+MOV M, A
+INX H
+MOV C, A
+DCR B
+JNZ LOOP <---- Jumping to the loop point
+HLT
+
+[HOW TO USE COMMENTS IN CODE]
+Any line starting with '@' will be considered as comment, e.g., @This is comment.
+NOTE: You can not start a comment in between, i.e., 
+-> MOV A, B @Will copy the content of B to A     [WRONG]
+
+-> @Next line will copy the content of B to A    [CORRECT]
+      MOV A, B
+
+
+[EMPTY LINES]
+All empty lines in between the codes will be ignored.
+
+
+[IMPORTANT]
+->Do not use H or h to represent the hexadecimal data as application is designed in such a way that it
+will consider every immediate data in hexxadecimal only.
+
+->Separate every token by a space, i.e.,
+    -> MOV A,B          [WRONG]
+    -> MOV A, B         [CORRECT]
+    -> MOV A , B        [CORRECT]
+    -> MOV A ,B         [CORRECT]
+    -> LOOP:MVI A, 00   [WRONG]
+    -> LOOP: MVI A, 00  [CORRECT]

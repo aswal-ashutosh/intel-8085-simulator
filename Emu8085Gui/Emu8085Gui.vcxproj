@@ -28,7 +28,9 @@
     <ClCompile Include="MainFrame.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <Text Include="ABOUT.txt" />
     <Text Include="debug_lex.txt" />
+    <Text Include="HELP.txt" />
     <Text Include="sample.txt" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
