@@ -117,7 +117,7 @@ MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30,
 	m_CountTextCtrl = new wxTextCtrl(m_MemoryViewPanelStaticBox, wxID_ANY, "00", wxPoint(150, 30), wxSize(20, 20));
 	m_CountTextCtrl->SetMaxLength(2);
 	m_ViewButton = new wxButton(m_MemoryViewPanelStaticBox, ButtonID::VIEW_BUTTON, "View", wxPoint(58, 60));
-	m_MemoryViewList = new wxListView(m_MemoryViewPanelStaticBox, wxID_ANY, wxPoint(5, 90), wxSize(190, 300));
+	m_MemoryViewList = new wxListView(m_MemoryViewPanelStaticBox, wxID_ANY, wxPoint(5, 90), wxSize(190, 315));
 	m_MemoryViewList->AppendColumn("Address");
 	m_MemoryViewList->AppendColumn("Data");
 	m_MemoryViewPanel->SetSizer(m_MemoryViewPanelStaticBoxSizer);

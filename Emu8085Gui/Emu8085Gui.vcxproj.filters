@@ -37,5 +37,8 @@
     <Text Include="sample.txt">
       <Filter>Source Files</Filter>
     </Text>
+    <Text Include="debug_lex.txt">
+      <Filter>Source Files</Filter>
+    </Text>
   </ItemGroup>
 </Project>

@@ -80,6 +80,8 @@ public:
 	static int HexToDec(char number);
 
 	static std::string DecToHex(int number, int type = 8);
+
+	static void ToUpperString(std::string& s);
 };
 
 int Converter::HexToDec(std::string number)
@@ -106,10 +108,7 @@ std::string Converter::DecToHex(int number, int type)
 	std::stringstream ss;
 	ss << std::hex << number;
 	std::string hex_number = ss.str();
-	for (char& x : hex_number)
-	{
-		x = toupper(x);
-	}
+	ToUpperString(hex_number);
 	if (type == 8)
 	{
 		Utility::_8Bit(hex_number);
@@ -119,6 +118,14 @@ std::string Converter::DecToHex(int number, int type)
 		Utility::_16Bit(hex_number);
 	}
 	return hex_number;
+}
+
+void Converter::ToUpperString(std::string& s)
+{
+	for (char& c : s)
+	{
+		c = toupper(c);
+	}
 }
 
 
@@ -409,10 +416,27 @@ public:
 
 	static void HLT(const std::pair<std::string, std::string>& operands);
 
+	static bool validOperandCount(const std::pair<std::string, std::string>& operands, int operand_count);
+
 };
 
 std::map<std::string, void (*)(const std::pair<std::string, std::string>&)> Mnemonic::Execute;
 
+bool Mnemonic::validOperandCount(const std::pair<std::string, std::string>& operands, int expected_operand_count)
+{
+	if (expected_operand_count == 0)
+	{
+		return operands.first.empty() && operands.second.empty();
+	}
+	else if(expected_operand_count == 1)
+	{
+		return !operands.first.empty() && operands.second.empty();
+	}
+	else
+	{
+		return !operands.first.empty() && !operands.second.empty();
+	}
+}
 
 void Mnemonic::LoadInsctructionSet()
 {
@@ -473,6 +497,13 @@ bool Mnemonic::isValid(const std::string mnemonic)
 
 void Mnemonic::MOV(const std::pair<std::string, std::string>& operands)
 {
+	if (!Mnemonic::validOperandCount(operands, 2))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
+
+
 	char destination = operands.first.front(), source = operands.second.front();
 	if (destination == 'M' && Register::isValid(source))
 	{
@@ -495,6 +526,13 @@ void Mnemonic::MOV(const std::pair<std::string, std::string>& operands)
 
 void Mnemonic::MVI(const std::pair<std::string, std::string>& operands)
 {
+	if (!Mnemonic::validOperandCount(operands, 2))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
+
+
 	char reg = operands.first.front();
 	std::string value = operands.second;
 
@@ -521,6 +559,12 @@ void Mnemonic::MVI(const std::pair<std::string, std::string>& operands)
 
 void Mnemonic::LDA(const std::pair<std::string, std::string>& operands)
 {
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
+
 	std::string address = operands.first;
 	int nAddress = Converter::HexToDec(address);
 	if (nAddress >= 0 && nAddress < (1 << 16))
@@ -536,6 +580,12 @@ void Mnemonic::LDA(const std::pair<std::string, std::string>& operands)
 
 void Mnemonic::STA(const std::pair<std::string, std::string>& operands)
 {
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
+
 	std::string address = operands.first;
 	int nAddress = Converter::HexToDec(address);
 	if (nAddress >= 0 && nAddress < (1 << 16))
@@ -551,6 +601,12 @@ void Mnemonic::STA(const std::pair<std::string, std::string>& operands)
 
 void Mnemonic::LHLD(const std::pair<std::string, std::string>& operands)
 {
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
+
 	std::string address = operands.first;
 	int nAddress = Converter::HexToDec(address);
 	if (nAddress >= 0 && nAddress < (1 << 16) - 1)
@@ -567,6 +623,12 @@ void Mnemonic::LHLD(const std::pair<std::string, std::string>& operands)
 
 void Mnemonic::SHLD(const std::pair<std::string, std::string>& operands)
 {
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
+
 	std::string address = operands.first;
 	int nAddress = Converter::HexToDec(address);
 	if (nAddress >= 0 && nAddress < (1 << 16) - 1)
@@ -585,6 +647,12 @@ void Mnemonic::SHLD(const std::pair<std::string, std::string>& operands)
 
 void Mnemonic::LXI(const std::pair<std::string, std::string>& operands)
 {
+	if (!Mnemonic::validOperandCount(operands, 2))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
+
 	char reg = operands.first.front();
 	std::string data = operands.second;
 	Utility::_16Bit(data);
@@ -612,6 +680,12 @@ void Mnemonic::LXI(const std::pair<std::string, std::string>& operands)
 
 void Mnemonic::LDAX(const std::pair<std::string, std::string>& operands)
 {
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
+
 	char reg = operands.first.front();
 	if (reg == 'B')
 	{
@@ -634,6 +708,12 @@ void Mnemonic::LDAX(const std::pair<std::string, std::string>& operands)
 
 void Mnemonic::STAX(const std::pair<std::string, std::string>& operands)
 {
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
+
 	char reg = operands.first.front();
 	if (reg == 'B')
 	{
@@ -656,6 +736,12 @@ void Mnemonic::STAX(const std::pair<std::string, std::string>& operands)
 
 void Mnemonic::XCHG(const std::pair<std::string, std::string>& operands)
 {
+	if (!Mnemonic::validOperandCount(operands, 0))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
+
 	std::swap(Register::Main['H'], Register::Main['D']);
 	std::swap(Register::Main['L'], Register::Main['E']);
 	++Register::PC;
@@ -664,6 +750,12 @@ void Mnemonic::XCHG(const std::pair<std::string, std::string>& operands)
 //@Airthmatic Instrunction
 void Mnemonic::ADD(const std::pair<std::string, std::string>& operands)
 {
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
+
 	char reg = operands.first.front();
 
 	int _4Bit_A = Converter::HexToDec((Converter::DecToHex(Register::Main['A'])).back()), _4Bit_R = 0;
@@ -689,6 +781,12 @@ void Mnemonic::ADD(const std::pair<std::string, std::string>& operands)
 
 void Mnemonic::ADC(const std::pair<std::string, std::string>& operands)
 {
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
+
 	char reg = operands.first.front();
 
 	int _4Bit_A = Converter::HexToDec((Converter::DecToHex(Register::Main['A'])).back()), _4Bit_R = 0;
@@ -714,6 +812,12 @@ void Mnemonic::ADC(const std::pair<std::string, std::string>& operands)
 
 void Mnemonic::ADI(const std::pair<std::string, std::string>& operands)
 {
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
+
 	int nValue = Converter::HexToDec(operands.first);
 	int _4Bit_A = 0, _4Bit_R = 0;
 	if (nValue > 0xFF)
@@ -736,6 +840,12 @@ void Mnemonic::ADI(const std::pair<std::string, std::string>& operands)
 
 void Mnemonic::ACI(const std::pair<std::string, std::string>& operands)
 {
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
+
 	std::string data = operands.first;
 	Utility::_8Bit(data);
 	int nValue = Converter::HexToDec(data);
@@ -756,6 +866,12 @@ void Mnemonic::ACI(const std::pair<std::string, std::string>& operands)
 
 void Mnemonic::SUB(const std::pair<std::string, std::string>& operands)
 {
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
+
 	char reg = operands.first.front();
 
 	int _4Bit_A = Converter::HexToDec((Converter::DecToHex(Register::Main['A'])).back()), _4Bit_R = 0;
@@ -792,6 +908,12 @@ void Mnemonic::SUB(const std::pair<std::string, std::string>& operands)
 
 void Mnemonic::SBB(const std::pair<std::string, std::string>& operands)//Not sure about flags
 {
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
+
 	char reg = operands.first.front();
 
 	int _4Bit_A = Converter::HexToDec((Converter::DecToHex(Register::Main['A'])).back()), _4Bit_R = 0;
@@ -822,6 +944,12 @@ void Mnemonic::SBB(const std::pair<std::string, std::string>& operands)//Not sur
 
 void Mnemonic::SUI(const std::pair<std::string, std::string>& operands)
 {
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
+
 	int nValue = Converter::HexToDec(operands.first), _4Bit_A = 0, _4Bit_R = 0;
 	if (nValue > 0xFF)
 	{
@@ -842,6 +970,12 @@ void Mnemonic::SUI(const std::pair<std::string, std::string>& operands)
 
 void Mnemonic::SBI(const std::pair<std::string, std::string>& operands)
 {
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
+
 	int nValue = Converter::HexToDec(operands.first), _4Bit_A = 0, _4Bit_R = 0;/*, _4Bit_C = 0*/
 
 	if (nValue > 0xFF)
@@ -862,6 +996,12 @@ void Mnemonic::SBI(const std::pair<std::string, std::string>& operands)
 
 void Mnemonic::INR(const std::pair<std::string, std::string>& operands)//CY is not affected
 {
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
+
 	char reg = operands.first.front();
 
 	if (reg == 'M')
@@ -894,6 +1034,12 @@ void Mnemonic::INR(const std::pair<std::string, std::string>& operands)//CY is n
 
 void Mnemonic::INX(const std::pair<std::string, std::string>& operands)//No flags are affected during the execution
 {
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
+
 	char reg = operands.first.front();
 
 	if (reg == 'H')
@@ -933,6 +1079,12 @@ void Mnemonic::INX(const std::pair<std::string, std::string>& operands)//No flag
 
 void Mnemonic::DCR(const std::pair<std::string, std::string>& operands)//CY is not affected
 {
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
+
 	char reg = operands.first.front();
 
 	if (reg == 'M')
@@ -965,6 +1117,12 @@ void Mnemonic::DCR(const std::pair<std::string, std::string>& operands)//CY is n
 
 void Mnemonic::DCX(const std::pair<std::string, std::string>& operands)//No flags are affected during the execution
 {
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
+
 	char reg = operands.first.front();
 
 	if (reg == 'H')
@@ -1004,6 +1162,12 @@ void Mnemonic::DCX(const std::pair<std::string, std::string>& operands)//No flag
 
 void Mnemonic::DAD(const std::pair<std::string, std::string>& operands)//only affect CY
 {
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
+
 	char Rp = operands.first.front();
 	int HL_DATA = Register::HL(), Rp_DATA = 0;
 	if (Rp == 'H')
@@ -1036,6 +1200,12 @@ void Mnemonic::DAD(const std::pair<std::string, std::string>& operands)//only af
 
 void Mnemonic::ANA(const std::pair<std::string, std::string>& operands)
 {
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
+
 	char reg = operands.first.front();
 	if (reg == 'M')
 	{
@@ -1056,6 +1226,12 @@ void Mnemonic::ANA(const std::pair<std::string, std::string>& operands)
 
 void Mnemonic::ANI(const std::pair<std::string, std::string>& operands)
 {
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
+
 	int nValue = Converter::HexToDec(operands.first);
 	if (nValue > 0xFF)
 	{
@@ -1072,6 +1248,12 @@ void Mnemonic::ANI(const std::pair<std::string, std::string>& operands)
 
 void Mnemonic::ORA(const std::pair<std::string, std::string>& operands)
 {
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
+
 	char reg = operands.first.front();
 	if (reg == 'M')
 	{
@@ -1092,6 +1274,12 @@ void Mnemonic::ORA(const std::pair<std::string, std::string>& operands)
 
 void Mnemonic::ORI(const std::pair<std::string, std::string>& operands)
 {
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
+
 	int nValue = Converter::HexToDec(operands.first);
 
 	if (nValue > 0xFF)
@@ -1109,6 +1297,12 @@ void Mnemonic::ORI(const std::pair<std::string, std::string>& operands)
 
 void Mnemonic::XRA(const std::pair<std::string, std::string>& operands)
 {
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
+
 	char reg = operands.first.front();
 	if (reg == 'M')
 	{
@@ -1129,6 +1323,12 @@ void Mnemonic::XRA(const std::pair<std::string, std::string>& operands)
 
 void Mnemonic::XRI(const std::pair<std::string, std::string>& operands)
 {
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
+
 	int nValue = Converter::HexToDec(operands.first);
 	if (nValue > 0xFF)
 	{
@@ -1145,6 +1345,12 @@ void Mnemonic::XRI(const std::pair<std::string, std::string>& operands)
 
 void Mnemonic::CMA(const std::pair<std::string, std::string>& operands)//Flags are not affected by this instruction
 {
+	if (!Mnemonic::validOperandCount(operands, 0))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
+
 	for (int i = 0; i < 8; ++i)
 	{
 		Register::Main['A'] ^= (1 << i);
@@ -1154,6 +1360,11 @@ void Mnemonic::CMA(const std::pair<std::string, std::string>& operands)//Flags a
 
 void Mnemonic::RLC(const std::pair<std::string, std::string>& operands)
 {
+	if (!Mnemonic::validOperandCount(operands, 0))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
 	Register::Flag::CY = Register::Main['A'] & (1 << 7);
 	Register::Main['A'] <<= 1; //Left Shift by 1 bit
 	Register::Main['A'] |= Register::Flag::CY ? 1 : 0;
@@ -1163,6 +1374,11 @@ void Mnemonic::RLC(const std::pair<std::string, std::string>& operands)
 
 void Mnemonic::RAL(const std::pair<std::string, std::string>& operands)
 {
+	if (!Mnemonic::validOperandCount(operands, 0))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
 	bool MSB = Register::Main['A'] & (1 << 7);
 	Register::Main['A'] <<= 1;//Left Shift by 1 bit
 	Register::Main['A'] |= Register::Flag::CY ? 1 : 0;
@@ -1173,6 +1389,11 @@ void Mnemonic::RAL(const std::pair<std::string, std::string>& operands)
 
 void Mnemonic::RRC(const std::pair<std::string, std::string>& operands)
 {
+	if (!Mnemonic::validOperandCount(operands, 0))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
 	Register::Flag::CY = Register::Main['A'] & 1;
 	Register::Main['A'] >>= 1; //Right Shift by 1 bit
 	Register::Main['A'] |= Register::Flag::CY ? (1 << 7) : 0;
@@ -1181,6 +1402,11 @@ void Mnemonic::RRC(const std::pair<std::string, std::string>& operands)
 
 void Mnemonic::RAR(const std::pair<std::string, std::string>& operands)
 {
+	if (!Mnemonic::validOperandCount(operands, 0))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
 	bool LSB = Register::Main['A'] & 1;
 	Register::Main['A'] >>= 1;//Right Shift by 1 bit
 	Register::Main['A'] |= Register::Flag::CY ? (1 << 7) : 0;
@@ -1190,18 +1416,34 @@ void Mnemonic::RAR(const std::pair<std::string, std::string>& operands)
 
 void Mnemonic::STC(const std::pair<std::string, std::string>& operands)
 {
+	if (!Mnemonic::validOperandCount(operands, 0))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
+
 	Register::Flag::CY = 1;
 	++Register::PC;
 }
 
 void Mnemonic::CMC(const std::pair<std::string, std::string>& operands)
 {
+	if (!Mnemonic::validOperandCount(operands, 0))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
 	Register::Flag::CY = !Register::Flag::CY;
 	++Register::PC;
 }
 
 void Mnemonic::CMP(const std::pair<std::string, std::string>& operands)
 {
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
 	char reg = operands.first.front();
 	int A = Register::Main['A'], R = 0;
 	if (reg == 'M')
@@ -1234,6 +1476,12 @@ void Mnemonic::CMP(const std::pair<std::string, std::string>& operands)
 
 void Mnemonic::CPI(const std::pair<std::string, std::string>& operands)
 {
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
+
 	int A = Register::Main['A'], R = Converter::HexToDec(operands.first);
 
 	if (R > 0xFF)
@@ -1258,54 +1506,114 @@ void Mnemonic::CPI(const std::pair<std::string, std::string>& operands)
 //@Branching Instructions
 void Mnemonic::JMP(const std::pair<std::string, std::string>& operands)
 {
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
 	Register::PC = Program::Loop[operands.first];
 }
 
 void Mnemonic::JC(const std::pair<std::string, std::string>& operands)
 {
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
 	Register::PC = Register::Flag::CY ? Program::Loop[operands.first] : Register::PC + 1;
 }
 
 void Mnemonic::JNC(const std::pair<std::string, std::string>& operands)
 {
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
 	Register::PC = Register::Flag::CY ? Register::PC + 1 : Program::Loop[operands.first];
 }
 
 void Mnemonic::JZ(const std::pair<std::string, std::string>& operands)
 {
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
 	Register::PC = Register::Flag::ZF ? Program::Loop[operands.first] : Register::PC + 1;
 }
 
 void Mnemonic::JNZ(const std::pair<std::string, std::string>& operands)
 {
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
 	Register::PC = Register::Flag::ZF ? Register::PC + 1 : Program::Loop[operands.first];
 }
 
 void Mnemonic::JPE(const std::pair<std::string, std::string>& operands)
 {
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
 	Register::PC = Register::Flag::PF ? Program::Loop[operands.first] : Register::PC + 1;
 }
 
 void Mnemonic::JPO(const std::pair<std::string, std::string>& operands)
 {
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
 	Register::PC = Register::Flag::PF ? Register::PC + 1 : Program::Loop[operands.first];
 }
 
 void Mnemonic::JM(const std::pair<std::string, std::string>& operands)
 {
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
 	Register::PC = Register::Flag::SF ? Program::Loop[operands.first] : Register::PC + 1;
 }
 
 void Mnemonic::JP(const std::pair<std::string, std::string>& operands)
 {
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
 	Register::PC = Register::Flag::SF ? Register::PC + 1 : Program::Loop[operands.first];
 }
 
 void Mnemonic::HLT(const std::pair<std::string, std::string>& operands)
 {
+	if (!Mnemonic::validOperandCount(operands, 0))
+	{
+		Error::Throw("Invalid Operand Count", Register::PC);
+		return;
+	}
 	Program::HLT = true;
 }
 
+//Function to print the lexer output to a file
+void DebugLex()
+{
+	std::ofstream file;
+	file.open("debug_lex.txt");
+	for (Instruction& s : Program::program)
+	{
+		file << s.mnemonic << ' ' << s.operands.first << ' ' << s.operands.second << '\n';
+	}
+}
 
 
 bool Program::Read(std::string filePath)
@@ -1321,33 +1629,132 @@ bool Program::Read(std::string filePath)
 		std::getline(file, currentLine);
 		std::stringstream ss(currentLine);
 		std::string word;
-		Instruction instruction;
+		std::vector<std::string> tokens;
 		while (ss >> word)
 		{
-			if (word.back() == ':')
+			tokens.push_back(word);
+		}
+		
+		int token_count = tokens.size();
+
+		if (token_count > 5)
+		{
+			//We can not have more than 5 tokens in a line
+			Error::Throw("Syntax error", program.size() + 1);
+			return false;
+		}
+		
+		if (token_count == 0) //Empty line
+		{
+			continue;
+		}
+
+		Instruction instruction;
+
+		int token_idx = 0;
+
+		//First token can either be a loop point or a mnemonic
+		if (tokens[token_idx].back() == ':') //If it is a loop
+		{
+			Loop[tokens[token_idx].substr(0, tokens[token_idx].size() - 1)] = program.size();
+			++token_idx;
+		}
+
+		//Checking for mnemonic
+		if (token_idx < token_count)
+		{
+			Converter::ToUpperString(tokens[token_idx]);
+			if (Mnemonic::isValid(tokens[token_idx]))
 			{
-				Loop[word.substr(0, word.size() - 1)] = program.size();
-			}
-			else if (Mnemonic::isValid(word))
-			{
-				instruction.mnemonic = word;
+				instruction.mnemonic = tokens[token_idx++];
 			}
 			else
 			{
-				if (word.back() == ',')
+				Error::Throw("Invalid Mnemonic", program.size() + 1);
+				return false;
+			}
+		}
+		else
+		{
+			wxMessageBox("1");
+			//This token should have to be a mnemonic
+			Error::Throw("Syntax error", program.size() + 1);
+			return false;
+		}
+
+		//Searching for first operand(comma may be attached to it. eg: A,)
+		bool comma_found = false;
+		if (token_idx < token_count)
+		{
+			std::string operand = tokens[token_idx];
+			if (operand.back() == ',') // if comma is attaced to first operand
+			{
+				operand.erase(operand.end() - 1);//removing comma
+				comma_found = true;
+			}
+
+			Converter::ToUpperString(operand);
+			instruction.operands.first = operand;
+			++token_idx;
+		}
+		else
+		{
+			program.push_back(instruction);
+			continue;
+			//as if there if no token after mnemonic then it must be a instruction with no operands
+		}
+
+		
+		if (token_idx < token_count)
+		{
+			if (comma_found)//It should be a second operand
+			{
+				Converter::ToUpperString(tokens[token_idx]);
+				instruction.operands.second = tokens[token_idx];
+			}
+			else
+			{
+				//Either the comma is separate from the operands (eg: A , B) or may be attaced to second operand(A ,B)
+				std::string s = tokens[token_idx];
+				if (s == ",")//Separated comma
 				{
-					word.erase(word.end() - 1);
-				}
-				if (instruction.operands.first.empty())
-				{
-					instruction.operands.first = word;
+					//next token will be the second operand
+					++token_idx;
+					if (token_idx < token_count)
+					{
+						Converter::ToUpperString(tokens[token_idx]);
+						instruction.operands.second = tokens[token_idx];
+					}
+					else
+					{
+						//No operand after a comma
+						Error::Throw("Syntax error", program.size() + 1);
+						return false;
+					}
+					
 				}
 				else
 				{
-					instruction.operands.second = word;
+					//It must be a attached comma
+					if (s.front() == ',')
+					{
+						s.erase(s.begin());
+						Converter::ToUpperString(s);
+						instruction.operands.second = s;
+					}
+					else
+					{
+						Error::Throw("Syntax error", program.size() + 1);
+						return false;
+					}
 				}
-
 			}
+		}
+		else
+		{
+			program.push_back(instruction);
+			continue;
+			//as if there if no token after first operand then it must be a instruction with single operand
 		}
 		program.push_back(instruction);
 	}
@@ -1372,3 +1779,5 @@ void Program::Run()
 		Mnemonic::Execute[instruction.mnemonic](instruction.operands);
 	}
 }
+
+
