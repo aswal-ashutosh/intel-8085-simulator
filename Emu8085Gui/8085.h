@@ -70,16 +70,6 @@ void Utility::_16Bit_Normalization(int& num)
 	}
 }
 
-class Error
-{
-public:
-	static void Throw(const std::string& e, const int line_number);
-};
-
-void Error::Throw(const std::string& e, const int line_number)
-{
-	exit(0);
-}
 
 
 class Converter
@@ -160,6 +150,7 @@ class Register
 public:
 	static std::map<char, int> Main;
 	static int PC;
+
 	class Flag
 	{
 	public:
@@ -268,13 +259,39 @@ public:
 	static std::map<std::string, int> Loop;
 	static std::vector<Instruction> program;
 
-	static void Read(std::string filePath);
+	static bool HLT;
+
+	static bool Read(std::string filePath);
 
 	static void Run();
 };
 
 std::vector<Instruction> Program::program;
 std::map<std::string, int> Program::Loop;
+bool Program::HLT;
+
+
+class Error
+{
+public:
+	static void Throw(const std::string& e, const int PC);
+};
+
+void Error::Throw(const std::string& e, const int PC = -1)
+{
+	std::string error;
+	if (PC ^ -1)
+	{
+		error = "Error: " + e + " [Line Number: " + std::to_string(PC + 1) + "]";
+	}
+	else
+	{
+		error = "Error: " + e;
+	}
+	
+	wxMessageBox(error, "Execution Stopped");
+	Program::HLT = true;
+}
 
 
 class Mnemonic
@@ -299,7 +316,6 @@ public:
 
 	static void SHLD(const std::pair<std::string, std::string>& operands);
 
-	static void HLT(const std::pair<std::string, std::string>& operands);
 
 	static void LXI(const std::pair<std::string, std::string>& operands);
 
@@ -390,9 +406,12 @@ public:
 	static void JM(const std::pair<std::string, std::string>& operands);
 
 	static void JP(const std::pair<std::string, std::string>& operands);
+
+	static void HLT(const std::pair<std::string, std::string>& operands);
+
 };
 
-
+std::map<std::string, void (*)(const std::pair<std::string, std::string>&)> Mnemonic::Execute;
 
 
 void Mnemonic::LoadInsctructionSet()
@@ -469,7 +488,7 @@ void Mnemonic::MOV(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		Error::Throw("Invalid register", Register::PC);
+		Error::Throw("Invalid Register", Register::PC);
 	}
 	++Register::PC;
 }
@@ -483,7 +502,7 @@ void Mnemonic::MVI(const std::pair<std::string, std::string>& operands)
 
 	if (nValue > 0xFF)
 	{
-		Error::Throw("Overflow", Register::PC);
+		Error::Throw("Expected 8 Bit data", Register::PC);
 	}
 	else if (reg == 'M') //@Memory
 	{
@@ -562,10 +581,7 @@ void Mnemonic::SHLD(const std::pair<std::string, std::string>& operands)
 	++Register::PC;
 }
 
-void Mnemonic::HLT(const std::pair<std::string, std::string>& operands)
-{
 
-}
 
 void Mnemonic::LXI(const std::pair<std::string, std::string>& operands)
 {
@@ -702,7 +718,7 @@ void Mnemonic::ADI(const std::pair<std::string, std::string>& operands)
 	int _4Bit_A = 0, _4Bit_R = 0;
 	if (nValue > 0xFF)
 	{
-		Error::Throw("Overflow", Register::PC);
+		Error::Throw("Expected 8 Bit data", Register::PC);
 	}
 	else
 	{
@@ -728,7 +744,7 @@ void Mnemonic::ACI(const std::pair<std::string, std::string>& operands)
 
 	if (nValue > 0xFF)
 	{
-		Error::Throw("Overflow", Register::PC);
+		Error::Throw("Expected 8 Bit data", Register::PC);
 	}
 	else
 	{
@@ -809,7 +825,7 @@ void Mnemonic::SUI(const std::pair<std::string, std::string>& operands)
 	int nValue = Converter::HexToDec(operands.first), _4Bit_A = 0, _4Bit_R = 0;
 	if (nValue > 0xFF)
 	{
-		Error::Throw("Overflow", Register::PC);
+		Error::Throw("Expected 8 Bit data", Register::PC);
 	}
 	else
 	{
@@ -830,7 +846,7 @@ void Mnemonic::SBI(const std::pair<std::string, std::string>& operands)
 
 	if (nValue > 0xFF)
 	{
-		Error::Throw("Overflow", Register::PC);
+		Error::Throw("Expected 8 Bit data", Register::PC);
 	}
 	else
 	{
@@ -923,7 +939,7 @@ void Mnemonic::DCR(const std::pair<std::string, std::string>& operands)//CY is n
 	{
 		int nValue = MemoryManager::Memory[Register::HL()];
 		//Register::Flag::AC = (Converter::DecToHex(nValue)).back() == 'F';//@Not sure about auxiliary flag
-		--MemoryManager::Memory[Register::HL()]; // Add overflow checker
+		--MemoryManager::Memory[Register::HL()];
 		Utility::_8Bit_Normalization(MemoryManager::Memory[Register::HL()]);
 		Register::Flag::PF = !(Utility::_set_bits_count(MemoryManager::Memory[Register::HL()]) & 1);//@Parity Flag
 		Register::Flag::SF = MemoryManager::Memory[Register::HL()] & (1 << 7);//Sign Flag
@@ -933,7 +949,7 @@ void Mnemonic::DCR(const std::pair<std::string, std::string>& operands)//CY is n
 	{
 		int nValue = Register::Main[reg];
 		//Register::Flag::AC = (Converter::DecToHex(nValue)).back() == 'F';//@Not sure about auxiliary flag
-		--Register::Main[reg]; // Add overflow checker
+		--Register::Main[reg];
 		Utility::_8Bit_Normalization(Register::Main[reg]);
 		Register::Flag::PF = !(Utility::_set_bits_count(Register::Main[reg]) & 1);//@Parity Flag
 		Register::Flag::SF = Register::Main[reg] & (1 << 7);//Sign Flag
@@ -1043,7 +1059,7 @@ void Mnemonic::ANI(const std::pair<std::string, std::string>& operands)
 	int nValue = Converter::HexToDec(operands.first);
 	if (nValue > 0xFF)
 	{
-		Error::Throw("Overflow", Register::PC);
+		Error::Throw("Expected 8 Bit data", Register::PC);
 	}
 	else
 	{
@@ -1080,7 +1096,7 @@ void Mnemonic::ORI(const std::pair<std::string, std::string>& operands)
 
 	if (nValue > 0xFF)
 	{
-		Error::Throw("Overflow", Register::PC);
+		Error::Throw("Expected 8 Bit data", Register::PC);
 	}
 	else
 	{
@@ -1116,7 +1132,7 @@ void Mnemonic::XRI(const std::pair<std::string, std::string>& operands)
 	int nValue = Converter::HexToDec(operands.first);
 	if (nValue > 0xFF)
 	{
-		Error::Throw("Overflow", Register::PC);
+		Error::Throw("Expected 8 Bit data", Register::PC);
 	}
 	else
 	{
@@ -1222,7 +1238,7 @@ void Mnemonic::CPI(const std::pair<std::string, std::string>& operands)
 
 	if (R > 0xFF)
 	{
-		Error::Throw("Overflow", Register::PC);
+		Error::Throw("Expected 8 Bit data", Register::PC);
 	}
 
 	int temp = A + Utility::_8bit_2sc(R);
@@ -1285,16 +1301,20 @@ void Mnemonic::JP(const std::pair<std::string, std::string>& operands)
 	Register::PC = Register::Flag::SF ? Register::PC + 1 : Program::Loop[operands.first];
 }
 
-
-std::map<std::string, void (*)(const std::pair<std::string, std::string>&)> Mnemonic::Execute;
-
-
-
-void Program::Read(std::string filePath)
+void Mnemonic::HLT(const std::pair<std::string, std::string>& operands)
 {
+	Program::HLT = true;
+}
+
+
+
+bool Program::Read(std::string filePath)
+{
+	Program::program.clear();//Clearing previous program
+	Program::Loop.clear();//Clearing previous program
+
 	std::fstream file;
 	file.open(filePath, std::ios::in);
-	int line = 0;
 	while (!file.eof())
 	{
 		std::string currentLine;
@@ -1331,19 +1351,24 @@ void Program::Read(std::string filePath)
 		}
 		program.push_back(instruction);
 	}
+
+	if (program.back().mnemonic != "HLT")
+	{
+		Error::Throw("'HLT' Missing");
+		return false;
+	}
+	else
+	{
+		return true;
+	}
 }
 
 void Program::Run()
 {
-	bool HLT = false;
+	HLT = false;
 	while (!HLT)
 	{
 		const Instruction& instruction = program[Register::PC];
 		Mnemonic::Execute[instruction.mnemonic](instruction.operands);
-		HLT = instruction.mnemonic == "HLT";
 	}
 }
-
-
-
-  

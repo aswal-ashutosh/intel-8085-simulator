@@ -289,8 +289,6 @@ void MainFrame::Clear()
 	m_FlagRegCheckList->Check(m_FlagRegCheckList->FindString("P"), false);
 
 	//Clearing Backend
-	Program::Loop.clear();
-	Program::program.clear();
 	Register::Clear();
 }
 
@@ -312,23 +310,27 @@ void MainFrame::OnDebug(wxCommandEvent& event)
 
 void MainFrame::Run8085(const std::string& filePath)
 {
-	Clear();//Clearing Front End + Back End
-	Program::Read(filePath);
-	Program::Run();
-	UpdateFlagRegister();
-	UpdateRegisters();
-	UpdateMemory();
+	if (Program::Read(filePath))
+	{
+		Clear();//Clearing Front End + Back End
+		Program::Run();
+		UpdateFlagRegister();
+		UpdateRegisters();
+		UpdateMemory();
+	}
 }
 
 void MainFrame::Debug8085(const std::string& filePath)
 {
-	Clear();//Clearing Front End + Back End
-	Program::Read(filePath);
-	m_ExecuteButton->Enable();
-	m_DebugButton->Disable();
-	m_StopButton->Enable();
-	m_CurrentLineTextCtrl->Clear();
-	m_CurrentLineTextCtrl->AppendText(ToWxString(std::to_string(Register::PC + 1)));
+	if (Program::Read(filePath))
+	{
+		Clear();//Clearing Front End + Back End
+		m_ExecuteButton->Enable();
+		m_DebugButton->Disable();
+		m_StopButton->Enable();
+		m_CurrentLineTextCtrl->Clear();
+		m_CurrentLineTextCtrl->AppendText(ToWxString(std::to_string(Register::PC + 1)));
+	}
 }
 
 void MainFrame::OnExecute(wxCommandEvent& event)
