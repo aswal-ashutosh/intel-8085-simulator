@@ -40,8 +40,9 @@ MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30,
 	m_FileMenu->Append(wxID_EXIT, _("Exit"));
 
 	m_HelpMenu = new wxMenu();
-	m_HelpMenu->Append(wxID_ABOUT, _("About"));
 	m_HelpMenu->Append(wxID_HELP, _("Help"));
+	m_HelpMenu->Append(wxID_ABOUT, _("About"));
+
 
 	m_MenuBar->Append(m_FileMenu, _("&File"));
 	m_MenuBar->Append(m_HelpMenu, _("&More"));

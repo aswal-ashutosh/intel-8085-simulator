@@ -1627,6 +1627,12 @@ bool Program::Read(std::string filePath)
 	{
 		std::string currentLine;
 		std::getline(file, currentLine);
+		//Checking for commented line and empty line
+		if (currentLine.empty() || currentLine.front() == '@')
+		{
+			continue;
+		}
+
 		std::stringstream ss(currentLine);
 		std::string word;
 		std::vector<std::string> tokens;
@@ -1643,12 +1649,7 @@ bool Program::Read(std::string filePath)
 			Error::Throw("Syntax error", program.size() + 1);
 			return false;
 		}
-		
-		if (token_count == 0) //Empty line
-		{
-			continue;
-		}
-
+	
 		Instruction instruction;
 
 		int token_idx = 0;
@@ -1656,6 +1657,7 @@ bool Program::Read(std::string filePath)
 		//First token can either be a loop point or a mnemonic
 		if (tokens[token_idx].back() == ':') //If it is a loop
 		{
+			Converter::ToUpperString(tokens[token_idx]);
 			Loop[tokens[token_idx].substr(0, tokens[token_idx].size() - 1)] = program.size();
 			++token_idx;
 		}
@@ -1676,7 +1678,6 @@ bool Program::Read(std::string filePath)
 		}
 		else
 		{
-			wxMessageBox("1");
 			//This token should have to be a mnemonic
 			Error::Throw("Syntax error", program.size() + 1);
 			return false;
