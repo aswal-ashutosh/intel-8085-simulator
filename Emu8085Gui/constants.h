@@ -4,7 +4,7 @@
 namespace ERROR_TYPE
 {
 	const std::string SYNTAX = "Syntax Error";
-	const std::string INVALID_OPERANDS= "Invalid Operand";
+	const std::string INVALID_OPERANDS = "Invalid Operand";
 	const std::string INVALID_MEMORY_LOCATION = "Invalid Memory Location";
 	const std::string INVALID_REGISTER = "Invalid Register";
 	const std::string INVALID_REGISTER_PAIR = "Invalid Register Pair";
@@ -27,48 +27,49 @@ namespace MNEMONIC
 	const std::string STA = "STA";
 	const std::string LHLD = "LHLD";
 	const std::string SHLD = "SHLD";
-	const std::string HLT = "HLT" ;
-	const std::string LXI = "LXI" ;
+	const std::string HLT = "HLT";
+	const std::string LXI = "LXI";
 	const std::string LDAX = "LDAX";
 	const std::string STAX = "STAX";
 	const std::string XCHG = "XCHG";
-	const std::string ADD = "ADD" ;
-	const std::string ADI = "ADI" ;
-	const std::string ADC = "ADC" ;
-	const std::string ACI = "ACI" ;
-	const std::string SUB = "SUB" ;
-	const std::string SBB = "SBB" ;
-	const std::string SUI = "SUI" ;
-	const std::string SBI = "SBI" ;
-	const std::string INR = "INR" ;
-	const std::string INX = "INX" ;
-	const std::string DCR = "DCR" ;
-	const std::string DCX = "DCX" ;
-	const std::string DAD = "DAD" ;
-	const std::string ANA = "ANA" ;
-	const std::string ANI = "ANI" ;
-	const std::string ORA = "ORA" ;
-	const std::string ORI = "ORI" ;
-	const std::string XRA = "XRA" ;
-	const std::string XRI = "XRI" ;
-	const std::string CMA = "CMA" ;
-	const std::string RLC = "RLC" ;
-	const std::string RAL = "RAL" ;
-	const std::string RRC = "RRC" ;
-	const std::string RAR = "RAR" ;
-	const std::string STC = "STC" ;
-	const std::string CMC = "CMC" ;
-	const std::string CMP = "CMP" ;
-	const std::string CPI = "CPI" ;
-	const std::string JMP = "JMP" ;
-	const std::string JC = "JC"  ;
-	const std::string JNC = "JNC" ;
-	const std::string JZ = "JZ"  ;
-	const std::string JNZ = "JNZ" ;
-	const std::string JPE = "JPE" ;
-	const std::string JPO = "JPO" ;
-	const std::string JM = "JM"  ;
-	const std::string JP = "JP"  ;
+	const std::string ADD = "ADD";
+	const std::string ADI = "ADI";
+	const std::string ADC = "ADC";
+	const std::string ACI = "ACI";
+	const std::string SUB = "SUB";
+	const std::string SBB = "SBB";
+	const std::string SUI = "SUI";
+	const std::string SBI = "SBI";
+	const std::string DAA = "DAA";
+	const std::string INR = "INR";
+	const std::string INX = "INX";
+	const std::string DCR = "DCR";
+	const std::string DCX = "DCX";
+	const std::string DAD = "DAD";
+	const std::string ANA = "ANA";
+	const std::string ANI = "ANI";
+	const std::string ORA = "ORA";
+	const std::string ORI = "ORI";
+	const std::string XRA = "XRA";
+	const std::string XRI = "XRI";
+	const std::string CMA = "CMA";
+	const std::string RLC = "RLC";
+	const std::string RAL = "RAL";
+	const std::string RRC = "RRC";
+	const std::string RAR = "RAR";
+	const std::string STC = "STC";
+	const std::string CMC = "CMC";
+	const std::string CMP = "CMP";
+	const std::string CPI = "CPI";
+	const std::string JMP = "JMP";
+	const std::string JC = "JC";
+	const std::string JNC = "JNC";
+	const std::string JZ = "JZ";
+	const std::string JNZ = "JNZ";
+	const std::string JPE = "JPE";
+	const std::string JPO = "JPO";
+	const std::string JM = "JM";
+	const std::string JP = "JP";
 }
 
 namespace REGISTER
@@ -94,6 +95,7 @@ namespace DIALOG
 	const std::string ABOUT = "ABOUT";
 	const std::string HELP = "HLEP";
 	const std::string EXECUTION_STOPPED = "EXECUTION STOPPED";
+	const std::string ERROR_OCCURRED = "ERROR";
 }
 
 namespace PANEL

@@ -1,10 +1,9 @@
 #pragma once
-
 #include<wx\wx.h>
 #include<wx\artprov.h>
 #include<wx/stc/stc.h>
 #include<wx/listctrl.h>
-#include "wx/html/htmlwin.h"
+#include"wx/html/htmlwin.h"
 #include<map>
 
 
@@ -12,7 +11,7 @@
 class MainFrame : public wxFrame
 {
 private:
-	
+
 	//Menu Bar
 	wxMenuBar* m_MenuBar = nullptr;
 	wxMenu* m_FileMenu = nullptr;
@@ -30,7 +29,7 @@ private:
 
 	//File
 	wxString m_currentFilePath;
-	
+
 	//Flag Rgister Panel 
 	wxPanel* m_FlagPanel = nullptr;
 	wxStaticBox* m_FlagPanelStaticBox = nullptr;
@@ -100,7 +99,7 @@ private:
 	bool m_bDebugMode = false;
 public:
 
-	
+
 
 	MainFrame();
 	~MainFrame();
@@ -129,9 +128,9 @@ public:
 
 enum ButtonID
 {
-	VIEW_BUTTON = 333, 
-	SET_BUTTON, 
-	EXECUTE_BUTTON ,
+	VIEW_BUTTON = 333,
+	SET_BUTTON,
+	EXECUTE_BUTTON,
 	DEBUG_BUTTON,
 	STOP_BUTTON
 };

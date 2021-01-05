@@ -72,7 +72,7 @@ MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30,
 	m_EditBox->SetUseVerticalScrollBar(true);
 	m_TextBoxStaticBoxSizer->Add(m_EditBox, wxEXPAND);
 	m_TextBoxPanel->SetSizer(m_TextBoxStaticBoxSizer);
-	
+
 	//FlagPanel
 	m_FlagPanel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(200, 200));
 	m_FlagPanelStaticBox = new wxStaticBox(m_FlagPanel, wxID_ANY, PANEL::FLAG_REGISTER);
@@ -85,12 +85,12 @@ MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30,
 	m_RegisterPanel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(200, 200));
 	m_RegisterPanelStaticBox = new wxStaticBox(m_RegisterPanel, wxID_ANY, PANEL::REGISTER);
 	m_RegisterPanelStaticBoxSizer = new wxStaticBoxSizer(m_RegisterPanelStaticBox, wxVERTICAL);
-	
+
 	for (int i = 0; i < 7; ++i)
 	{
-		std::string label= m_MainRegisterArray[i] + std::string(" :");
+		std::string label = m_MainRegisterArray[i] + std::string(" :");
 		m_MainRegisterLabel[m_MainRegisterArray[i]] = new wxStaticText(m_RegisterPanelStaticBox, wxID_ANY, label, wxPoint(10, 22 + i * 25), wxSize(20, 20));
-		m_MainRegister[m_MainRegisterArray[i]] = new wxTextCtrl(m_RegisterPanelStaticBox, wxID_ANY, "00", wxPoint(30, 20 + i * 25), wxSize(20, 20), wxTE_READONLY);
+		m_MainRegister[m_MainRegisterArray[i]] = new wxTextCtrl(m_RegisterPanelStaticBox, wxID_ANY, "00", wxPoint(30, 20 + i * 25), wxSize(25, 20), wxTE_READONLY);
 		m_MainRegister[m_MainRegisterArray[i]]->SetMaxLength(2);
 	}
 	m_RegisterPanel->SetSizer(m_RegisterPanelStaticBoxSizer);
@@ -100,10 +100,10 @@ MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30,
 	m_MemoryInitPanelStaticBox = new wxStaticBox(m_MemoryInitPanel, wxID_ANY, PANEL::MEMORY_INITALIZER);
 	m_MemoryInitPanelStaticBoxSizer = new wxStaticBoxSizer(m_MemoryInitPanelStaticBox, wxVERTICAL);
 	m_MemoryLocationLabel = new wxStaticText(m_MemoryInitPanelStaticBox, wxID_ANY, "Address :", wxPoint(5, 30));
-	m_MemoryAddressTextCtrl = new wxTextCtrl(m_MemoryInitPanelStaticBox, wxID_ANY, "0000", wxPoint(55, 30), wxSize(38, 20));
+	m_MemoryAddressTextCtrl = new wxTextCtrl(m_MemoryInitPanelStaticBox, wxID_ANY, "0000", wxPoint(55, 30), wxSize(50, 20));
 	m_MemoryAddressTextCtrl->SetMaxLength(4);
 	m_DataLabel = new wxStaticText(m_MemoryInitPanelStaticBox, wxID_ANY, "Data :", wxPoint(110, 30));
-	m_DataTextCtrl = new wxTextCtrl(m_MemoryInitPanelStaticBox, wxID_ANY, "00", wxPoint(145, 30), wxSize(20, 20));
+	m_DataTextCtrl = new wxTextCtrl(m_MemoryInitPanelStaticBox, wxID_ANY, "00", wxPoint(145, 30), wxSize(25, 20));
 	m_DataTextCtrl->SetMaxLength(2);
 	m_SetButton = new wxButton(m_MemoryInitPanelStaticBox, ButtonID::SET_BUTTON, BUTTON::SET, wxPoint(58, 60));
 	m_MemoryInitPanel->SetSizer(m_MemoryInitPanelStaticBoxSizer);
@@ -150,9 +150,9 @@ MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30,
 
 
 	m_MainSizer = new wxBoxSizer(wxHORIZONTAL);
-	m_MainSizer->Add(m_LeftPanelSizer, 1, wxEXPAND|wxALL, 1);
-	m_MainSizer->Add(m_TextBoxPanel, 2, wxEXPAND|wxTOP|wxBOTTOM, 1);
-	m_MainSizer->Add(m_RightPanelSizer, 1, wxEXPAND|wxALL, 1);
+	m_MainSizer->Add(m_LeftPanelSizer, 1, wxEXPAND | wxALL, 1);
+	m_MainSizer->Add(m_TextBoxPanel, 2, wxEXPAND | wxTOP | wxBOTTOM, 1);
+	m_MainSizer->Add(m_RightPanelSizer, 1, wxEXPAND | wxALL, 1);
 	this->SetSizerAndFit(m_MainSizer);
 
 	Init();
@@ -160,12 +160,12 @@ MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30,
 
 MainFrame::~MainFrame()
 {
-	
+
 }
 
 void MainFrame::OnOpen(wxCommandEvent& event)
 {
-	wxFileDialog openFileDialog(this, _("Open text file"), "", "","TEXT files (*.txt)|*.txt", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+	wxFileDialog openFileDialog(this, _("Open text file"), "", "", "TEXT files (*.txt)|*.txt", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
 	if (openFileDialog.ShowModal() == wxID_CANCEL)
 		return;
 	m_currentFilePath = openFileDialog.GetPath();
@@ -183,15 +183,15 @@ void MainFrame::OnSave(wxCommandEvent& event)
 	{
 		m_EditBox->SaveFile(m_currentFilePath);
 	}
-	
+
 }
 
 void MainFrame::OnSaveAs(wxCommandEvent& event)
 {
-	wxFileDialog saveFileDialog(this, _("Save text file"), "", "","TEXT files (*.txt)|*.txt", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+	wxFileDialog saveFileDialog(this, _("Save text file"), "", "", "TEXT files (*.txt)|*.txt", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
 
 	if (saveFileDialog.ShowModal() == wxID_CANCEL)
-		return; 
+		return;
 	m_currentFilePath = saveFileDialog.GetPath();
 	m_EditBox->SaveFile(m_currentFilePath);
 	m_TextBoxStaticBox->SetLabel(saveFileDialog.GetFilename());
@@ -209,7 +209,7 @@ void MainFrame::Init()
 
 void MainFrame::OnRun(wxCommandEvent& event)
 {
-	
+
 	if (m_currentFilePath.empty())
 	{
 		OnSaveAs(event);
@@ -284,7 +284,7 @@ void MainFrame::Clear()
 		m_MainRegister[reg]->Clear();
 		m_MainRegister[reg]->AppendText("00");
 	}
-	
+
 	//Clearing Flag Register(Frontend)
 	m_FlagRegCheckList->Check(m_FlagRegCheckList->FindString("AC"), false);
 	m_FlagRegCheckList->Check(m_FlagRegCheckList->FindString("CY"), false);
@@ -340,22 +340,24 @@ void MainFrame::Debug8085(const std::string& filePath)
 void MainFrame::OnExecute(wxCommandEvent& event)
 {
 	const Instruction& instruction = Program::program[Register::PC];
-	if (instruction.mnemonic == MNEMONIC::HLT)
+
+	if (!Mnemonic::Execute[instruction.mnemonic](instruction.operands))//Error occurred
+	{
+		OnStopDebug(event);
+	}
+	else if (Program::HLT)//Execution finished
 	{
 		wxMessageBox(MESSAGE::SUCCESSFUL_EXECUTION, DIALOG::EXECUTION_STOPPED);
-		m_ExecuteButton->Disable();
-		m_StopButton->Disable();
-		m_DebugButton->Enable();
-		m_CurrentLineTextCtrl->Clear();
-		m_CurrentLineTextCtrl->AppendText("---");
-		return;
+		OnStopDebug(event);
 	}
-	Mnemonic::Execute[instruction.mnemonic](instruction.operands);
-	UpdateFlagRegister();
-	UpdateRegisters();
-	UpdateMemory();
-	m_CurrentLineTextCtrl->Clear();
-	m_CurrentLineTextCtrl->AppendText(ToWxString(std::to_string(Program::program[Register::PC].line_number)));
+	else //Successful execution of a instruction(Not HLT)
+	{
+		UpdateFlagRegister();
+		UpdateRegisters();
+		UpdateMemory();
+		m_CurrentLineTextCtrl->Clear();
+		m_CurrentLineTextCtrl->AppendText(ToWxString(std::to_string(Program::program[Register::PC].line_number)));
+	}
 }
 
 
@@ -372,7 +374,7 @@ void MainFrame::OnAbout(wxCommandEvent& event)
 {
 	wxDialog aboutDialog(this, wxID_ANY, DIALOG::HELP);
 	m_AboutDialogSizer = new wxBoxSizer(wxVERTICAL);
-	m_AboutDialogTextCtrl = new wxTextCtrl(&aboutDialog, wxID_ANY,"", wxDefaultPosition, wxSize(350, 250), wxTE_MULTILINE|wxTE_READONLY| wxTE_AUTO_URL| wxTE_NO_VSCROLL| wxTE_CENTRE);
+	m_AboutDialogTextCtrl = new wxTextCtrl(&aboutDialog, wxID_ANY, "", wxDefaultPosition, wxSize(350, 250), wxTE_MULTILINE | wxTE_READONLY | wxTE_AUTO_URL | wxTE_NO_VSCROLL | wxTE_CENTRE);
 	m_AboutDialogTextCtrl->LoadFile(PATH::ABOUT_FILE);
 	m_AboutDialogSizer->Add(m_AboutDialogTextCtrl, 1, wxALL, 10);
 	aboutDialog.SetSizer(m_AboutDialogSizer);
