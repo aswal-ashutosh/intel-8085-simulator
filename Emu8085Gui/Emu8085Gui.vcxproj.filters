@@ -24,6 +24,9 @@
     <ClInclude Include="8085.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="constants.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Emulator.cpp">
@@ -40,10 +43,10 @@
     <Text Include="sample.txt">
       <Filter>Resource Files</Filter>
     </Text>
-    <Text Include="ABOUT.txt">
+    <Text Include="res\ABOUT.txt">
       <Filter>Resource Files</Filter>
     </Text>
-    <Text Include="HELP.txt">
+    <Text Include="res\HELP.txt">
       <Filter>Resource Files</Filter>
     </Text>
   </ItemGroup>

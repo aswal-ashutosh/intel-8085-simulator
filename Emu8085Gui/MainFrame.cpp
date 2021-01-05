@@ -75,7 +75,7 @@ MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30,
 	
 	//FlagPanel
 	m_FlagPanel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(200, 200));
-	m_FlagPanelStaticBox = new wxStaticBox(m_FlagPanel, wxID_ANY, "FLAG REGISTER");
+	m_FlagPanelStaticBox = new wxStaticBox(m_FlagPanel, wxID_ANY, PANEL::FLAG_REGISTER);
 	m_FlagPanelStaticBoxSizer = new wxStaticBoxSizer(m_FlagPanelStaticBox, wxVERTICAL);
 	m_FlagRegCheckList = new wxCheckListBox(m_FlagPanelStaticBox, wxID_ANY, wxPoint(0, 0), wxDefaultSize, wxArrayString(5, m_FlagRegisterArray), 1, wxDefaultValidator);
 	m_FlagPanelStaticBoxSizer->Add(m_FlagRegCheckList);
@@ -83,7 +83,7 @@ MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30,
 
 	//Register Panel
 	m_RegisterPanel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(200, 200));
-	m_RegisterPanelStaticBox = new wxStaticBox(m_RegisterPanel, wxID_ANY, "REGISTERS");
+	m_RegisterPanelStaticBox = new wxStaticBox(m_RegisterPanel, wxID_ANY, PANEL::REGISTER);
 	m_RegisterPanelStaticBoxSizer = new wxStaticBoxSizer(m_RegisterPanelStaticBox, wxVERTICAL);
 	
 	for (int i = 0; i < 7; ++i)
@@ -97,7 +97,7 @@ MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30,
 
 	//Memory Init Panel
 	m_MemoryInitPanel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(100, 100));
-	m_MemoryInitPanelStaticBox = new wxStaticBox(m_MemoryInitPanel, wxID_ANY, "MEMORY INITIALIZER");
+	m_MemoryInitPanelStaticBox = new wxStaticBox(m_MemoryInitPanel, wxID_ANY, PANEL::MEMORY_INITALIZER);
 	m_MemoryInitPanelStaticBoxSizer = new wxStaticBoxSizer(m_MemoryInitPanelStaticBox, wxVERTICAL);
 	m_MemoryLocationLabel = new wxStaticText(m_MemoryInitPanelStaticBox, wxID_ANY, "Address :", wxPoint(5, 30));
 	m_MemoryAddressTextCtrl = new wxTextCtrl(m_MemoryInitPanelStaticBox, wxID_ANY, "0000", wxPoint(55, 30), wxSize(38, 20));
@@ -105,13 +105,13 @@ MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30,
 	m_DataLabel = new wxStaticText(m_MemoryInitPanelStaticBox, wxID_ANY, "Data :", wxPoint(110, 30));
 	m_DataTextCtrl = new wxTextCtrl(m_MemoryInitPanelStaticBox, wxID_ANY, "00", wxPoint(145, 30), wxSize(20, 20));
 	m_DataTextCtrl->SetMaxLength(2);
-	m_SetButton = new wxButton(m_MemoryInitPanelStaticBox, ButtonID::SET_BUTTON, "Set", wxPoint(58, 60));
+	m_SetButton = new wxButton(m_MemoryInitPanelStaticBox, ButtonID::SET_BUTTON, BUTTON::SET, wxPoint(58, 60));
 	m_MemoryInitPanel->SetSizer(m_MemoryInitPanelStaticBoxSizer);
 
 
 	//Memory View Panel
 	m_MemoryViewPanel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(200, 200));
-	m_MemoryViewPanelStaticBox = new wxStaticBox(m_MemoryViewPanel, wxID_ANY, "MEMORY VIEWER");
+	m_MemoryViewPanelStaticBox = new wxStaticBox(m_MemoryViewPanel, wxID_ANY, PANEL::MEMORY_VIEWER);
 	m_MemoryViewPanelStaticBoxSizer = new wxStaticBoxSizer(m_MemoryViewPanelStaticBox, wxVERTICAL);
 	m_FromLabel = new wxStaticText(m_MemoryViewPanelStaticBox, wxID_ANY, "From :", wxPoint(5, 30));
 	m_FromMemoryAddressTextCtrl = new wxTextCtrl(m_MemoryViewPanelStaticBox, wxID_ANY, "0000", wxPoint(40, 30), wxSize(38, 20));
@@ -119,7 +119,7 @@ MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30,
 	m_CountLabel = new wxStaticText(m_MemoryViewPanelStaticBox, wxID_ANY, "Count :", wxPoint(110, 30));
 	m_CountTextCtrl = new wxTextCtrl(m_MemoryViewPanelStaticBox, wxID_ANY, "00", wxPoint(150, 30), wxSize(20, 20));
 	m_CountTextCtrl->SetMaxLength(2);
-	m_ViewButton = new wxButton(m_MemoryViewPanelStaticBox, ButtonID::VIEW_BUTTON, "View", wxPoint(58, 60));
+	m_ViewButton = new wxButton(m_MemoryViewPanelStaticBox, ButtonID::VIEW_BUTTON, BUTTON::VIEW, wxPoint(58, 60));
 	m_MemoryViewList = new wxListView(m_MemoryViewPanelStaticBox, wxID_ANY, wxPoint(5, 90), wxSize(190, 315));
 	m_MemoryViewList->AppendColumn("Address");
 	m_MemoryViewList->AppendColumn("Data");
@@ -127,13 +127,13 @@ MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30,
 
 	//Debug Panel
 	m_DebugPanel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(200, 200));
-	m_DebugStaticBox = new wxStaticBox(m_DebugPanel, wxID_ANY, "DEBUGGER");
+	m_DebugStaticBox = new wxStaticBox(m_DebugPanel, wxID_ANY, PANEL::DEBUGGER);
 	m_DebugStaticBoxSizer = new wxStaticBoxSizer(m_DebugStaticBox, wxVERTICAL);
 	m_CurrentLineLabel = new wxStaticText(m_DebugStaticBox, wxID_ANY, "Current Line Number : ", wxPoint(30, 35));
 	m_CurrentLineTextCtrl = new wxTextCtrl(m_DebugStaticBox, wxID_ANY, "---", wxPoint(150, 30), wxSize(20, 20), wxTE_READONLY);
-	m_ExecuteButton = new wxButton(m_DebugStaticBox, ButtonID::EXECUTE_BUTTON, "Execute", wxPoint(65, 55));
-	m_DebugButton = new wxButton(m_DebugStaticBox, ButtonID::DEBUG_BUTTON, "DEBUG", wxPoint(25, 100));
-	m_StopButton = new wxButton(m_DebugStaticBox, ButtonID::STOP_BUTTON, "STOP", wxPoint(105, 100));
+	m_ExecuteButton = new wxButton(m_DebugStaticBox, ButtonID::EXECUTE_BUTTON, BUTTON::EXECUTE, wxPoint(65, 55));
+	m_DebugButton = new wxButton(m_DebugStaticBox, ButtonID::DEBUG_BUTTON, BUTTON::DEBUG, wxPoint(25, 100));
+	m_StopButton = new wxButton(m_DebugStaticBox, ButtonID::STOP_BUTTON, BUTTON::STOP, wxPoint(105, 100));
 	m_ExecuteButton->Disable();
 	m_StopButton->Disable();
 	m_DebugPanel->SetSizer(m_DebugStaticBoxSizer);
@@ -340,9 +340,9 @@ void MainFrame::Debug8085(const std::string& filePath)
 void MainFrame::OnExecute(wxCommandEvent& event)
 {
 	const Instruction& instruction = Program::program[Register::PC];
-	if (instruction.mnemonic == "HLT")
+	if (instruction.mnemonic == MNEMONIC::HLT)
 	{
-		wxMessageBox("Program Executed Successfully.");
+		wxMessageBox(MESSAGE::SUCCESSFUL_EXECUTION, DIALOG::EXECUTION_STOPPED);
 		m_ExecuteButton->Disable();
 		m_StopButton->Disable();
 		m_DebugButton->Enable();
@@ -370,10 +370,10 @@ void MainFrame::OnStopDebug(wxCommandEvent& event)
 
 void MainFrame::OnAbout(wxCommandEvent& event)
 {
-	wxDialog aboutDialog(this, wxID_ANY, "ABOUT");
+	wxDialog aboutDialog(this, wxID_ANY, DIALOG::HELP);
 	m_AboutDialogSizer = new wxBoxSizer(wxVERTICAL);
 	m_AboutDialogTextCtrl = new wxTextCtrl(&aboutDialog, wxID_ANY,"", wxDefaultPosition, wxSize(350, 250), wxTE_MULTILINE|wxTE_READONLY| wxTE_AUTO_URL| wxTE_NO_VSCROLL| wxTE_CENTRE);
-	m_AboutDialogTextCtrl->LoadFile("ABOUT.txt");
+	m_AboutDialogTextCtrl->LoadFile(PATH::ABOUT_FILE);
 	m_AboutDialogSizer->Add(m_AboutDialogTextCtrl, 1, wxALL, 10);
 	aboutDialog.SetSizer(m_AboutDialogSizer);
 	m_AboutDialogSizer->Fit(&aboutDialog);
@@ -382,10 +382,10 @@ void MainFrame::OnAbout(wxCommandEvent& event)
 
 void MainFrame::OnHelp(wxCommandEvent& event)
 {
-	wxDialog helpDialog(this, wxID_ANY, "HELP");
+	wxDialog helpDialog(this, wxID_ANY, DIALOG::HELP);
 	m_HelpDialogSizer = new wxBoxSizer(wxVERTICAL);
 	m_HelpDialogTextCtrl = new wxTextCtrl(&helpDialog, wxID_ANY, "", wxDefaultPosition, wxSize(450, 500), wxTE_MULTILINE | wxTE_READONLY);
-	m_HelpDialogTextCtrl->LoadFile("HELP.txt");
+	m_HelpDialogTextCtrl->LoadFile(PATH::HELP_FILE);
 	m_HelpDialogSizer->Add(m_HelpDialogTextCtrl, 1, wxALL, 10);
 	helpDialog.SetSizer(m_HelpDialogSizer);
 	m_HelpDialogSizer->Fit(&helpDialog);
