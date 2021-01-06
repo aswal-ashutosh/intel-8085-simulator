@@ -229,6 +229,10 @@ void MainFrame::OnSet(wxCommandEvent& envet)
 	if (m_MemoryAddressTextCtrl->IsEmpty() || m_DataTextCtrl->IsEmpty())
 	{
 		Error::Throw(ERROR_TYPE::EMPTY_FIELD);
+		m_MemoryAddressTextCtrl->Clear();
+		m_DataTextCtrl->Clear();
+		m_MemoryAddressTextCtrl->AppendText("0000");
+		m_DataTextCtrl->AppendText("00");
 	}
 	else if (MemoryManager::SetMemory(ToString(m_MemoryAddressTextCtrl->GetValue()), ToString(m_DataTextCtrl->GetValue())))//No need to report error as SetMemory will report if any.
 	{
@@ -268,33 +272,34 @@ void MainFrame::UpdateMemory()
 {
 	if (m_FromMemoryAddressTextCtrl->IsEmpty() || m_CountTextCtrl->IsEmpty())
 	{
-		Error::Throw(ERROR_TYPE::EMPTY_FIELD);
+		m_FromMemoryAddressTextCtrl->Clear();
+		m_CountTextCtrl->Clear();
+		m_FromMemoryAddressTextCtrl->AppendText("0000");
+		m_CountTextCtrl->AppendText("00");
+	}
+
+	const std::string sFrom = ToString(m_FromMemoryAddressTextCtrl->GetValue());
+	const std::string sCount = ToString(m_CountTextCtrl->GetValue());
+	if (Utility::IsValidHex(sFrom) && Utility::IsValidInt(sCount))
+	{
+		m_MemoryViewList->ClearAll();
+		m_MemoryViewList->AppendColumn("Address");
+		m_MemoryViewList->AppendColumn("Data");
+
+		int nFrom = Converter::HexToDec(sFrom);
+		int nCount = std::stoi(sCount);
+
+		for (int i = 0; i < nCount; ++i)
+		{
+			std::string address = Converter::DecToHex(nFrom + i, 16);
+			std::string data = Converter::DecToHex(MemoryManager::Memory[nFrom + i]);
+			m_MemoryViewList->InsertItem(i, ToWxString(address));
+			m_MemoryViewList->SetItem(i, 1, ToWxString(data));
+		}
 	}
 	else
 	{
-		const std::string sFrom = ToString(m_FromMemoryAddressTextCtrl->GetValue());
-		const std::string sCount = ToString(m_CountTextCtrl->GetValue());
-		if (Utility::IsValidHex(sFrom) && Utility::IsValidInt(sCount))
-		{
-			m_MemoryViewList->ClearAll();
-			m_MemoryViewList->AppendColumn("Address");
-			m_MemoryViewList->AppendColumn("Data");
-
-			int nFrom = Converter::HexToDec(sFrom);
-			int nCount = std::stoi(sCount);
-
-			for (int i = 0; i < nCount; ++i)
-			{
-				std::string address = Converter::DecToHex(nFrom + i, 16);
-				std::string data = Converter::DecToHex(MemoryManager::Memory[nFrom + i]);
-				m_MemoryViewList->InsertItem(i, ToWxString(address));
-				m_MemoryViewList->SetItem(i, 1, ToWxString(data));
-			}
-		}
-		else
-		{
-			Error::Throw(ERROR_TYPE::INVALID_DATA);
-		}
+		Error::Throw(ERROR_TYPE::INVALID_DATA);
 	}
 }
 
