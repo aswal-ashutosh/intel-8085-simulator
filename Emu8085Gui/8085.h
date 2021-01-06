@@ -970,18 +970,28 @@ bool Mnemonic::DAA(const std::pair<std::string, std::string>& operands)
 	if ((LSD > 9 || Register::Flag::AC) && (MSD > 9 || Register::Flag::CY))
 	{
 		Register::Main[REGISTER::A] += 0x66;
-		Register::UpdateFlags(LSD + 0x6);
+		Register::Flag::CY = true;
+		Register::Flag::AC = true;
 	}
 	else if (LSD > 9 || Register::Flag::AC)
 	{
 		Register::Main[REGISTER::A] += 0x06;
-		Register::UpdateFlags(LSD + 0x6);
+		Register::Flag::AC = true;
 	}
 	else if (MSD > 9 || Register::Flag::CY)
 	{
 		Register::Main[REGISTER::A] += 0x60;
-		Register::UpdateFlags(LSD + 0x0);
+		Register::Flag::CY = true;
 	}
+	
+	Utility::_8Bit_Normalization(Register::Main[REGISTER::A]);
+
+	Register::Flag::SF = Register::Main[REGISTER::A] & (1 << 7); //@Sign Flag
+
+	Register::Flag::ZF = Register::Main[REGISTER::A] == 0; //@Zero Flag
+
+	Register::Flag::PF = !(Utility::_set_bits_count(Register::Main[REGISTER::A]) & 1); //@Pairty Flag
+
 	++Register::PC;
 	return true;
 }
