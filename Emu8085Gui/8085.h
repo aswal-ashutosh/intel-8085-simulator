@@ -169,6 +169,28 @@ public:
 
 std::vector<int> MemoryManager::Memory(1 << 16, 0);
 
+class Error
+{
+public:
+	static bool Throw(const std::string& e, const int line_number);
+};
+
+bool Error::Throw(const std::string& e, const int line_number = -1)
+{
+	std::string error;
+	if (line_number != -1)
+	{
+		error = "Error: " + e + " [Line Number: " + std::to_string(line_number) + "]";
+	}
+	else
+	{
+		error = "Error: " + e;
+	}
+
+	wxMessageBox(error, DIALOG::ERROR_OCCURRED);
+	return false;
+}
+
 bool MemoryManager::SetMemory(const std::string& location, const std::string& data)
 {
 	bool OK = true;
@@ -325,27 +347,6 @@ std::map<std::string, int> Program::Loop;
 bool Program::HLT;
 
 
-class Error
-{
-public:
-	static bool Throw(const std::string& e, const int line_number);
-};
-
-bool Error::Throw(const std::string& e, const int line_number = -1)
-{
-	std::string error;
-	if (line_number != -1)
-	{
-		error = "Error: " + e + " [Line Number: " + std::to_string(line_number) + "]";
-	}
-	else
-	{
-		error = "Error: " + e;
-	}
-
-	wxMessageBox(error, DIALOG::ERROR_OCCURRED);
-	return false;
-}
 
 
 class Mnemonic
