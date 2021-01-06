@@ -3,11 +3,16 @@
 #include<fstream>
 #include<sstream>
 #include<map>
+#include<set>
 #include"constants.h"
 
 class Utility
 {
 public:
+	static bool IsValidHex(const std::string&);
+
+	static bool IsValidInt(const std::string&);
+
 	static void _8Bit(std::string& data);
 
 	static void _16Bit(std::string& data);
@@ -20,6 +25,38 @@ public:
 
 	static void _16Bit_Normalization(int& num);
 };
+
+bool Utility::IsValidInt(const std::string& data)
+{
+	for (const char& x : data)
+	{
+		if (x >= '0' && x <= '9')
+		{
+			continue;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+bool Utility::IsValidHex(const std::string& hex)
+{
+	for (const char &x : hex)
+	{
+		if ((x >= '0' && x <= '9') || (x >= 'A' && x <= 'F'))
+		{
+			continue;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	return true;
+}
 
 
 void Utility::_8Bit(std::string& data)
@@ -76,14 +113,15 @@ void Utility::_16Bit_Normalization(int& num)
 class Converter
 {
 public:
-	static int HexToDec(std::string number);
 
-	static int HexToDec(char number);
+	static int HexToDec(std::string number);
 
 	static std::string DecToHex(int number, int type = 8);
 
 	static void ToUpperString(std::string& s);
 };
+
+
 
 int Converter::HexToDec(std::string number)
 {
@@ -94,14 +132,6 @@ int Converter::HexToDec(std::string number)
 	return decimal_number;
 }
 
-int Converter::HexToDec(char number)
-{
-	std::stringstream ss;
-	ss << number;
-	int decimal_number;
-	ss >> std::hex >> decimal_number;
-	return decimal_number;
-}
 
 
 std::string Converter::DecToHex(int number, int type)
@@ -134,21 +164,28 @@ class MemoryManager
 {
 public:
 	static std::vector<int> Memory;
-	static void SetMemory(const std::string&, const std::string&);
-	static void ResetMemory();
+	static bool SetMemory(const std::string&, const std::string&);
 };
 
-std::vector<int> MemoryManager::Memory(1 << 16);
+std::vector<int> MemoryManager::Memory(1 << 16, 0);
 
-void MemoryManager::SetMemory(const std::string& location, const std::string& data)
+bool MemoryManager::SetMemory(const std::string& location, const std::string& data)
 {
-	Memory[Converter::HexToDec(location)] = Converter::HexToDec(data);
-}
+	bool OK = true;
+	OK &= Utility::IsValidHex(location) && Utility::IsValidHex(data);
+	int address = Converter::HexToDec(location), value = Converter::HexToDec(data);
+	OK &= (address >= 0x0000 && address <= 0xffff) && (value >= 0x00 && value <= 0xff);
+	
+	if (OK)
+	{
+		Memory[address] = value;
+	}
+	else
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_DATA);
+	}
 
-void MemoryManager::ResetMemory()
-{
-	Memory.clear();
-	Memory.assign(1 << 16, 0);
+	return true;
 }
 
 
@@ -156,7 +193,7 @@ void MemoryManager::ResetMemory()
 class Register
 {
 public:
-	static std::map<char, int> Main;
+	static std::map<std::string, int> Main;
 	static int PC;
 
 	class Flag
@@ -165,7 +202,7 @@ public:
 		static bool SF, ZF, AC, PF, CY;
 	};
 
-	static bool isValid(char reg);
+	static bool isValid(const std::string &);
 
 	static int HL();
 
@@ -173,22 +210,26 @@ public:
 
 	static int DE();
 
-	static void UpdateFlags(int aux);
+	static void UpdateFlags(int, bool);
 
 	static void Clear();
 };
 
 int Register::PC = 0;
-std::map<char, int> Register::Main = { {REGISTER::A, 0}, {REGISTER::B, 0}, {REGISTER::C ,0}, {REGISTER::D ,0}, {REGISTER::E ,0}, {REGISTER::H ,0}, {REGISTER::L ,0} };
+std::map<std::string, int> Register::Main = { {REGISTER::A, 0}, {REGISTER::B, 0}, {REGISTER::C ,0}, {REGISTER::D ,0}, {REGISTER::E ,0}, {REGISTER::H ,0}, {REGISTER::L ,0} };
 bool Register::Flag::AC;
 bool Register::Flag::CY;
 bool Register::Flag::PF;
 bool Register::Flag::SF;
 bool Register::Flag::ZF;
 
-bool Register::isValid(char reg)
+bool Register::isValid(const std::string& expected_register)
 {
-	return (reg == REGISTER::A || reg == REGISTER::B || reg == REGISTER::C || reg == REGISTER::D || reg == REGISTER::E || reg == REGISTER::H || reg == REGISTER::L);
+	if ((int)expected_register.size() != 1)
+	{
+		return false;
+	}
+	return (expected_register == REGISTER::A || expected_register == REGISTER::B || expected_register == REGISTER::C || expected_register == REGISTER::D || expected_register == REGISTER::E || expected_register == REGISTER::H || expected_register == REGISTER::L);
 }
 
 int Register::HL()
@@ -206,7 +247,7 @@ int Register::DE()
 	return Converter::HexToDec(Converter::DecToHex(Main[REGISTER::D]) + Converter::DecToHex(Main[REGISTER::E]));
 }
 
-void Register::UpdateFlags(int aux)
+void Register::UpdateFlags(int aux, bool preserve_carry = false)
 {
 	/*
 		Some calculation also cause carry at 10th bit but all online 8085 sim do not consider that as carry.
@@ -222,7 +263,11 @@ void Register::UpdateFlags(int aux)
 		Here carry is generated from 8th bit(D7) is '10' but because the set bit falls on 10th bit(D9),
 		it is not considered as carry.
 	*/
-	Register::Flag::CY = Register::Main[REGISTER::A] & (1 << 8); //@Carry Flag
+	if (!preserve_carry)
+	{
+		Register::Flag::CY = Register::Main[REGISTER::A] & (1 << 8); //@Carry Flag
+	}
+
 	Utility::_8Bit_Normalization(Register::Main[REGISTER::A]);
 
 	Register::Flag::SF = Register::Main[REGISTER::A] & (1 << 7); //@Sign Flag
@@ -245,7 +290,7 @@ void Register::Clear()
 	Register::Flag::SF = false;
 	Register::Flag::ZF = false;
 
-	for (std::pair<const char, int>& reg : Main)
+	for (std::pair<const std::string, int>& reg : Main)
 	{
 		reg.second = 0;
 	}
@@ -289,7 +334,7 @@ public:
 bool Error::Throw(const std::string& e, const int line_number = -1)
 {
 	std::string error;
-	if (line_number ^ -1)
+	if (line_number != -1)
 	{
 		error = "Error: " + e + " [Line Number: " + std::to_string(line_number) + "]";
 	}
@@ -371,7 +416,6 @@ public:
 	static bool HLT(const std::pair<std::string, std::string>&);
 
 	static bool validOperandCount(const std::pair<std::string, std::string>&, int);
-
 };
 
 std::map<std::string, bool (*)(const std::pair<std::string, std::string>&)> Mnemonic::Execute;
@@ -457,8 +501,7 @@ bool Mnemonic::MOV(const std::pair<std::string, std::string>& operands)
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
 	}
 
-
-	char destination = operands.first.front(), source = operands.second.front();
+	const std::string destination = operands.first, source = operands.second;
 
 	if (destination == REGISTER::M && source == REGISTER::M)
 	{
@@ -493,12 +536,17 @@ bool Mnemonic::MVI(const std::pair<std::string, std::string>& operands)
 	}
 
 
-	char reg = operands.first.front();
-	std::string value = operands.second;
+	const std::string reg = operands.first;
+	const std::string value = operands.second;
+
+	if (!Utility::IsValidHex(value))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_HEX, Program::program[Register::PC].line_number);
+	}
 
 	int nValue = Converter::HexToDec(value);
 
-	if (nValue > 0xFF)
+	if (nValue < 0x00 || nValue > 0xff)
 	{
 		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, Program::program[Register::PC].line_number);
 	}
@@ -526,8 +574,12 @@ bool Mnemonic::LDA(const std::pair<std::string, std::string>& operands)
 	}
 
 	std::string address = operands.first;
+	if (!Utility::IsValidHex(address))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_HEX, Program::program[Register::PC].line_number);
+	}
 	int nAddress = Converter::HexToDec(address);
-	if (nAddress >= 0 && nAddress < (1 << 16))
+	if (nAddress >= 0 && nAddress <= 0xffff)
 	{
 		Register::Main[REGISTER::A] = MemoryManager::Memory[nAddress];
 	}
@@ -547,8 +599,12 @@ bool Mnemonic::STA(const std::pair<std::string, std::string>& operands)
 	}
 
 	std::string address = operands.first;
+	if (!Utility::IsValidHex(address))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_HEX, Program::program[Register::PC].line_number);
+	}
 	int nAddress = Converter::HexToDec(address);
-	if (nAddress >= 0 && nAddress < (1 << 16))
+	if (nAddress >= 0 && nAddress <= 0xffff)
 	{
 		MemoryManager::Memory[nAddress] = Register::Main[REGISTER::A];
 	}
@@ -568,8 +624,12 @@ bool Mnemonic::LHLD(const std::pair<std::string, std::string>& operands)
 	}
 
 	std::string address = operands.first;
+	if (!Utility::IsValidHex(address))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_HEX, Program::program[Register::PC].line_number);
+	}
 	int nAddress = Converter::HexToDec(address);
-	if (nAddress >= 0 && nAddress < (1 << 16) - 1)
+	if (nAddress >= 0 && nAddress < 0xffff) // <0xffff as we also need a valid address + 1
 	{
 		Register::Main[REGISTER::L] = MemoryManager::Memory[nAddress];
 		Register::Main[REGISTER::H] = MemoryManager::Memory[nAddress + 1];
@@ -590,8 +650,12 @@ bool Mnemonic::SHLD(const std::pair<std::string, std::string>& operands)
 	}
 
 	std::string address = operands.first;
+	if (!Utility::IsValidHex(address))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_HEX, Program::program[Register::PC].line_number);
+	}
 	int nAddress = Converter::HexToDec(address);
-	if (nAddress >= 0 && nAddress < (1 << 16) - 1)
+	if (nAddress >= 0 && nAddress < 0xffff) // <0xffff as we also need a valid address + 1
 	{
 		MemoryManager::Memory[nAddress] = Register::Main[REGISTER::L];
 		MemoryManager::Memory[nAddress + 1] = Register::Main[REGISTER::H];
@@ -612,9 +676,15 @@ bool Mnemonic::LXI(const std::pair<std::string, std::string>& operands)
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
 	}
+	
+	const std::string reg = operands.first;
 
-	char reg = operands.first.front();
 	std::string data = operands.second;
+	if (!Utility::IsValidHex(data))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_HEX, Program::program[Register::PC].line_number);
+	}
+
 	Utility::_16Bit(data);
 	if (reg == REGISTER::B)
 	{
@@ -646,7 +716,8 @@ bool Mnemonic::LDAX(const std::pair<std::string, std::string>& operands)
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
 	}
 
-	char reg = operands.first.front();
+	const std::string reg = operands.first;
+
 	if (reg == REGISTER::B)
 	{
 		Register::Main[REGISTER::A] = MemoryManager::Memory[Register::BC()];
@@ -674,7 +745,8 @@ bool Mnemonic::STAX(const std::pair<std::string, std::string>& operands)
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
 	}
 
-	char reg = operands.first.front();
+	const std::string reg = operands.first;
+
 	if (reg == REGISTER::B)
 	{
 		MemoryManager::Memory[Register::BC()] = Register::Main[REGISTER::A];
@@ -716,26 +788,26 @@ bool Mnemonic::ADD(const std::pair<std::string, std::string>& operands)
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
 	}
 
-	char reg = operands.first.front();
+	const std::string reg = operands.first;
 
-	int _4Bit_A = Converter::HexToDec((Converter::DecToHex(Register::Main[REGISTER::A])).back()), _4Bit_R = 0;
+	int LSN_A = Register::Main[REGISTER::A] & 0x0f, LSN_R = 0;//LSN: Least singnificant nibble
 
 	if (reg == REGISTER::M)
 	{
-		_4Bit_R = Converter::HexToDec((Converter::DecToHex(MemoryManager::Memory[Register::HL()])).back());
+		LSN_R = MemoryManager::Memory[Register::HL()] & 0x0f;
 		Register::Main[REGISTER::A] += MemoryManager::Memory[Register::HL()];
 
 	}
 	else if (Register::isValid(reg))
 	{
-		_4Bit_R = Converter::HexToDec((Converter::DecToHex(Register::Main[reg])).back());
+		LSN_R = Register::Main[reg] & 0x0f;
 		Register::Main[REGISTER::A] += Register::Main[reg];
 	}
 	else
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, Program::program[Register::PC].line_number);
 	}
-	Register::UpdateFlags(_4Bit_A + _4Bit_R);
+	Register::UpdateFlags(LSN_A + LSN_R);
 	++Register::PC;
 	return true;
 }
@@ -747,26 +819,26 @@ bool Mnemonic::ADC(const std::pair<std::string, std::string>& operands)
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
 	}
 
-	char reg = operands.first.front();
+	const std::string reg = operands.first;
 
-	int _4Bit_A = Converter::HexToDec((Converter::DecToHex(Register::Main[REGISTER::A])).back()), _4Bit_R = 0;
+	int LSN_A = Register::Main[REGISTER::A] & 0x0f, LSN_R = 0;
 
 	if (reg == REGISTER::M)
 	{
-		_4Bit_R = Converter::HexToDec((Converter::DecToHex(MemoryManager::Memory[Register::HL()])).back());
+		LSN_R = MemoryManager::Memory[Register::HL()] & 0x0f;
 		Register::Main[REGISTER::A] += MemoryManager::Memory[Register::HL()] + Register::Flag::CY;
 
 	}
 	else if (Register::isValid(reg))
 	{
-		_4Bit_R = Converter::HexToDec((Converter::DecToHex(Register::Main[reg])).back());
+		LSN_R = Register::Main[reg] & 0x0f;
 		Register::Main[REGISTER::A] += Register::Main[reg] + Register::Flag::CY;
 	}
 	else
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, Program::program[Register::PC].line_number);
 	}
-	Register::UpdateFlags(_4Bit_A + _4Bit_R);
+	Register::UpdateFlags(LSN_A + LSN_R);
 	++Register::PC;
 	return true;
 }
@@ -778,22 +850,25 @@ bool Mnemonic::ADI(const std::pair<std::string, std::string>& operands)
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
 	}
 
+	if (!Utility::IsValidHex(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_HEX, Program::program[Register::PC].line_number);
+	}
+
 	int nValue = Converter::HexToDec(operands.first);
-	int _4Bit_A = 0, _4Bit_R = 0;
-	if (nValue > 0xFF)
+	int LSN_A = 0, LSN_R = 0;
+	if (nValue < 0x00 || nValue > 0xff)
 	{
 		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, Program::program[Register::PC].line_number);
 	}
 	else
 	{
-		std::string data = operands.first;
-		Utility::_8Bit(data);
-		_4Bit_A = Converter::HexToDec((Converter::DecToHex(Register::Main[REGISTER::A])).back());
-		_4Bit_R = Converter::HexToDec(data.back());
+		LSN_A = Register::Main[REGISTER::A] & 0x0f;
+		LSN_R = nValue & 0x0f;
 
 		Register::Main[REGISTER::A] += nValue;
 	}
-	Register::UpdateFlags(_4Bit_A + _4Bit_R);
+	Register::UpdateFlags(LSN_A + LSN_R);
 	++Register::PC;
 	return true;
 }
@@ -807,12 +882,16 @@ bool Mnemonic::ACI(const std::pair<std::string, std::string>& operands)
 	}
 
 	std::string data = operands.first;
-	Utility::_8Bit(data);
-	int nValue = Converter::HexToDec(data);
-	int _4Bit_A = Converter::HexToDec((Converter::DecToHex(Register::Main[REGISTER::A])).back());
-	int _4Bit_R = Converter::HexToDec(data.back());
 
-	if (nValue > 0xFF)
+	if (!Utility::IsValidHex(data))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_HEX, Program::program[Register::PC].line_number);
+	}
+	int nValue = Converter::HexToDec(data);
+	int LSN_A = Register::Main[REGISTER::A] & 0x0f;
+	int LSN_R = nValue & 0x0f;
+
+	if (nValue < 0x00 || nValue > 0xff)
 	{
 		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, Program::program[Register::PC].line_number);
 	}
@@ -820,11 +899,13 @@ bool Mnemonic::ACI(const std::pair<std::string, std::string>& operands)
 	{
 		Register::Main[REGISTER::A] += nValue + Register::Flag::CY;
 	}
-	Register::UpdateFlags(_4Bit_A + _4Bit_R);
+	Register::UpdateFlags(LSN_A + LSN_R);
 	++Register::PC;
 	return true;
 }
 
+
+//For subtraction check carry separately which will work as follows: Register::Flag::CY = subtrahend > minuend (carry will not be included)
 bool Mnemonic::SUB(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
@@ -832,74 +913,73 @@ bool Mnemonic::SUB(const std::pair<std::string, std::string>& operands)
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
 	}
 
-	char reg = operands.first.front();
+	const std::string reg = operands.first;
 
-	int _4Bit_A = Converter::HexToDec((Converter::DecToHex(Register::Main[REGISTER::A])).back()), _4Bit_R = 0;
+	int LSN_A = Register::Main[REGISTER::A] & 0x0f, LSN_R = 0, minuend = Register::Main[REGISTER::A], subtrahend = 0;
 
 	if (reg == REGISTER::M)
 	{
-		//@Setting carry flag explicitly
-		int minuend = Register::Main[REGISTER::A];
-		int subtrahend = MemoryManager::Memory[Register::HL()];
-		Register::Flag::CY = subtrahend > minuend;
+		subtrahend = MemoryManager::Memory[Register::HL()];
 
 		int _2sc = Utility::_8bit_2sc(MemoryManager::Memory[Register::HL()]);
-		_4Bit_R = Converter::HexToDec((Converter::DecToHex(_2sc)).back());
+		LSN_R = _2sc & 0x0f;
 		Register::Main[REGISTER::A] += _2sc;
 	}
 	else if (Register::isValid(reg))
 	{
-		//@Setting carry flag explicitly
-		int minuend = Register::Main[REGISTER::A];
-		int subtrahend = Register::Main[reg];
-		Register::Flag::CY = subtrahend > minuend;
+		subtrahend = Register::Main[reg];
 
 		int _2sc = Utility::_8bit_2sc(Register::Main[reg]);
-		_4Bit_R = Converter::HexToDec((Converter::DecToHex(_2sc)).back());
+		LSN_R = _2sc & 0x0f;
 		Register::Main[REGISTER::A] += _2sc;
 	}
 	else
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, Program::program[Register::PC].line_number);
 	}
-	Register::UpdateFlags(_4Bit_A + _4Bit_R);
+
+	//@Setting carry flag explicitly
+	Register::Flag::CY = subtrahend > minuend;
+	Register::UpdateFlags(LSN_A + LSN_R, true);
 	++Register::PC;
 	return true;
 }
 
 
-bool Mnemonic::SBB(const std::pair<std::string, std::string>& operands)//Not sure about flags
+bool Mnemonic::SBB(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
 	}
 
-	char reg = operands.first.front();
+	const std::string reg = operands.first;
 
-	int _4Bit_A = Converter::HexToDec((Converter::DecToHex(Register::Main[REGISTER::A])).back()), _4Bit_R = 0;
+	int LSN_A = Register::Main[REGISTER::A] & 0x0f, LSN_R = 0, minuend = Register::Main[REGISTER::A], subtrahend = 0;
 	//int _4Bit_C = Register::Flag::CY ? 0xF : 0x0; // Not sure if last nibble of Carry is also responsible for AC
 	if (reg == REGISTER::M)
 	{
+		subtrahend = MemoryManager::Memory[Register::HL()];
 
 		int _2sc = Utility::_8bit_2sc(MemoryManager::Memory[Register::HL()]);
-		_4Bit_R = Converter::HexToDec((Converter::DecToHex(_2sc)).back());
+		LSN_R = _2sc & 0x0f;
 		Register::Main[REGISTER::A] += _2sc + Utility::_8bit_2sc(Register::Flag::CY);
 
 	}
 	else if (Register::isValid(reg))
 	{
+		subtrahend = Register::Main[reg];
 
 		int _2sc = Utility::_8bit_2sc(Register::Main[reg]);
-		_4Bit_R = Converter::HexToDec((Converter::DecToHex(_2sc)).back());
+		LSN_R = _2sc & 0x0f;
 		Register::Main[REGISTER::A] += _2sc + Utility::_8bit_2sc(Register::Flag::CY);
-
 	}
 	else
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, Program::program[Register::PC].line_number);
 	}
-	Register::UpdateFlags(_4Bit_A + _4Bit_R); //Add _4Bit_C if last nibble of Carry is also responsible for AC
+	Register::Flag::CY = subtrahend > minuend;
+	Register::UpdateFlags(LSN_A + LSN_R, true); //Add _4Bit_C if last nibble of Carry is also responsible for AC
 	++Register::PC;
 }
 
@@ -910,20 +990,27 @@ bool Mnemonic::SUI(const std::pair<std::string, std::string>& operands)
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
 	}
 
-	int nValue = Converter::HexToDec(operands.first), _4Bit_A = 0, _4Bit_R = 0;
-	if (nValue > 0xFF)
+	if (!Utility::IsValidHex(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_HEX, Program::program[Register::PC].line_number);
+	}
+
+	int nValue = Converter::HexToDec(operands.first), LSN_A = 0, LSN_R = 0, minuend = Register::Main[REGISTER::A];
+	int subtrahend = nValue;
+
+	if (nValue < 0x00 || nValue > 0xff)
 	{
 		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, Program::program[Register::PC].line_number);
 	}
 	else
 	{
 		int _2sc = Utility::_8bit_2sc(nValue);
-		_4Bit_A = Converter::HexToDec((Converter::DecToHex(Register::Main[REGISTER::A])).back());
-		_4Bit_R = Converter::HexToDec((Converter::DecToHex(_2sc)).back());
+		LSN_A = Register::Main[REGISTER::A] & 0x0f;
+		LSN_R = _2sc & 0x0f;
 		Register::Main[REGISTER::A] += _2sc;
 	}
-
-	Register::UpdateFlags(_4Bit_A + _4Bit_R);
+	Register::Flag::CY = subtrahend > minuend;
+	Register::UpdateFlags(LSN_A + LSN_R, true);
 	++Register::PC;
 	return true;
 }
@@ -936,21 +1023,28 @@ bool Mnemonic::SBI(const std::pair<std::string, std::string>& operands)
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
 	}
 
-	int nValue = Converter::HexToDec(operands.first), _4Bit_A = 0, _4Bit_R = 0;/*, _4Bit_C = 0*/
+	if (!Utility::IsValidHex(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_HEX, Program::program[Register::PC].line_number);
+	}
 
-	if (nValue > 0xFF)
+	int nValue = Converter::HexToDec(operands.first), LSN_A = 0, LSN_R = 0, minuend = Register::Main[REGISTER::A];
+	int subtrahend = nValue;
+
+	if (nValue < 0x00 || nValue > 0xff)
 	{
 		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, Program::program[Register::PC].line_number);
 	}
 	else
 	{
 		int _2sc = Utility::_8bit_2sc(nValue);
-		_4Bit_A = Converter::HexToDec((Converter::DecToHex(Register::Main[REGISTER::A])).back());
-		_4Bit_R = Converter::HexToDec((Converter::DecToHex(_2sc)).back());
+		LSN_A = Register::Main[REGISTER::A] & 0x0f;
+		LSN_R = _2sc & 0x0f;
 		//_4Bit_C = Register::Flag::CY ? 0xF : 0x0;// Not sure if last nibble of Carry is also responsible for AC
 		Register::Main[REGISTER::A] += _2sc + Utility::_8bit_2sc(Register::Flag::CY);//Add _4Bit_C if last nibble of Carry is also responsible for AC
 	}
-	Register::UpdateFlags(_4Bit_A + _4Bit_R);
+	Register::Flag::CY = subtrahend > minuend;
+	Register::UpdateFlags(LSN_A + LSN_R, true);
 	++Register::PC;
 	return true;
 }
@@ -963,22 +1057,21 @@ bool Mnemonic::DAA(const std::pair<std::string, std::string>& operands)
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
 	}
 
-	std::string A = Converter::DecToHex(Register::Main[REGISTER::A]);
-	int LSD = Converter::HexToDec(A.back());
-	int MSD = Converter::HexToDec(A.front());
+	int LSN = Register::Main[REGISTER::A] & 0x0f;
+	int MSN = (Register::Main[REGISTER::A] & 0xf0) >> 4;
 
-	if ((LSD > 9 || Register::Flag::AC) && (MSD > 9 || Register::Flag::CY))
+	if ((LSN > 9 || Register::Flag::AC) && (MSN > 9 || Register::Flag::CY))
 	{
 		Register::Main[REGISTER::A] += 0x66;
 		Register::Flag::CY = true;
 		Register::Flag::AC = true;
 	}
-	else if (LSD > 9 || Register::Flag::AC)
+	else if (LSN > 9 || Register::Flag::AC)
 	{
 		Register::Main[REGISTER::A] += 0x06;
 		Register::Flag::AC = true;
 	}
-	else if (MSD > 9 || Register::Flag::CY)
+	else if (MSN > 9 || Register::Flag::CY)
 	{
 		Register::Main[REGISTER::A] += 0x60;
 		Register::Flag::CY = true;
@@ -1003,7 +1096,7 @@ bool Mnemonic::INR(const std::pair<std::string, std::string>& operands)//CY is n
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
 	}
 
-	char reg = operands.first.front();
+	const std::string reg = operands.first;
 
 	if (reg == REGISTER::M)
 	{
@@ -1040,7 +1133,7 @@ bool Mnemonic::INX(const std::pair<std::string, std::string>& operands)//No flag
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
 	}
 
-	char reg = operands.first.front();
+	const std::string reg = operands.first;
 
 	if (reg == REGISTER::H)
 	{
@@ -1084,7 +1177,7 @@ bool Mnemonic::DCR(const std::pair<std::string, std::string>& operands)//CY is n
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
 	}
 
-	char reg = operands.first.front();
+	const std::string reg = operands.first;
 
 	if (reg == REGISTER::M)
 	{
@@ -1121,7 +1214,7 @@ bool Mnemonic::DCX(const std::pair<std::string, std::string>& operands)//No flag
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
 	}
 
-	char reg = operands.first.front();
+	const std::string reg = operands.first;
 
 	if (reg == REGISTER::H)
 	{
@@ -1165,7 +1258,7 @@ bool Mnemonic::DAD(const std::pair<std::string, std::string>& operands)//only af
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
 	}
 
-	char Rp = operands.first.front();
+	const std::string Rp = operands.first;
 	int HL_DATA = Register::HL(), Rp_DATA = 0;
 	if (Rp == REGISTER::H)
 	{
@@ -1202,7 +1295,8 @@ bool Mnemonic::ANA(const std::pair<std::string, std::string>& operands)
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
 	}
 
-	char reg = operands.first.front();
+	const std::string reg = operands.first;
+
 	if (reg == REGISTER::M)
 	{
 		Register::Main[REGISTER::A] &= MemoryManager::Memory[Register::HL()];
@@ -1227,8 +1321,13 @@ bool Mnemonic::ANI(const std::pair<std::string, std::string>& operands)
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
 	}
 
+	if (!Utility::IsValidHex(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_HEX, Program::program[Register::PC].line_number);
+	}
+
 	int nValue = Converter::HexToDec(operands.first);
-	if (nValue > 0xFF)
+	if (nValue < 0x00 || nValue > 0xff)
 	{
 		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, Program::program[Register::PC].line_number);
 	}
@@ -1248,7 +1347,7 @@ bool Mnemonic::ORA(const std::pair<std::string, std::string>& operands)
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
 	}
 
-	char reg = operands.first.front();
+	const std::string reg = operands.first;
 	if (reg == REGISTER::M)
 	{
 		Register::Main[REGISTER::A] |= MemoryManager::Memory[Register::HL()];
@@ -1273,9 +1372,14 @@ bool Mnemonic::ORI(const std::pair<std::string, std::string>& operands)
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
 	}
 
+	if (!Utility::IsValidHex(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_HEX, Program::program[Register::PC].line_number);
+	}
+
 	int nValue = Converter::HexToDec(operands.first);
 
-	if (nValue > 0xFF)
+	if (nValue < 0x00 || nValue > 0xff)
 	{
 		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, Program::program[Register::PC].line_number);
 	}
@@ -1295,7 +1399,7 @@ bool Mnemonic::XRA(const std::pair<std::string, std::string>& operands)
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
 	}
 
-	char reg = operands.first.front();
+	const std::string reg = operands.first;
 	if (reg == REGISTER::M)
 	{
 		Register::Main[REGISTER::A] ^= MemoryManager::Memory[Register::HL()];
@@ -1320,8 +1424,13 @@ bool Mnemonic::XRI(const std::pair<std::string, std::string>& operands)
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
 	}
 
+	if (!Utility::IsValidHex(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_HEX, Program::program[Register::PC].line_number);
+	}
+
 	int nValue = Converter::HexToDec(operands.first);
-	if (nValue > 0xFF)
+	if (nValue < 0x00 || nValue > 0xff)
 	{
 		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, Program::program[Register::PC].line_number);
 	}
@@ -1432,7 +1541,7 @@ bool Mnemonic::CMP(const std::pair<std::string, std::string>& operands)
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
 	}
-	char reg = operands.first.front();
+	const std::string reg = operands.first;
 	int A = Register::Main[REGISTER::A], R = 0;
 	if (reg == REGISTER::M)
 	{
@@ -1446,14 +1555,16 @@ bool Mnemonic::CMP(const std::pair<std::string, std::string>& operands)
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, Program::program[Register::PC].line_number);
 	}
-
-	int temp = A + Utility::_8bit_2sc(R);
+	
+	int _2sc = Utility::_8bit_2sc(R);
+	int temp = A + _2sc;
 	Utility::_8Bit_Normalization(temp);
 	Register::Flag::PF = !(Utility::_set_bits_count(temp) & 1);
 
-	int _4Bit_A = Converter::HexToDec(((Converter::DecToHex(A)).back()));
-	int _4Bit_R = Converter::HexToDec(((Converter::DecToHex(Utility::_8bit_2sc(R))).back()));
-	Register::Flag::AC = _4Bit_A + _4Bit_R > 15;
+	int LSN_A = A & 0x0f;
+	int LSN_R = _2sc & 0x0f;
+
+	Register::Flag::AC = LSN_A + LSN_R > 0xf;
 
 	Register::Flag::CY = A < R;
 	Register::Flag::SF = A < R;
@@ -1477,13 +1588,14 @@ bool Mnemonic::CPI(const std::pair<std::string, std::string>& operands)
 		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, Program::program[Register::PC].line_number);
 	}
 
-	int temp = A + Utility::_8bit_2sc(R);
+	int _2sc = Utility::_8bit_2sc(R);
+	int temp = A + _2sc;
 	Utility::_8Bit_Normalization(temp);
 	Register::Flag::PF = !(Utility::_set_bits_count(temp) & 1);
 
-	int _4Bit_A = Converter::HexToDec(((Converter::DecToHex(A)).back()));
-	int _4Bit_R = Converter::HexToDec(((Converter::DecToHex(Utility::_8bit_2sc(R))).back()));
-	Register::Flag::AC = _4Bit_A + _4Bit_R > 15;
+	int LSN_A = A & 0x0f;
+	int LSN_R = _2sc & 0x0f;
+	Register::Flag::AC = LSN_A + LSN_R > 0xf;
 
 	Register::Flag::CY = A < R;
 	Register::Flag::SF = A < R;

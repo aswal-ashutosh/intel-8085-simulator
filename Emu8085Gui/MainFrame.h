@@ -5,6 +5,7 @@
 #include<wx/listctrl.h>
 #include"wx/html/htmlwin.h"
 #include<map>
+#include"constants.h"
 
 
 
@@ -90,9 +91,9 @@ private:
 	wxTextCtrl* m_HelpDialogTextCtrl = nullptr;
 
 	//Other
-	std::map<char, wxTextCtrl*> m_MainRegister;
-	std::map<char, wxStaticText*> m_MainRegisterLabel;
-	const char m_MainRegisterArray[7] = { 'A', 'B', 'C', 'D', 'E', 'H', 'L' };
+	std::map<std::string, wxTextCtrl*> m_MainRegister;
+	std::map<std::string, wxStaticText*> m_MainRegisterLabel;
+	const std::string m_MainRegisterArray[7] = { REGISTER::A, REGISTER::B, REGISTER::C, REGISTER::D, REGISTER::E, REGISTER::H, REGISTER::L };
 	const char* m_FlagRegisterArray[5] = { "Z", "S", "P", "AC", "CY" };
 
 	//State

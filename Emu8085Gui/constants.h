@@ -11,6 +11,9 @@ namespace ERROR_TYPE
 	const std::string EXPECTED_8BIT_DATA = "Expected 8Bit data";
 	const std::string HLT_MISSING = "HLT Missing";
 	const std::string INVALID_MNEMONIC = "Invalid Mnemonic";
+	const std::string INVALID_HEX = "Invalid Hexadecimal Value";
+	const std::string INVALID_DATA = "Invalid Data Provided";
+	const std::string EMPTY_FIELD = "Empty Field Is Not Allowed";
 }
 
 namespace PATH
@@ -74,14 +77,14 @@ namespace MNEMONIC
 
 namespace REGISTER
 {
-	const char A = 'A';
-	const char B = 'B';
-	const char C = 'C';
-	const char D = 'D';
-	const char E = 'E';
-	const char H = 'H';
-	const char L = 'L';
-	const char M = 'M'; // Not a register but don't want to make a separate namespace for a single variable
+	const std::string A = "A";
+	const std::string B = "B";
+	const std::string C = "C";
+	const std::string D = "D";
+	const std::string E = "E";
+	const std::string H = "H";
+	const std::string L = "L";
+	const std::string M = "M"; // Not a register but don't want to make a separate namespace for a single variable
 
 }
 

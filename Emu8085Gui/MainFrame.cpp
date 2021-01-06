@@ -226,12 +226,18 @@ void MainFrame::OnRun(wxCommandEvent& event)
 
 void MainFrame::OnSet(wxCommandEvent& envet)
 {
-	MemoryManager::SetMemory(ToString(m_MemoryAddressTextCtrl->GetValue()), ToString(m_DataTextCtrl->GetValue()));
-	m_MemoryAddressTextCtrl->Clear();
-	m_DataTextCtrl->Clear();
-	m_MemoryAddressTextCtrl->AppendText("0000");
-	m_DataTextCtrl->AppendText("00");
-	UpdateMemory();
+	if (m_MemoryAddressTextCtrl->IsEmpty() || m_DataTextCtrl->IsEmpty())
+	{
+		Error::Throw(ERROR_TYPE::EMPTY_FIELD);
+	}
+	else if (MemoryManager::SetMemory(ToString(m_MemoryAddressTextCtrl->GetValue()), ToString(m_DataTextCtrl->GetValue())))//No need to report error as SetMemory will report if any.
+	{
+		m_MemoryAddressTextCtrl->Clear();
+		m_DataTextCtrl->Clear();
+		m_MemoryAddressTextCtrl->AppendText("0000");
+		m_DataTextCtrl->AppendText("00");
+		UpdateMemory();
+	}
 }
 
 void MainFrame::OnView(wxCommandEvent& envet)
@@ -250,7 +256,7 @@ void MainFrame::UpdateFlagRegister()
 
 void MainFrame::UpdateRegisters()
 {
-	for (const char& reg : m_MainRegisterArray)
+	for (const std::string& reg : m_MainRegisterArray)
 	{
 		m_MainRegister[reg]->Clear();
 		m_MainRegister[reg]->AppendText(ToWxString(Converter::DecToHex(Register::Main[reg])));
@@ -260,26 +266,42 @@ void MainFrame::UpdateRegisters()
 
 void MainFrame::UpdateMemory()
 {
-	m_MemoryViewList->ClearAll();
-	m_MemoryViewList->AppendColumn("Address");
-	m_MemoryViewList->AppendColumn("Data");
-
-	int from = Converter::HexToDec(ToString(m_FromMemoryAddressTextCtrl->GetValue()));
-	int cnt = std::stoi(ToString(m_CountTextCtrl->GetValue()));
-
-	for (int i = 0; i < cnt; ++i)
+	if (m_FromMemoryAddressTextCtrl->IsEmpty() || m_CountTextCtrl->IsEmpty())
 	{
-		std::string address = Converter::DecToHex(from + i, 16);
-		std::string data = Converter::DecToHex(MemoryManager::Memory[from + i]);
-		m_MemoryViewList->InsertItem(i, ToWxString(address));
-		m_MemoryViewList->SetItem(i, 1, ToWxString(data));
+		Error::Throw(ERROR_TYPE::EMPTY_FIELD);
+	}
+	else
+	{
+		const std::string sFrom = ToString(m_FromMemoryAddressTextCtrl->GetValue());
+		const std::string sCount = ToString(m_CountTextCtrl->GetValue());
+		if (Utility::IsValidHex(sFrom) && Utility::IsValidInt(sCount))
+		{
+			m_MemoryViewList->ClearAll();
+			m_MemoryViewList->AppendColumn("Address");
+			m_MemoryViewList->AppendColumn("Data");
+
+			int nFrom = Converter::HexToDec(sFrom);
+			int nCount = std::stoi(sCount);
+
+			for (int i = 0; i < nCount; ++i)
+			{
+				std::string address = Converter::DecToHex(nFrom + i, 16);
+				std::string data = Converter::DecToHex(MemoryManager::Memory[nFrom + i]);
+				m_MemoryViewList->InsertItem(i, ToWxString(address));
+				m_MemoryViewList->SetItem(i, 1, ToWxString(data));
+			}
+		}
+		else
+		{
+			Error::Throw(ERROR_TYPE::INVALID_DATA);
+		}
 	}
 }
 
 void MainFrame::Clear()
 {
 	//Clearing Registers(Frontend)
-	for (const char& reg : m_MainRegisterArray)
+	for (const std::string& reg : m_MainRegisterArray)
 	{
 		m_MainRegister[reg]->Clear();
 		m_MainRegister[reg]->AppendText("00");
@@ -334,6 +356,7 @@ void MainFrame::Debug8085(const std::string& filePath)
 		m_StopButton->Enable();
 		m_CurrentLineTextCtrl->Clear();
 		m_CurrentLineTextCtrl->AppendText(ToWxString(std::to_string(Program::program[Register::PC].line_number)));
+		m_ToolBar->Disable();//Disabling the toolbar
 	}
 }
 
@@ -368,6 +391,7 @@ void MainFrame::OnStopDebug(wxCommandEvent& event)
 	m_DebugButton->Enable();
 	m_CurrentLineTextCtrl->Clear();
 	m_CurrentLineTextCtrl->AppendText("---");
+	m_ToolBar->Enable();
 }
 
 void MainFrame::OnAbout(wxCommandEvent& event)
