@@ -65,7 +65,7 @@ MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30,
 	m_TextBoxStaticBoxSizer = new wxStaticBoxSizer(m_TextBoxStaticBox, wxHORIZONTAL);
 	m_EditBox = new wxStyledTextCtrl(m_TextBoxStaticBox, wxID_ANY, wxPoint(0, 20), wxSize(200, 800));
 	m_EditBox->SetMarginType(1, wxSTC_MARGIN_NUMBER);
-	m_EditBox->SetMarginWidth(1, 30);
+	m_EditBox->SetMarginWidth(1, 80);
 	m_EditBox->SetLexer(wxSTC_LEX_ASM);
 	m_EditBox->StyleSetForeground(wxSTC_H_TAGUNKNOWN, wxColour(0, 150, 0));
 	m_EditBox->SetUseHorizontalScrollBar(false);
@@ -363,7 +363,6 @@ void MainFrame::Debug8085(const std::string& filePath)
 		m_CurrentLineTextCtrl->AppendText(ToWxString(std::to_string(Program::program[Register::PC].line_number)));
 		m_EditBox->SetEditable(false);//Disabling Editor
 		m_ToolBar->Disable();//Disabling the toolbar
-
 		m_EditBox->MarkerAdd(Program::program[Register::PC].line_number - 1, 0);
 		m_EditBox->MarkerSetBackground(0, *wxRED);
 	}
@@ -412,24 +411,34 @@ void MainFrame::OnStopDebug(wxCommandEvent& event)
 
 void MainFrame::OnAbout(wxCommandEvent& event)
 {
-	wxDialog aboutDialog(this, wxID_ANY, DIALOG::HELP);
-	m_AboutDialogSizer = new wxBoxSizer(wxVERTICAL);
-	m_AboutDialogTextCtrl = new wxTextCtrl(&aboutDialog, wxID_ANY, "", wxDefaultPosition, wxSize(350, 250), wxTE_MULTILINE | wxTE_READONLY | wxTE_AUTO_URL | wxTE_NO_VSCROLL | wxTE_CENTRE);
-	m_AboutDialogTextCtrl->LoadFile(PATH::ABOUT_FILE);
-	m_AboutDialogSizer->Add(m_AboutDialogTextCtrl, 1, wxALL, 10);
-	aboutDialog.SetSizer(m_AboutDialogSizer);
-	m_AboutDialogSizer->Fit(&aboutDialog);
+	wxDialog aboutDialog(this, wxID_ANY, DIALOG::ABOUT);
+	wxBoxSizer* dialogSizer = new wxBoxSizer(wxVERTICAL);
+	wxHtmlWindow* html = new wxHtmlWindow(&aboutDialog, wxID_ANY, wxDefaultPosition, wxSize(380, 160), wxHW_SCROLLBAR_NEVER);
+	html->SetBorders(1);
+	html->LoadPage(PATH::ABOUT_HTML_FILE);
+	html->SetSize(html->GetInternalRepresentation()->GetWidth(), html->GetInternalRepresentation()->GetHeight());
+	dialogSizer->Add(html, 1, wxALL, 10);
+	wxButton* OKButton = new wxButton(&aboutDialog, wxID_OK, _("OK"));
+	OKButton->SetDefault();
+	dialogSizer->Add(OKButton, 0, wxALIGN_CENTER | wxALL, 10);
+	aboutDialog.SetSizer(dialogSizer);
+	dialogSizer->Fit(&aboutDialog);
 	aboutDialog.ShowModal();
 }
 
 void MainFrame::OnHelp(wxCommandEvent& event)
 {
-	wxDialog helpDialog(this, wxID_ANY, DIALOG::HELP);
-	m_HelpDialogSizer = new wxBoxSizer(wxVERTICAL);
-	m_HelpDialogTextCtrl = new wxTextCtrl(&helpDialog, wxID_ANY, "", wxDefaultPosition, wxSize(450, 500), wxTE_MULTILINE | wxTE_READONLY);
-	m_HelpDialogTextCtrl->LoadFile(PATH::HELP_FILE);
-	m_HelpDialogSizer->Add(m_HelpDialogTextCtrl, 1, wxALL, 10);
-	helpDialog.SetSizer(m_HelpDialogSizer);
-	m_HelpDialogSizer->Fit(&helpDialog);
+	wxDialog helpDialog(this, wxID_ANY, DIALOG::ABOUT);
+	wxBoxSizer* dialogSizer = new wxBoxSizer(wxVERTICAL);
+	wxHtmlWindow* html = new wxHtmlWindow(&helpDialog, wxID_ANY, wxDefaultPosition, wxSize(800, 600));
+	html->SetBorders(1);
+	html->LoadPage(PATH::HELP_HTML_FILE);
+	html->SetSize(html->GetInternalRepresentation()->GetWidth(), html->GetInternalRepresentation()->GetHeight());
+	dialogSizer->Add(html, 1, wxALL, 10);
+	wxButton* OKButton = new wxButton(&helpDialog, wxID_OK, _("OK"));
+	OKButton->SetDefault();
+	dialogSizer->Add(OKButton, 0, wxALIGN_CENTER | wxALL, 10);
+	helpDialog.SetSizer(dialogSizer);
+	dialogSizer->Fit(&helpDialog);
 	helpDialog.ShowModal();
 }

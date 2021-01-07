@@ -1,0 +1,145 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HELP</title>
+</head>
+<body>
+    <p>
+        <center><h1><u>COMPONENTS</u></h1></center>
+        <ol>
+
+            <li><h3>FLAG REGISTER PANEL</h3></li>
+            <em>It will display the status of <strong>Flag Register</strong>.</em><br>
+
+
+            <li><h3>REGISTER PANEL</h3></li>
+            <em>
+                It display the content of
+                <strong>A</strong>,
+                <strong>B</strong>,
+                <strong>C</strong>,
+                <strong>D</strong>,
+                <strong>E</strong>,
+                <strong>H</strong> &
+                <strong>L</strong>
+                Register in <strong>hexadecimal</strong>.
+            </em><br>
+
+
+            <li><h3>MEMORY INITIALIZER PANEL</h3></li>
+            <em>
+                It provide way to feed data in memory location ranging from [0000 - FFFF].<br><br>
+                <strong>Direction To Use:</strong> Provide the address and data in the corresponding text box and click on <strong>SET</strong> button.
+            </em><br>
+
+
+            <li><h3>MEMORY VIEWER PANEL</h3></li>
+            <em>
+                It provide way to view the data in the memory.<br><br>
+                <strong>Direction To Use:</strong> Provide the starting address and the count(number of locations to be accessed from the starting address) in the corresponding text box and click on the <strong>VIEW</strong> button.<br>
+            </em><br>
+
+
+            <li><h3>DEBUGGER PANEL</h3></li>
+            <em>
+                It provide mechanism to debug the code.<br><br>
+
+                <strong>Direction To Use</strong><br>
+                <ol>
+                    <li>Write the code.</li>
+                    <li>Make sure to save the file.</li>
+                    <li>Hit Debug button which will enable the Execute and STOP button.</li>
+                    <li>Hit the execute button to execute/run the line number shown in the Debugger Panel.</li>
+                    <li>Hit the STOP button to stop debugging.</li>
+                </ol>
+                <br>
+                <strong>Note:</strong>
+                <ul>
+                    <li>Debugger will stop automatically after executing HLT instruction.</li>
+                    <li>Use STOP button to stop debugging in between.</li>
+                </ul>
+            </em>
+        </ol><br><br>
+
+        <center><h1><u>KEY POINTS</u></h1></center>
+        <ol>
+            <li><h3>Loop/Jump</h3></li>
+            <em>
+                <br>
+                In order to jump to a specific line of code create a <strong>Jump-Point</strong>.
+                Jump Point is any string ending with <strong>':'</strong>.<br>
+                for example: "LOOP:", "HERE:" etc.<br><br>
+                <strong>Note:</strong> All Jump-Point strings will be considered in their uppercase form i.e., "LOOP:", "Loop:",
+                "loop:", "loOP:", . . . . . . will be considered as same Jump-Point as all of them same uppercase form "LOOP:".<br>
+
+                <br>
+                <h4><u>Example of a program using Jump-Point</u></h4>
+                LDA 2050<br>
+                MOV D, A<br>
+                MVI B, 0A<br>
+                LXI H, 3050<br>
+                MVI C, 00<br>
+                <strong>LOOP:</strong> MOV A, D
+                ADD C<br>
+                MOV M, A<br>
+                INX H<br>
+                MOV C, A<br>
+                DCR B<br>
+                JNZ <strong>LOOP</strong><br>
+                HLT<br>
+            </em>
+            <br>
+
+            <li><h3>How to use comments in code</h3></li>
+            <em>
+                Any line <strong>starting</strong> with <strong>'@'</strong> symbol will be considered as comment in the code.
+                <h4><u>Example of a program using Comments</u></h4>
+
+                MVI A, 00<br>
+                MVI B, 11<br>
+                @Next line will add B register content to A and will store result in A<br>
+                ADD B<br>
+                HLT<br><br>
+                <strong>Note:</strong> You can not comment in between, i.e., <br><br>
+                <ul>
+                    <li>
+                        MOV A, B @Will copy the content of B to A &emsp;&emsp;<strong>[WRONG]</strong>
+                    </li>
+                    <br>
+                    <li>
+                        @Next line will copy the content of B to A &emsp;&emsp;<strong>[CORRECT]</strong><br>
+                        MOV A, B
+                    </li>
+                </ul>
+            </em><br>
+
+            <li><h3>Empty lines</h3></li>
+            <em>
+                All empty lines in between the codes will be <strong>ignored</strong>.<br><br>
+            </em>
+
+            <li><h3>Hexadecimal Values</h3></li>
+            Do not use
+            <strong>H</strong> or
+            <strong>h</strong> to represent the hexadecimal values as application is designed in such a way that it
+            will always consider every immediate data in hexadecimal number system only.
+            <br>
+            <br>
+
+            <li><h3>How to write a avoid syntax error</h3></li>
+            Separate every token by a space, i.e.,
+            <br>
+            <br>
+            <ul>
+                <li>MOV A,B&emsp;&emsp;&emsp;&emsp;&emsp;&nbsp;&nbsp;<strong>[WRONG]</strong></li>
+                <li>MOV A, B&emsp;&emsp;&emsp;&nbsp;&nbsp;&nbsp;&emsp;&nbsp;<strong>[CORRECT]</strong></li>
+                <li>MOV A , B&emsp;&emsp;&nbsp;&emsp;&nbsp;&emsp;&nbsp;<strong>[CORRECT]</strong></li>
+                <li>MOV A ,B&emsp;&emsp;&emsp;&nbsp;&nbsp;&nbsp;&emsp;&nbsp;<strong>[CORRECT]</strong></li>
+                <li>LOOP:MVI A, 00&emsp;&emsp;&nbsp;<strong>[WRONG]</strong></li>
+                <li>LOOP: MVI A, 00&emsp;&emsp;<strong>[CORRECT]</strong></li>
+            </ul>
+        </ol>
+    </p>
+</body>
+</html>

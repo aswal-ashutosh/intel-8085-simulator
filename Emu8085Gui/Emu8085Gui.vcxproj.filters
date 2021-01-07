@@ -38,16 +38,15 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="debug_lex.txt">
-      <Filter>Resource Files</Filter>
+      <Filter>Source Files</Filter>
     </Text>
-    <Text Include="sample.txt">
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="res\ABOUT.html">
       <Filter>Resource Files</Filter>
-    </Text>
-    <Text Include="res\ABOUT.txt">
+    </None>
+    <None Include="res\HELP.html">
       <Filter>Resource Files</Filter>
-    </Text>
-    <Text Include="res\HELP.txt">
-      <Filter>Resource Files</Filter>
-    </Text>
+    </None>
   </ItemGroup>
 </Project>

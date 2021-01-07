@@ -1,5 +1,0 @@
-STC
-MVI A, 80
-MVI B, 40
-SBB B
-HLT

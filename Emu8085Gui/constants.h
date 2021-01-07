@@ -19,8 +19,8 @@ namespace ERROR_TYPE
 
 namespace PATH
 {
-	const std::string ABOUT_FILE = "res\\ABOUT.txt";
-	const std::string HELP_FILE = "res\\HELP.txt";
+	const std::string ABOUT_HTML_FILE = "res\\ABOUT.html";
+	const std::string HELP_HTML_FILE = "res\\HELP.html";
 }
 
 namespace MNEMONIC
