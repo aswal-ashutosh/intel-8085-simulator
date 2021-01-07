@@ -337,7 +337,7 @@ public:
 
 	static bool HLT;
 
-	static bool Read(std::string filePath);
+	static bool Read(const std::string filePath);
 
 	static void Run();
 };
@@ -1717,7 +1717,7 @@ void DebugLex()
 }
 
 
-bool Program::Read(std::string filePath)
+bool Program::Read(const std::string filePath)
 {
 	Program::program.clear();//Clearing previous program
 	Program::Loop.clear();//Clearing previous program
@@ -1855,8 +1855,11 @@ bool Program::Read(std::string filePath)
 		program.push_back(instruction);
 		++line_number;
 	}
-
-	if (program.back().mnemonic != MNEMONIC::HLT)
+	if (program.empty())
+	{
+		return Error::Throw(ERROR_TYPE::EMPTY_FILE);
+	}
+	else if (program.back().mnemonic != MNEMONIC::HLT)
 	{
 		return Error::Throw(ERROR_TYPE::HLT_MISSING);
 	}

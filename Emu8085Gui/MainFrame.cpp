@@ -65,7 +65,7 @@ MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30,
 	m_TextBoxStaticBoxSizer = new wxStaticBoxSizer(m_TextBoxStaticBox, wxHORIZONTAL);
 	m_EditBox = new wxStyledTextCtrl(m_TextBoxStaticBox, wxID_ANY, wxPoint(0, 20), wxSize(200, 800));
 	m_EditBox->SetMarginType(1, wxSTC_MARGIN_NUMBER);
-	m_EditBox->SetMarginWidth(1, 25);
+	m_EditBox->SetMarginWidth(1, 30);
 	m_EditBox->SetLexer(wxSTC_LEX_ASM);
 	m_EditBox->StyleSetForeground(wxSTC_H_TAGUNKNOWN, wxColour(0, 150, 0));
 	m_EditBox->SetUseHorizontalScrollBar(false);
@@ -361,7 +361,11 @@ void MainFrame::Debug8085(const std::string& filePath)
 		m_StopButton->Enable();
 		m_CurrentLineTextCtrl->Clear();
 		m_CurrentLineTextCtrl->AppendText(ToWxString(std::to_string(Program::program[Register::PC].line_number)));
+		m_EditBox->SetEditable(false);//Disabling Editor
 		m_ToolBar->Disable();//Disabling the toolbar
+
+		m_EditBox->MarkerAdd(Program::program[Register::PC].line_number - 1, 0);
+		m_EditBox->MarkerSetBackground(0, *wxRED);
 	}
 }
 
@@ -385,6 +389,10 @@ void MainFrame::OnExecute(wxCommandEvent& event)
 		UpdateMemory();
 		m_CurrentLineTextCtrl->Clear();
 		m_CurrentLineTextCtrl->AppendText(ToWxString(std::to_string(Program::program[Register::PC].line_number)));
+		m_EditBox->MarkerDeleteAll(0);
+		m_EditBox->MarkerAdd(Program::program[Register::PC].line_number - 1, 0);
+		m_EditBox->MarkerSetBackground(0, *wxRED);
+
 	}
 }
 
@@ -397,6 +405,9 @@ void MainFrame::OnStopDebug(wxCommandEvent& event)
 	m_CurrentLineTextCtrl->Clear();
 	m_CurrentLineTextCtrl->AppendText("---");
 	m_ToolBar->Enable();
+	m_EditBox->SetEditable(true);
+	m_EditBox->MarkerDeleteAll(0);
+
 }
 
 void MainFrame::OnAbout(wxCommandEvent& event)

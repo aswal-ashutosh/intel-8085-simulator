@@ -14,6 +14,7 @@ namespace ERROR_TYPE
 	const std::string INVALID_HEX = "Invalid Hexadecimal Value";
 	const std::string INVALID_DATA = "Invalid Data Provided";
 	const std::string EMPTY_FIELD = "Empty Field Is Not Allowed";
+	const std::string EMPTY_FILE = "Empty File Found";
 }
 
 namespace PATH
