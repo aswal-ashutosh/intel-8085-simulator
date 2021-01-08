@@ -281,7 +281,7 @@ void MainFrame::UpdateMemory()
 
 	const std::string sFrom = ToString(m_FromMemoryAddressTextCtrl->GetValue());
 	const std::string sCount = ToString(m_CountTextCtrl->GetValue());
-	if (Utility::IsValidHex(sFrom) && Utility::IsValidInt(sCount))
+	if (Validator::IsValidHex(sFrom) && Validator::IsValidInt(sCount))
 	{
 		m_MemoryViewList->ClearAll();
 		m_MemoryViewList->AppendColumn("Address");

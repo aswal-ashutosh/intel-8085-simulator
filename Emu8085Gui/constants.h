@@ -9,7 +9,7 @@ namespace ERROR_TYPE
 	const std::string INVALID_REGISTER = "Invalid Register";
 	const std::string INVALID_REGISTER_PAIR = "Invalid Register Pair";
 	const std::string EXPECTED_8BIT_DATA = "Expected 8Bit data";
-	const std::string NEVER_REACHED_HLT = "PROGRAM CONTROL FLOW NEVER REACHED HLT.";
+	const std::string NEVER_REACHED_HLT = "Program Control Flow Never Reached 'HLT'.";
 	const std::string INVALID_MNEMONIC = "Invalid Mnemonic";
 	const std::string INVALID_HEX = "Invalid Hexadecimal Value";
 	const std::string INVALID_DATA = "Invalid Data Provided";
