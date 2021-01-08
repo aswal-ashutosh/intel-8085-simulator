@@ -9,12 +9,13 @@ namespace ERROR_TYPE
 	const std::string INVALID_REGISTER = "Invalid Register";
 	const std::string INVALID_REGISTER_PAIR = "Invalid Register Pair";
 	const std::string EXPECTED_8BIT_DATA = "Expected 8Bit data";
-	const std::string HLT_MISSING = "HLT Missing";
+	const std::string NEVER_REACHED_HLT = "PROGRAM CONTROL FLOW NEVER REACHED HLT.";
 	const std::string INVALID_MNEMONIC = "Invalid Mnemonic";
 	const std::string INVALID_HEX = "Invalid Hexadecimal Value";
 	const std::string INVALID_DATA = "Invalid Data Provided";
 	const std::string EMPTY_FIELD = "Empty Field Is Not Allowed";
 	const std::string EMPTY_FILE = "Empty File Found";
+	const std::string INVALID_JUMP_POINT = "Invalid Jump Point";
 }
 
 namespace PATH
@@ -74,6 +75,24 @@ namespace MNEMONIC
 	const std::string JPO = "JPO";
 	const std::string JM = "JM";
 	const std::string JP = "JP";
+	const std::string CALL = "CALL";
+	const std::string CNC = "CNC";
+	const std::string CC = "CC";
+	const std::string CNZ = "CNZ";
+	const std::string CZ = "CZ";
+	const std::string CPE = "CPE";
+	const std::string CPO = "CPO";
+	const std::string CP = "CP";
+	const std::string CM = "CM";
+	const std::string RET = "RET";
+	const std::string RNC = "RNC";
+	const std::string RC = "RC";
+	const std::string RNZ = "RNZ";
+	const std::string RZ = "RZ";
+	const std::string RPE = "RPE";
+	const std::string RPO = "RPO";
+	const std::string RP = "RP";
+	const std::string RM = "RM";
 }
 
 namespace REGISTER

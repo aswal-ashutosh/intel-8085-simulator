@@ -3,7 +3,7 @@
 #include<fstream>
 #include<sstream>
 #include<map>
-#include<set>
+#include<stack>
 #include"constants.h"
 
 class Utility
@@ -44,7 +44,7 @@ bool Utility::IsValidInt(const std::string& data)
 
 bool Utility::IsValidHex(const std::string& hex)
 {
-	for (const char &x : hex)
+	for (const char& x : hex)
 	{
 		if ((x >= '0' && x <= '9') || (x >= 'A' && x <= 'F'))
 		{
@@ -197,7 +197,7 @@ bool MemoryManager::SetMemory(const std::string& location, const std::string& da
 	OK &= Utility::IsValidHex(location) && Utility::IsValidHex(data);
 	int address = Converter::HexToDec(location), value = Converter::HexToDec(data);
 	OK &= (address >= 0x0000 && address <= 0xffff) && (value >= 0x00 && value <= 0xff);
-	
+
 	if (OK)
 	{
 		Memory[address] = value;
@@ -224,7 +224,7 @@ public:
 		static bool SF, ZF, AC, PF, CY;
 	};
 
-	static bool isValid(const std::string &);
+	static bool isValid(const std::string&);
 
 	static int HL();
 
@@ -328,25 +328,33 @@ public:
 };
 
 
-class Program
+class ProgramManager
 {
 
 public:
-	static std::map<std::string, int> Loop;
-	static std::vector<Instruction> program;
-
+	static std::map<std::string, int> JumpPoint;
+	static std::vector<Instruction> Program;
+	static std::stack<int> CallStack;
 	static bool HLT;
 
 	static bool Read(const std::string filePath);
 
 	static void Run();
+
+	static bool isValidJumpPoint(const std::string&);
 };
 
-std::vector<Instruction> Program::program;
-std::map<std::string, int> Program::Loop;
-bool Program::HLT;
 
 
+std::vector<Instruction> ProgramManager::Program;
+std::map<std::string, int> ProgramManager::JumpPoint;
+std::stack<int> ProgramManager::CallStack;
+bool ProgramManager::HLT;
+
+bool ProgramManager::isValidJumpPoint(const std::string& expected_jump_point)
+{
+	return JumpPoint.count(expected_jump_point);
+}
 
 
 class Mnemonic
@@ -415,6 +423,26 @@ public:
 	static bool JM(const std::pair<std::string, std::string>&);
 	static bool JP(const std::pair<std::string, std::string>&);
 	static bool HLT(const std::pair<std::string, std::string>&);
+
+	//subroutine
+	static bool CALL(const std::pair<std::string, std::string>&);
+	static bool CNC(const std::pair<std::string, std::string>&);
+	static bool CC(const std::pair<std::string, std::string>&);
+	static bool CNZ(const std::pair<std::string, std::string>&);
+	static bool CZ(const std::pair<std::string, std::string>&);
+	static bool CPE(const std::pair<std::string, std::string>&);
+	static bool CPO(const std::pair<std::string, std::string>&);
+	static bool CP(const std::pair<std::string, std::string>&);
+	static bool CM(const std::pair<std::string, std::string>&);
+	static bool RET(const std::pair<std::string, std::string>&);
+	static bool RNC(const std::pair<std::string, std::string>&);
+	static bool RC(const std::pair<std::string, std::string>&);
+	static bool RZ(const std::pair<std::string, std::string>&);
+	static bool RNZ(const std::pair<std::string, std::string>&);
+	static bool RPE(const std::pair<std::string, std::string>&);
+	static bool RPO(const std::pair<std::string, std::string>&);
+	static bool RP(const std::pair<std::string, std::string>&);
+	static bool RM(const std::pair<std::string, std::string>&);
 
 	static bool validOperandCount(const std::pair<std::string, std::string>&, int);
 };
@@ -488,6 +516,24 @@ void Mnemonic::LoadInsctructionSet()
 	Execute[MNEMONIC::JM] = JM;
 	Execute[MNEMONIC::JP] = JP;
 	Execute[MNEMONIC::DAA] = DAA;
+	Execute[MNEMONIC::CALL] = CALL;
+	Execute[MNEMONIC::CNC] = CNC;
+	Execute[MNEMONIC::CC] = CC;
+	Execute[MNEMONIC::CNZ] = CNZ;
+	Execute[MNEMONIC::CZ] = CZ;
+	Execute[MNEMONIC::CPE] = CPE;
+	Execute[MNEMONIC::CPO] = CPO;
+	Execute[MNEMONIC::CP] = CP;
+	Execute[MNEMONIC::CM] = CM;
+	Execute[MNEMONIC::RET] = RET;
+	Execute[MNEMONIC::RNC] = RNC;
+	Execute[MNEMONIC::RC] = RC;
+	Execute[MNEMONIC::RNZ] = RNZ;
+	Execute[MNEMONIC::RZ] = RZ;
+	Execute[MNEMONIC::RPO] = RPO;
+	Execute[MNEMONIC::RPE] = RPE;
+	Execute[MNEMONIC::RP] = RP;
+	Execute[MNEMONIC::RM] = RM;
 }
 
 bool Mnemonic::isValid(const std::string mnemonic)
@@ -499,14 +545,14 @@ bool Mnemonic::MOV(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 2))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	const std::string destination = operands.first, source = operands.second;
 
 	if (destination == REGISTER::M && source == REGISTER::M)
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	if (destination == REGISTER::M && Register::isValid(source))
@@ -523,7 +569,7 @@ bool Mnemonic::MOV(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, ProgramManager::Program[Register::PC].line_number);
 	}
 	++Register::PC;
 	return true;
@@ -533,7 +579,7 @@ bool Mnemonic::MVI(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 2))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 
 
@@ -542,14 +588,14 @@ bool Mnemonic::MVI(const std::pair<std::string, std::string>& operands)
 
 	if (!Utility::IsValidHex(value))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_HEX, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_HEX, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	int nValue = Converter::HexToDec(value);
 
 	if (nValue < 0x00 || nValue > 0xff)
 	{
-		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, ProgramManager::Program[Register::PC].line_number);
 	}
 	else if (reg == REGISTER::M) //@Memory
 	{
@@ -561,7 +607,7 @@ bool Mnemonic::MVI(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, ProgramManager::Program[Register::PC].line_number);
 	}
 	++Register::PC;
 	return true;
@@ -571,13 +617,13 @@ bool Mnemonic::LDA(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	std::string address = operands.first;
 	if (!Utility::IsValidHex(address))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_HEX, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_HEX, ProgramManager::Program[Register::PC].line_number);
 	}
 	int nAddress = Converter::HexToDec(address);
 	if (nAddress >= 0 && nAddress <= 0xffff)
@@ -586,7 +632,7 @@ bool Mnemonic::LDA(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_MEMORY_LOCATION, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_MEMORY_LOCATION, ProgramManager::Program[Register::PC].line_number);
 	}
 	++Register::PC;
 	return true;
@@ -596,13 +642,13 @@ bool Mnemonic::STA(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	std::string address = operands.first;
 	if (!Utility::IsValidHex(address))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_HEX, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_HEX, ProgramManager::Program[Register::PC].line_number);
 	}
 	int nAddress = Converter::HexToDec(address);
 	if (nAddress >= 0 && nAddress <= 0xffff)
@@ -611,7 +657,7 @@ bool Mnemonic::STA(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_MEMORY_LOCATION, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_MEMORY_LOCATION, ProgramManager::Program[Register::PC].line_number);
 	}
 	++Register::PC;
 	return true;
@@ -621,13 +667,13 @@ bool Mnemonic::LHLD(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	std::string address = operands.first;
 	if (!Utility::IsValidHex(address))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_HEX, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_HEX, ProgramManager::Program[Register::PC].line_number);
 	}
 	int nAddress = Converter::HexToDec(address);
 	if (nAddress >= 0 && nAddress < 0xffff) // <0xffff as we also need a valid address + 1
@@ -637,7 +683,7 @@ bool Mnemonic::LHLD(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_MEMORY_LOCATION, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_MEMORY_LOCATION, ProgramManager::Program[Register::PC].line_number);
 	}
 	++Register::PC;
 	return true;
@@ -647,13 +693,13 @@ bool Mnemonic::SHLD(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	std::string address = operands.first;
 	if (!Utility::IsValidHex(address))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_HEX, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_HEX, ProgramManager::Program[Register::PC].line_number);
 	}
 	int nAddress = Converter::HexToDec(address);
 	if (nAddress >= 0 && nAddress < 0xffff) // <0xffff as we also need a valid address + 1
@@ -663,7 +709,7 @@ bool Mnemonic::SHLD(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_MEMORY_LOCATION, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_MEMORY_LOCATION, ProgramManager::Program[Register::PC].line_number);
 	}
 	++Register::PC;
 	return true;
@@ -675,15 +721,15 @@ bool Mnemonic::LXI(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 2))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
-	
+
 	const std::string reg = operands.first;
 
 	std::string data = operands.second;
 	if (!Utility::IsValidHex(data))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_HEX, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_HEX, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	Utility::_16Bit(data);
@@ -704,7 +750,7 @@ bool Mnemonic::LXI(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_REGISTER_PAIR, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_REGISTER_PAIR, ProgramManager::Program[Register::PC].line_number);
 	}
 	++Register::PC;
 	return true;
@@ -714,7 +760,7 @@ bool Mnemonic::LDAX(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	const std::string reg = operands.first;
@@ -733,7 +779,7 @@ bool Mnemonic::LDAX(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_REGISTER_PAIR, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_REGISTER_PAIR, ProgramManager::Program[Register::PC].line_number);
 	}
 	++Register::PC;
 	return true;
@@ -743,7 +789,7 @@ bool Mnemonic::STAX(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	const std::string reg = operands.first;
@@ -762,7 +808,7 @@ bool Mnemonic::STAX(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_REGISTER_PAIR, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_REGISTER_PAIR, ProgramManager::Program[Register::PC].line_number);
 	}
 	++Register::PC;
 	return true;
@@ -772,7 +818,7 @@ bool Mnemonic::XCHG(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 0))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	std::swap(Register::Main[REGISTER::H], Register::Main[REGISTER::D]);
@@ -786,7 +832,7 @@ bool Mnemonic::ADD(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	const std::string reg = operands.first;
@@ -806,7 +852,7 @@ bool Mnemonic::ADD(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, ProgramManager::Program[Register::PC].line_number);
 	}
 	Register::UpdateFlags(LSN_A + LSN_R);
 	++Register::PC;
@@ -817,7 +863,7 @@ bool Mnemonic::ADC(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	const std::string reg = operands.first;
@@ -837,7 +883,7 @@ bool Mnemonic::ADC(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, ProgramManager::Program[Register::PC].line_number);
 	}
 	Register::UpdateFlags(LSN_A + LSN_R);
 	++Register::PC;
@@ -848,19 +894,19 @@ bool Mnemonic::ADI(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	if (!Utility::IsValidHex(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_HEX, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_HEX, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	int nValue = Converter::HexToDec(operands.first);
 	int LSN_A = 0, LSN_R = 0;
 	if (nValue < 0x00 || nValue > 0xff)
 	{
-		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
@@ -879,14 +925,14 @@ bool Mnemonic::ACI(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	std::string data = operands.first;
 
 	if (!Utility::IsValidHex(data))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_HEX, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_HEX, ProgramManager::Program[Register::PC].line_number);
 	}
 	int nValue = Converter::HexToDec(data);
 	int LSN_A = Register::Main[REGISTER::A] & 0x0f;
@@ -894,7 +940,7 @@ bool Mnemonic::ACI(const std::pair<std::string, std::string>& operands)
 
 	if (nValue < 0x00 || nValue > 0xff)
 	{
-		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
@@ -911,7 +957,7 @@ bool Mnemonic::SUB(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	const std::string reg = operands.first;
@@ -936,7 +982,7 @@ bool Mnemonic::SUB(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	//@Setting carry flag explicitly
@@ -951,7 +997,7 @@ bool Mnemonic::SBB(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	const std::string reg = operands.first;
@@ -977,7 +1023,7 @@ bool Mnemonic::SBB(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, ProgramManager::Program[Register::PC].line_number);
 	}
 	Register::Flag::CY = subtrahend > minuend;
 	Register::UpdateFlags(LSN_A + LSN_R, true); //Add _4Bit_C if last nibble of Carry is also responsible for AC
@@ -988,12 +1034,12 @@ bool Mnemonic::SUI(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	if (!Utility::IsValidHex(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_HEX, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_HEX, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	int nValue = Converter::HexToDec(operands.first), LSN_A = 0, LSN_R = 0, minuend = Register::Main[REGISTER::A];
@@ -1001,7 +1047,7 @@ bool Mnemonic::SUI(const std::pair<std::string, std::string>& operands)
 
 	if (nValue < 0x00 || nValue > 0xff)
 	{
-		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
@@ -1021,12 +1067,12 @@ bool Mnemonic::SBI(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	if (!Utility::IsValidHex(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_HEX, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_HEX, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	int nValue = Converter::HexToDec(operands.first), LSN_A = 0, LSN_R = 0, minuend = Register::Main[REGISTER::A];
@@ -1034,7 +1080,7 @@ bool Mnemonic::SBI(const std::pair<std::string, std::string>& operands)
 
 	if (nValue < 0x00 || nValue > 0xff)
 	{
-		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
@@ -1055,7 +1101,7 @@ bool Mnemonic::DAA(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 0))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	int LSN = Register::Main[REGISTER::A] & 0x0f;
@@ -1077,7 +1123,7 @@ bool Mnemonic::DAA(const std::pair<std::string, std::string>& operands)
 		Register::Main[REGISTER::A] += 0x60;
 		Register::Flag::CY = true;
 	}
-	
+
 	Utility::_8Bit_Normalization(Register::Main[REGISTER::A]);
 
 	Register::Flag::SF = Register::Main[REGISTER::A] & (1 << 7); //@Sign Flag
@@ -1094,7 +1140,7 @@ bool Mnemonic::INR(const std::pair<std::string, std::string>& operands)//CY is n
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	const std::string reg = operands.first;
@@ -1121,7 +1167,7 @@ bool Mnemonic::INR(const std::pair<std::string, std::string>& operands)//CY is n
 	}
 	else
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, ProgramManager::Program[Register::PC].line_number);
 	}
 	++Register::PC;
 	return true;
@@ -1131,7 +1177,7 @@ bool Mnemonic::INX(const std::pair<std::string, std::string>& operands)//No flag
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	const std::string reg = operands.first;
@@ -1165,7 +1211,7 @@ bool Mnemonic::INX(const std::pair<std::string, std::string>& operands)//No flag
 	}
 	else
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, ProgramManager::Program[Register::PC].line_number);
 	}
 	++Register::PC;
 	return true;
@@ -1175,7 +1221,7 @@ bool Mnemonic::DCR(const std::pair<std::string, std::string>& operands)//CY is n
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	const std::string reg = operands.first;
@@ -1202,7 +1248,7 @@ bool Mnemonic::DCR(const std::pair<std::string, std::string>& operands)//CY is n
 	}
 	else
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, ProgramManager::Program[Register::PC].line_number);
 	}
 	++Register::PC;
 	return true;
@@ -1212,7 +1258,7 @@ bool Mnemonic::DCX(const std::pair<std::string, std::string>& operands)//No flag
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	const std::string reg = operands.first;
@@ -1246,7 +1292,7 @@ bool Mnemonic::DCX(const std::pair<std::string, std::string>& operands)//No flag
 	}
 	else
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, ProgramManager::Program[Register::PC].line_number);
 	}
 	++Register::PC;
 	return true;
@@ -1256,7 +1302,7 @@ bool Mnemonic::DAD(const std::pair<std::string, std::string>& operands)//only af
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	const std::string Rp = operands.first;
@@ -1275,7 +1321,7 @@ bool Mnemonic::DAD(const std::pair<std::string, std::string>& operands)//only af
 	}
 	else
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	HL_DATA += Rp_DATA;
@@ -1293,7 +1339,7 @@ bool Mnemonic::ANA(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	const std::string reg = operands.first;
@@ -1308,7 +1354,7 @@ bool Mnemonic::ANA(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, ProgramManager::Program[Register::PC].line_number);
 	}
 	Register::UpdateFlags(16);//16: As after executing AND instruction AC flag become set
 	++Register::PC;
@@ -1319,18 +1365,18 @@ bool Mnemonic::ANI(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	if (!Utility::IsValidHex(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_HEX, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_HEX, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	int nValue = Converter::HexToDec(operands.first);
 	if (nValue < 0x00 || nValue > 0xff)
 	{
-		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
@@ -1345,7 +1391,7 @@ bool Mnemonic::ORA(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	const std::string reg = operands.first;
@@ -1359,7 +1405,7 @@ bool Mnemonic::ORA(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, ProgramManager::Program[Register::PC].line_number);
 	}
 	Register::UpdateFlags(1);//1: As there can not be any auxiliary carry during bitwise operation
 	++Register::PC;
@@ -1370,19 +1416,19 @@ bool Mnemonic::ORI(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	if (!Utility::IsValidHex(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_HEX, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_HEX, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	int nValue = Converter::HexToDec(operands.first);
 
 	if (nValue < 0x00 || nValue > 0xff)
 	{
-		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
@@ -1397,7 +1443,7 @@ bool Mnemonic::XRA(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	const std::string reg = operands.first;
@@ -1411,7 +1457,7 @@ bool Mnemonic::XRA(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, ProgramManager::Program[Register::PC].line_number);
 	}
 	Register::UpdateFlags(1);
 	++Register::PC;
@@ -1422,18 +1468,18 @@ bool Mnemonic::XRI(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	if (!Utility::IsValidHex(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_HEX, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_HEX, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	int nValue = Converter::HexToDec(operands.first);
 	if (nValue < 0x00 || nValue > 0xff)
 	{
-		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
@@ -1448,7 +1494,7 @@ bool Mnemonic::CMA(const std::pair<std::string, std::string>& operands)//Flags a
 {
 	if (!Mnemonic::validOperandCount(operands, 0))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	for (int i = 0; i < 8; ++i)
@@ -1463,7 +1509,7 @@ bool Mnemonic::RLC(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 0))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 	Register::Flag::CY = Register::Main[REGISTER::A] & (1 << 7);
 	Register::Main[REGISTER::A] <<= 1; //Left Shift by 1 bit
@@ -1477,7 +1523,7 @@ bool Mnemonic::RAL(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 0))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 	bool MSB = Register::Main[REGISTER::A] & (1 << 7);
 	Register::Main[REGISTER::A] <<= 1;//Left Shift by 1 bit
@@ -1492,7 +1538,7 @@ bool Mnemonic::RRC(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 0))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 	Register::Flag::CY = Register::Main[REGISTER::A] & 1;
 	Register::Main[REGISTER::A] >>= 1; //Right Shift by 1 bit
@@ -1505,7 +1551,7 @@ bool Mnemonic::RAR(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 0))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 	bool LSB = Register::Main[REGISTER::A] & 1;
 	Register::Main[REGISTER::A] >>= 1;//Right Shift by 1 bit
@@ -1518,7 +1564,7 @@ bool Mnemonic::STC(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 0))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 	Register::Flag::CY = 1;
 	++Register::PC;
@@ -1529,7 +1575,7 @@ bool Mnemonic::CMC(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 0))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 	Register::Flag::CY = !Register::Flag::CY;
 	++Register::PC;
@@ -1540,7 +1586,7 @@ bool Mnemonic::CMP(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 	const std::string reg = operands.first;
 	int A = Register::Main[REGISTER::A], R = 0;
@@ -1554,9 +1600,9 @@ bool Mnemonic::CMP(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, ProgramManager::Program[Register::PC].line_number);
 	}
-	
+
 	int _2sc = Utility::_8bit_2sc(R);
 	int temp = A + _2sc;
 	Utility::_8Bit_Normalization(temp);
@@ -1579,14 +1625,14 @@ bool Mnemonic::CPI(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	int A = Register::Main[REGISTER::A], R = Converter::HexToDec(operands.first);
 
 	if (R > 0xFF)
 	{
-		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, ProgramManager::Program[Register::PC].line_number);
 	}
 
 	int _2sc = Utility::_8bit_2sc(R);
@@ -1610,9 +1656,16 @@ bool Mnemonic::JMP(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
-	Register::PC = Program::Loop[operands.first];
+	else if (!ProgramManager::isValidJumpPoint(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_JUMP_POINT, ProgramManager::Program[Register::PC].line_number);
+	}
+	else
+	{
+		Register::PC = ProgramManager::JumpPoint[operands.first];
+	}
 	return true;
 }
 
@@ -1620,18 +1673,33 @@ bool Mnemonic::JC(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
-	Register::PC = Register::Flag::CY ? Program::Loop[operands.first] : Register::PC + 1;
+	else if (!ProgramManager::isValidJumpPoint(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_JUMP_POINT, ProgramManager::Program[Register::PC].line_number);
+	}
+	else
+	{
+		Register::PC = Register::Flag::CY ? ProgramManager::JumpPoint[operands.first] : Register::PC + 1;
+	}
+	return true;
 }
 
 bool Mnemonic::JNC(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
-	Register::PC = Register::Flag::CY ? Register::PC + 1 : Program::Loop[operands.first];
+	else if (!ProgramManager::isValidJumpPoint(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_JUMP_POINT, ProgramManager::Program[Register::PC].line_number);
+	}
+	else
+	{
+		Register::PC = Register::Flag::CY ? Register::PC + 1 : ProgramManager::JumpPoint[operands.first];
+	}
 	return true;
 }
 
@@ -1639,9 +1707,16 @@ bool Mnemonic::JZ(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
-	Register::PC = Register::Flag::ZF ? Program::Loop[operands.first] : Register::PC + 1;
+	else if (!ProgramManager::isValidJumpPoint(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_JUMP_POINT, ProgramManager::Program[Register::PC].line_number);
+	}
+	else
+	{
+		Register::PC = Register::Flag::ZF ? ProgramManager::JumpPoint[operands.first] : Register::PC + 1;
+	}
 	return true;
 }
 
@@ -1649,9 +1724,16 @@ bool Mnemonic::JNZ(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
-	Register::PC = Register::Flag::ZF ? Register::PC + 1 : Program::Loop[operands.first];
+	else if (!ProgramManager::isValidJumpPoint(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_JUMP_POINT, ProgramManager::Program[Register::PC].line_number);
+	}
+	else
+	{
+		Register::PC = Register::Flag::ZF ? Register::PC + 1 : ProgramManager::JumpPoint[operands.first];
+	}
 	return true;
 }
 
@@ -1659,9 +1741,16 @@ bool Mnemonic::JPE(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
-	Register::PC = Register::Flag::PF ? Program::Loop[operands.first] : Register::PC + 1;
+	else if (!ProgramManager::isValidJumpPoint(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_JUMP_POINT, ProgramManager::Program[Register::PC].line_number);
+	}
+	else
+	{
+		Register::PC = Register::Flag::PF ? ProgramManager::JumpPoint[operands.first] : Register::PC + 1;
+	}
 	return true;
 }
 
@@ -1669,9 +1758,16 @@ bool Mnemonic::JPO(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
-	Register::PC = Register::Flag::PF ? Register::PC + 1 : Program::Loop[operands.first];
+	else if (!ProgramManager::isValidJumpPoint(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_JUMP_POINT, ProgramManager::Program[Register::PC].line_number);
+	}
+	else
+	{
+		Register::PC = Register::Flag::PF ? Register::PC + 1 : ProgramManager::JumpPoint[operands.first];
+	}
 	return true;
 }
 
@@ -1679,19 +1775,422 @@ bool Mnemonic::JM(const std::pair<std::string, std::string>& operands)
 {
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
-	Register::PC = Register::Flag::SF ? Program::Loop[operands.first] : Register::PC + 1;
+	else if (!ProgramManager::isValidJumpPoint(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_JUMP_POINT, ProgramManager::Program[Register::PC].line_number);
+	}
+	else
+	{
+		Register::PC = Register::Flag::SF ? ProgramManager::JumpPoint[operands.first] : Register::PC + 1;
+	}
 	return true;
 }
 
 bool Mnemonic::JP(const std::pair<std::string, std::string>& operands)
 {
+
 	if (!Mnemonic::validOperandCount(operands, 1))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
-	Register::PC = Register::Flag::SF ? Register::PC + 1 : Program::Loop[operands.first];
+	else if (!ProgramManager::isValidJumpPoint(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_JUMP_POINT, ProgramManager::Program[Register::PC].line_number);
+	}
+	else
+	{
+		Register::PC = Register::Flag::SF ? Register::PC + 1 : ProgramManager::JumpPoint[operands.first];
+	}
+	return true;
+}
+
+bool Mnemonic::CALL(const std::pair<std::string, std::string>& operands)
+{
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+	else if (!ProgramManager::isValidJumpPoint(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_JUMP_POINT, ProgramManager::Program[Register::PC].line_number);
+	}
+	else
+	{
+		ProgramManager::CallStack.push(Register::PC + 1);
+		Register::PC = ProgramManager::JumpPoint[operands.first];
+	}
+	return true;
+}
+
+
+bool Mnemonic::CNC(const std::pair<std::string, std::string>& operands)
+{
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+	else if (!ProgramManager::isValidJumpPoint(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_JUMP_POINT, ProgramManager::Program[Register::PC].line_number);
+	}
+	else
+	{
+		if (Register::Flag::CY)
+		{
+			++Register::PC;
+		}
+		else
+		{
+			ProgramManager::CallStack.push(Register::PC + 1);
+			Register::PC = ProgramManager::JumpPoint[operands.first];
+		}
+	}
+	return true;
+}
+
+bool Mnemonic::CC(const std::pair<std::string, std::string>& operands)
+{
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+	else if (!ProgramManager::isValidJumpPoint(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_JUMP_POINT, ProgramManager::Program[Register::PC].line_number);
+	}
+	else
+	{
+		if (Register::Flag::CY)
+		{
+			ProgramManager::CallStack.push(Register::PC + 1);
+			Register::PC = ProgramManager::JumpPoint[operands.first];
+		}
+		else
+		{
+			++Register::PC;
+		}
+	}
+	return true;
+}
+
+
+bool Mnemonic::CZ(const std::pair<std::string, std::string>& operands)
+{
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+	else if (!ProgramManager::isValidJumpPoint(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_JUMP_POINT, ProgramManager::Program[Register::PC].line_number);
+	}
+	else
+	{
+		if (Register::Flag::ZF)
+		{
+			ProgramManager::CallStack.push(Register::PC + 1);
+			Register::PC = ProgramManager::JumpPoint[operands.first];
+		}
+		else
+		{
+			++Register::PC;
+		}
+	}
+	return true;
+}
+
+
+bool Mnemonic::CNZ(const std::pair<std::string, std::string>& operands)
+{
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+	else if (!ProgramManager::isValidJumpPoint(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_JUMP_POINT, ProgramManager::Program[Register::PC].line_number);
+	}
+	else
+	{
+		if (Register::Flag::CY)
+		{
+			++Register::PC;
+		}
+		else
+		{
+			ProgramManager::CallStack.push(Register::PC + 1);
+			Register::PC = ProgramManager::JumpPoint[operands.first];
+		}
+	}
+	return true;
+}
+
+
+bool Mnemonic::CPE(const std::pair<std::string, std::string>& operands)
+{
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+	else if (!ProgramManager::isValidJumpPoint(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_JUMP_POINT, ProgramManager::Program[Register::PC].line_number);
+	}
+	else
+	{
+		if (Register::Flag::PF)
+		{
+			ProgramManager::CallStack.push(Register::PC + 1);
+			Register::PC = ProgramManager::JumpPoint[operands.first];
+		}
+		else
+		{
+			++Register::PC;
+		}
+	}
+	return true;
+}
+
+bool Mnemonic::CPO(const std::pair<std::string, std::string>& operands)
+{
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+	else if (!ProgramManager::isValidJumpPoint(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_JUMP_POINT, ProgramManager::Program[Register::PC].line_number);
+	}
+	else
+	{
+		if (Register::Flag::PF)
+		{
+			++Register::PC;
+		}
+		else
+		{
+			ProgramManager::CallStack.push(Register::PC + 1);
+			Register::PC = ProgramManager::JumpPoint[operands.first];
+		}
+	}
+	return true;
+}
+
+
+bool Mnemonic::CP(const std::pair<std::string, std::string>& operands)
+{
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+	else if (!ProgramManager::isValidJumpPoint(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_JUMP_POINT, ProgramManager::Program[Register::PC].line_number);
+	}
+	else
+	{
+		if (Register::Flag::SF)
+		{
+			++Register::PC;
+		}
+		else
+		{
+			ProgramManager::CallStack.push(Register::PC + 1);
+			Register::PC = ProgramManager::JumpPoint[operands.first];
+		}
+	}
+	return true;
+}
+
+bool Mnemonic::CM(const std::pair<std::string, std::string>& operands)
+{
+	if (!Mnemonic::validOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+	else if (!ProgramManager::isValidJumpPoint(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_JUMP_POINT, ProgramManager::Program[Register::PC].line_number);
+	}
+	else
+	{
+		if (Register::Flag::SF)
+		{
+			ProgramManager::CallStack.push(Register::PC + 1);
+			Register::PC = ProgramManager::JumpPoint[operands.first];
+		}
+		else
+		{
+			++Register::PC;
+		}
+	}
+	return true;
+}
+
+bool Mnemonic::RET(const std::pair<std::string, std::string>& operands)
+{
+	if (!Mnemonic::validOperandCount(operands, 0))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+
+	Register::PC = ProgramManager::CallStack.top();
+	ProgramManager::CallStack.pop();
+	return true;
+}
+
+bool Mnemonic::RNC(const std::pair<std::string, std::string>& operands)
+{
+	if (!Mnemonic::validOperandCount(operands, 0))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+
+	if (Register::Flag::CY)
+	{
+		++Register::PC;
+	}
+	else
+	{
+		Register::PC = ProgramManager::CallStack.top();
+		ProgramManager::CallStack.pop();
+	}
+	return true;
+}
+
+bool Mnemonic::RC(const std::pair<std::string, std::string>& operands)
+{
+	if (!Mnemonic::validOperandCount(operands, 0))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+
+	if (Register::Flag::CY)
+	{
+		Register::PC = ProgramManager::CallStack.top();
+		ProgramManager::CallStack.pop();
+	}
+	else
+	{
+		++Register::PC;
+	}
+	return true;
+}
+
+bool Mnemonic::RZ(const std::pair<std::string, std::string>& operands)
+{
+	if (!Mnemonic::validOperandCount(operands, 0))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+
+	if (Register::Flag::ZF)
+	{
+		Register::PC = ProgramManager::CallStack.top();
+		ProgramManager::CallStack.pop();
+	}
+	else
+	{
+		++Register::PC;
+	}
+	return true;
+}
+
+bool Mnemonic::RNZ(const std::pair<std::string, std::string>& operands)
+{
+	if (!Mnemonic::validOperandCount(operands, 0))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+
+	if (Register::Flag::ZF)
+	{
+		++Register::PC;
+	}
+	else
+	{
+		Register::PC = ProgramManager::CallStack.top();
+		ProgramManager::CallStack.pop();
+	}
+	return true;
+}
+
+
+bool Mnemonic::RPE(const std::pair<std::string, std::string>& operands)
+{
+	if (!Mnemonic::validOperandCount(operands, 0))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+
+	if (Register::Flag::PF)
+	{
+		Register::PC = ProgramManager::CallStack.top();
+		ProgramManager::CallStack.pop();
+	}
+	else
+	{
+		++Register::PC;
+	}
+	return true;
+}
+
+bool Mnemonic::RPO(const std::pair<std::string, std::string>& operands)
+{
+	if (!Mnemonic::validOperandCount(operands, 0))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+
+	if (Register::Flag::PF)
+	{
+		++Register::PC;
+	}
+	else
+	{
+		Register::PC = ProgramManager::CallStack.top();
+		ProgramManager::CallStack.pop();
+	}
+	return true;
+}
+
+bool Mnemonic::RM(const std::pair<std::string, std::string>& operands)
+{
+	if (!Mnemonic::validOperandCount(operands, 0))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+
+	if (Register::Flag::SF)
+	{
+		Register::PC = ProgramManager::CallStack.top();
+		ProgramManager::CallStack.pop();
+	}
+	else
+	{
+		++Register::PC;
+	}
+	return true;
+}
+
+bool Mnemonic::RP(const std::pair<std::string, std::string>& operands)
+{
+	if (!Mnemonic::validOperandCount(operands, 0))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+
+	if (Register::Flag::SF)
+	{
+		++Register::PC;
+	}
+	else
+	{
+		Register::PC = ProgramManager::CallStack.top();
+		ProgramManager::CallStack.pop();
+	}
 	return true;
 }
 
@@ -1699,9 +2198,9 @@ bool Mnemonic::HLT(const std::pair<std::string, std::string>& operands)//return 
 {
 	if (!Mnemonic::validOperandCount(operands, 0))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
-	Program::HLT = true;
+	ProgramManager::HLT = true;
 	return false;
 }
 
@@ -1710,20 +2209,20 @@ void DebugLex()
 {
 	std::ofstream file;
 	file.open("debug_lex.txt");
-	for (Instruction& s : Program::program)
+	for (Instruction& s : ProgramManager::Program)
 	{
 		file << s.mnemonic << ' ' << s.operands.first << ' ' << s.operands.second << '\n';
 	}
 }
 
 
-bool Program::Read(const std::string filePath)
+bool ProgramManager::Read(const std::string filePath)
 {
 	//Resetting
-	Program::program.clear();
-	Program::Loop.clear();
+	ProgramManager::Program.clear();
+	ProgramManager::JumpPoint.clear();
 	Register::Clear();
-	Program::HLT = false;
+	ProgramManager::HLT = false;
 
 	std::fstream file;
 	file.open(filePath, std::ios::in);
@@ -1763,7 +2262,7 @@ bool Program::Read(const std::string filePath)
 		if (tokens[token_idx].back() == ':') //If it is a loop
 		{
 			Converter::ToUpperString(tokens[token_idx]);
-			Loop[tokens[token_idx].substr(0, tokens[token_idx].size() - 1)] = program.size();
+			JumpPoint[tokens[token_idx].substr(0, tokens[token_idx].size() - 1)] = Program.size();
 			++token_idx;
 		}
 
@@ -1854,16 +2353,12 @@ bool Program::Read(const std::string filePath)
 			return Error::Throw(ERROR_TYPE::SYNTAX, line_number);
 		}
 
-		program.push_back(instruction);
+		Program.push_back(instruction);
 		++line_number;
 	}
-	if (program.empty())
+	if (Program.empty())
 	{
 		return Error::Throw(ERROR_TYPE::EMPTY_FILE);
-	}
-	else if (program.back().mnemonic != MNEMONIC::HLT)
-	{
-		return Error::Throw(ERROR_TYPE::HLT_MISSING);
 	}
 	else
 	{
@@ -1871,7 +2366,7 @@ bool Program::Read(const std::string filePath)
 	}
 }
 
-void Program::Run()
+void ProgramManager::Run()
 {
-	while (Mnemonic::Execute[program[Register::PC].mnemonic](program[Register::PC].operands));
+	while (Mnemonic::Execute[Program[Register::PC].mnemonic](Program[Register::PC].operands));
 }

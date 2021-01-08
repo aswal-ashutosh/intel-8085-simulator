@@ -342,10 +342,10 @@ void MainFrame::OnDebug(wxCommandEvent& event)
 void MainFrame::Run8085(const std::string& filePath)
 {
 	Clear();//Clearing Frontend
-	if (Program::Read(filePath))//Read function is responsible for clearing the backend
+	if (ProgramManager::Read(filePath))//Read function is responsible for clearing the backend
 	{
-		Program::Run();
-		if (Program::HLT)
+		ProgramManager::Run();
+		if (ProgramManager::HLT)
 		{
 			UpdateFlagRegister();
 			UpdateRegisters();
@@ -358,23 +358,23 @@ void MainFrame::Run8085(const std::string& filePath)
 void MainFrame::Debug8085(const std::string& filePath)
 {
 	Clear();//Clearing Front End
-	if (Program::Read(filePath))//Read function is responsible for clearing the backend
+	if (ProgramManager::Read(filePath))//Read function is responsible for clearing the backend
 	{
 		m_ExecuteButton->Enable();
 		m_DebugButton->Disable();
 		m_StopButton->Enable();
 		m_CurrentLineTextCtrl->Clear();
-		m_CurrentLineTextCtrl->AppendText(ToWxString(std::to_string(Program::program[Register::PC].line_number)));
+		m_CurrentLineTextCtrl->AppendText(ToWxString(std::to_string(ProgramManager::Program[Register::PC].line_number)));
 		m_EditBox->SetEditable(false);//Disabling Editor
 		m_ToolBar->Disable();//Disabling the toolbar
-		m_EditBox->MarkerAdd(Program::program[Register::PC].line_number - 1, 0);
+		m_EditBox->MarkerAdd(ProgramManager::Program[Register::PC].line_number - 1, 0);
 		m_EditBox->MarkerSetBackground(0, *wxRED);
 	}
 }
 
 void MainFrame::OnExecute(wxCommandEvent& event)
 {
-	const Instruction& instruction = Program::program[Register::PC];
+	const Instruction& instruction = ProgramManager::Program[Register::PC];
 
 	if (Mnemonic::Execute[instruction.mnemonic](instruction.operands))//Successful execution of a instruction
 	{
@@ -382,12 +382,12 @@ void MainFrame::OnExecute(wxCommandEvent& event)
 		UpdateRegisters();
 		UpdateMemory();
 		m_CurrentLineTextCtrl->Clear();
-		m_CurrentLineTextCtrl->AppendText(ToWxString(std::to_string(Program::program[Register::PC].line_number)));
+		m_CurrentLineTextCtrl->AppendText(ToWxString(std::to_string(ProgramManager::Program[Register::PC].line_number)));
 		m_EditBox->MarkerDeleteAll(0);
-		m_EditBox->MarkerAdd(Program::program[Register::PC].line_number - 1, 0);
+		m_EditBox->MarkerAdd(ProgramManager::Program[Register::PC].line_number - 1, 0);
 		m_EditBox->MarkerSetBackground(0, *wxRED);
 	}
-	else if (Program::HLT)//HLT get executed
+	else if (ProgramManager::HLT)//HLT get executed
 	{
 		wxMessageBox(MESSAGE::SUCCESSFUL_EXECUTION, DIALOG::EXECUTION_STOPPED);
 		OnStopDebug(event);
