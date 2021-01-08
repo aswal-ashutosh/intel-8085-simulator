@@ -42,12 +42,6 @@
     </Text>
   </ItemGroup>
   <ItemGroup>
-    <None Include="res\ABOUT.html">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="res\HELP.html">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="res\about_doc.html">
       <Filter>Resource Files</Filter>
     </None>
