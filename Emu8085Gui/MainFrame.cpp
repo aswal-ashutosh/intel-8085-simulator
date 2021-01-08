@@ -418,7 +418,7 @@ void MainFrame::OnAbout(wxCommandEvent& event)
 	wxBoxSizer* dialogSizer = new wxBoxSizer(wxVERTICAL);
 	wxHtmlWindow* html = new wxHtmlWindow(&aboutDialog, wxID_ANY, wxDefaultPosition, wxSize(380, 160), wxHW_SCROLLBAR_NEVER);
 	html->SetBorders(1);
-	html->LoadPage("res\\about_doc.html");
+	html->LoadPage(PATH::ABOUT_HTML_FILE);
 	html->SetSize(html->GetInternalRepresentation()->GetWidth(), html->GetInternalRepresentation()->GetHeight());
 	dialogSizer->Add(html, 1, wxALL, 10);
 	wxButton* OKButton = new wxButton(&aboutDialog, wxID_OK, _("OK"));
@@ -435,7 +435,7 @@ void MainFrame::OnHelp(wxCommandEvent& event)
 	wxBoxSizer* dialogSizer = new wxBoxSizer(wxVERTICAL);
 	wxHtmlWindow* html = new wxHtmlWindow(&helpDialog, wxID_ANY, wxDefaultPosition, wxSize(800, 600));
 	html->SetBorders(1);
-	html->LoadPage("res\\help_doc.html");
+	html->LoadPage(PATH::HELP_HTML_FILE);
 	html->SetSize(html->GetInternalRepresentation()->GetWidth(), html->GetInternalRepresentation()->GetHeight());
 	dialogSizer->Add(html, 1, wxALL, 10);
 	wxButton* OKButton = new wxButton(&helpDialog, wxID_OK, _("OK"));
