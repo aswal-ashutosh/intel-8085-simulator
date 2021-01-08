@@ -220,6 +220,7 @@ void MainFrame::OnRun(wxCommandEvent& event)
 	}
 	else
 	{
+		m_EditBox->SaveFile(m_currentFilePath);
 		Run8085(ToString(m_currentFilePath));
 	}
 }
@@ -319,8 +320,6 @@ void MainFrame::Clear()
 	m_FlagRegCheckList->Check(m_FlagRegCheckList->FindString("S"), false);
 	m_FlagRegCheckList->Check(m_FlagRegCheckList->FindString("P"), false);
 
-	//Clearing Backend
-	Register::Clear();
 }
 
 void MainFrame::OnDebug(wxCommandEvent& event)
@@ -335,27 +334,32 @@ void MainFrame::OnDebug(wxCommandEvent& event)
 	}
 	else
 	{
+		m_EditBox->SaveFile(m_currentFilePath);
 		Debug8085(ToString(m_currentFilePath));
 	}
 }
 
 void MainFrame::Run8085(const std::string& filePath)
 {
-	if (Program::Read(filePath))
+	Clear();//Clearing Frontend
+	if (Program::Read(filePath))//Read function is responsible for clearing the backend
 	{
-		Clear();//Clearing Front End + Back End
 		Program::Run();
-		UpdateFlagRegister();
-		UpdateRegisters();
-		UpdateMemory();
+		if (Program::HLT)
+		{
+			UpdateFlagRegister();
+			UpdateRegisters();
+			UpdateMemory();
+			wxMessageBox(MESSAGE::SUCCESSFUL_EXECUTION, DIALOG::EXECUTION_STOPPED);
+		}
 	}
 }
 
 void MainFrame::Debug8085(const std::string& filePath)
 {
-	if (Program::Read(filePath))
+	Clear();//Clearing Front End
+	if (Program::Read(filePath))//Read function is responsible for clearing the backend
 	{
-		Clear();//Clearing Front End + Back End
 		m_ExecuteButton->Enable();
 		m_DebugButton->Disable();
 		m_StopButton->Enable();
@@ -372,16 +376,7 @@ void MainFrame::OnExecute(wxCommandEvent& event)
 {
 	const Instruction& instruction = Program::program[Register::PC];
 
-	if (!Mnemonic::Execute[instruction.mnemonic](instruction.operands))//Error occurred
-	{
-		OnStopDebug(event);
-	}
-	else if (Program::HLT)//Execution finished
-	{
-		wxMessageBox(MESSAGE::SUCCESSFUL_EXECUTION, DIALOG::EXECUTION_STOPPED);
-		OnStopDebug(event);
-	}
-	else //Successful execution of a instruction(Not HLT)
+	if (Mnemonic::Execute[instruction.mnemonic](instruction.operands))//Successful execution of a instruction
 	{
 		UpdateFlagRegister();
 		UpdateRegisters();
@@ -391,7 +386,15 @@ void MainFrame::OnExecute(wxCommandEvent& event)
 		m_EditBox->MarkerDeleteAll(0);
 		m_EditBox->MarkerAdd(Program::program[Register::PC].line_number - 1, 0);
 		m_EditBox->MarkerSetBackground(0, *wxRED);
-
+	}
+	else if (Program::HLT)//HLT get executed
+	{
+		wxMessageBox(MESSAGE::SUCCESSFUL_EXECUTION, DIALOG::EXECUTION_STOPPED);
+		OnStopDebug(event);
+	}
+	else//Error
+	{
+		OnStopDebug(event);
 	}
 }
 
@@ -415,7 +418,7 @@ void MainFrame::OnAbout(wxCommandEvent& event)
 	wxBoxSizer* dialogSizer = new wxBoxSizer(wxVERTICAL);
 	wxHtmlWindow* html = new wxHtmlWindow(&aboutDialog, wxID_ANY, wxDefaultPosition, wxSize(380, 160), wxHW_SCROLLBAR_NEVER);
 	html->SetBorders(1);
-	html->LoadPage(PATH::ABOUT_HTML_FILE);
+	html->LoadPage("res\\about_doc.html");
 	html->SetSize(html->GetInternalRepresentation()->GetWidth(), html->GetInternalRepresentation()->GetHeight());
 	dialogSizer->Add(html, 1, wxALL, 10);
 	wxButton* OKButton = new wxButton(&aboutDialog, wxID_OK, _("OK"));
@@ -432,7 +435,7 @@ void MainFrame::OnHelp(wxCommandEvent& event)
 	wxBoxSizer* dialogSizer = new wxBoxSizer(wxVERTICAL);
 	wxHtmlWindow* html = new wxHtmlWindow(&helpDialog, wxID_ANY, wxDefaultPosition, wxSize(800, 600));
 	html->SetBorders(1);
-	html->LoadPage(PATH::HELP_HTML_FILE);
+	html->LoadPage("res\\help_doc.html");
 	html->SetSize(html->GetInternalRepresentation()->GetWidth(), html->GetInternalRepresentation()->GetHeight());
 	dialogSizer->Add(html, 1, wxALL, 10);
 	wxButton* OKButton = new wxButton(&helpDialog, wxID_OK, _("OK"));

@@ -1695,14 +1695,14 @@ bool Mnemonic::JP(const std::pair<std::string, std::string>& operands)
 	return true;
 }
 
-bool Mnemonic::HLT(const std::pair<std::string, std::string>& operands)
+bool Mnemonic::HLT(const std::pair<std::string, std::string>& operands)//return false even on successful execcution But will change Program::HLT = true
 {
 	if (!Mnemonic::validOperandCount(operands, 0))
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, Program::program[Register::PC].line_number);
 	}
 	Program::HLT = true;
-	return true;
+	return false;
 }
 
 //Function to print the lexer output to a file
@@ -1719,8 +1719,10 @@ void DebugLex()
 
 bool Program::Read(const std::string filePath)
 {
-	Program::program.clear();//Clearing previous program
-	Program::Loop.clear();//Clearing previous program
+	//Resetting
+	Program::program.clear();
+	Program::Loop.clear();
+	Register::Clear();
 	Program::HLT = false;
 
 	std::fstream file;
@@ -1871,12 +1873,5 @@ bool Program::Read(const std::string filePath)
 
 void Program::Run()
 {
-	while (!HLT)
-	{
-		const Instruction& instruction = program[Register::PC];
-		if (!Mnemonic::Execute[instruction.mnemonic](instruction.operands))
-		{
-			break;
-		}
-	}
+	while (Mnemonic::Execute[program[Register::PC].mnemonic](program[Register::PC].operands));
 }

@@ -33,7 +33,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="res\ABOUT.html" />
+    <None Include="res\about_doc.html" />
     <None Include="res\HELP.html" />
+    <None Include="res\help_doc.html" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

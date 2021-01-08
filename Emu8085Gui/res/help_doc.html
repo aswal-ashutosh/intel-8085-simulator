@@ -1,0 +1,196 @@
+<HTML>
+<HEAD>
+    <META NAME="GENERATOR" Content="Microsoft Visual Studio">
+    <TITLE></TITLE>
+</HEAD>
+<BODY>
+    <center><h1><u>COMPONENTS</u></h1></center>
+    <ol>
+        <li>
+            <p>
+                <h3>FLAG REGISTER PANEL</h3>
+                <em>It will display the status of <strong>Flag Register</strong>.</em>
+            </p><br>
+        </li>
+
+
+
+        <li>
+            <p>
+                <h3>REGISTER PANEL</h3>
+                <em>
+                    It display the content of
+                    <strong>A</strong>,
+                    <strong>B</strong>,
+                    <strong>C</strong>,
+                    <strong>D</strong>,
+                    <strong>E</strong>,
+                    <strong>H</strong> &
+                    <strong>L</strong>
+                    Register in <strong>hexadecimal</strong>.
+                </em>
+            </p><br>
+        </li>
+
+
+
+        <li>
+            <p>
+                <h3>MEMORY INITIALIZER PANEL</h3><br>
+
+                <em>
+                    It provide way to feed data in memory location ranging from [0000 - FFFF].<br><br>
+                    <strong>Direction To Use:</strong> Provide the address and data in the corresponding text box and click on <strong>SET</strong> button.
+                </em>
+            </p><br>
+        </li>
+
+
+
+        <li>
+            <h3>MEMORY VIEWER PANEL</h3>
+            <p>
+                <em>
+                    It provide way to view the data in the memory.<br><br>
+                    <strong>Direction To Use:</strong> Provide the starting address and the count(number of locations to be accessed from the starting address) in the corresponding text box and click on the <strong>VIEW</strong> button.<br>
+                </em>
+            </p><br>
+        </li>
+
+
+
+        <li>
+            <p>
+                <h3>DEBUGGER PANEL</h3>
+                <em>It provide mechanism to debug the code.</em><br><br>
+                <strong>Direction To Use</strong><br>
+                <ol>
+                    <li><em>Write the code.</em></li>
+                    <li><em>Make sure to save the file.</em></li>
+                    <li><em>Hit Debug button which will enable the Execute and STOP button.</em></li>
+                    <li><em>Hit the execute button to execute/run the line number shown in the Debugger Panel.</em></li>
+                    <li><em>Hit the STOP button to stop debugging.</em></li>
+                </ol>
+                <br>
+                <strong><em>Note:</em></strong>
+                <ul>
+                    <li><em>Debugger will stop automatically after executing HLT instruction.</em></li>
+                    <li><em>Use STOP button to stop debugging in between.</em></li>
+                </ul>
+            </p><br>
+        </li>
+    </ol>
+
+    <center><h1><u>KEY POINTS</u></h1></center>
+
+    <ol>
+        <li>
+            <p>
+                <h3>Loop/Jump</h3>
+                <em>
+                    <br>
+                    In order to jump to a specific line of code create a <strong>Jump-Point</strong>.
+                    Jump Point is any string ending with <strong>':'</strong>.<br>
+                    for example: "LOOP:", "HERE:" etc.<br><br>
+                    <strong>Note:</strong> All Jump-Point strings will be considered in their uppercase form i.e., "LOOP:", "Loop:",
+                    "loop:", "loOP:", . . . . . . will be considered as same Jump-Point as all of them same uppercase form "LOOP:".<br>
+                    <br>
+                    <strong><u>Example of a program using Jump-Point</u></strong><br><br>
+                </em>
+                LDA 2050<br>
+                MOV D, A<br>
+                MVI B, 0A<br>
+                LXI H, 3050<br>
+                MVI C, 00<br>
+                <strong>LOOP:</strong> MOV A, D
+                ADD C<br>
+                MOV M, A<br>
+                INX H<br>
+                MOV C, A<br>
+                DCR B<br>
+                JNZ <strong>LOOP</strong><br>
+                HLT<br>
+            </p><br>
+        </li>
+
+
+        <li>
+            <p>
+                <h3>How to use comments in code</h3>
+                <em>
+                    Any line <strong>starting</strong> with <strong>'@'</strong> symbol will be considered as comment in the code.<br><br>
+                    <strong><u>Example of a program using Comments</u></strong><br><br>
+                </em>
+                MVI A, 00<br>
+                MVI B, 11<br>
+                @Next line will add B register content to A and will store result in A<br>
+                ADD B<br>
+                HLT<br><br>
+                <em><strong>Note:</strong> You can not comment in between, i.e.,</em> <br><br>
+                <ul>
+                    <li>
+                        MOV A, B @Will copy the content of B to A &emsp;&emsp;<strong>[WRONG]</strong>
+                    </li>
+                    <li>
+                        @Next line will copy the content of B to A &emsp;&emsp;<strong>[CORRECT]</strong><br>
+                        MOV A, B
+                    </li>
+                </ul>
+            </p><br>
+        </li>
+
+
+        <li>
+            <p>
+                <h3>Empty lines</h3>
+                <em>
+                    All empty lines in between the codes will be <strong>ignored</strong>.<br><br>
+                </em>
+            </p><br>
+        </li>
+
+
+        <li>
+            <p>
+                <h3>Hexadecimal Values</h3>
+                <em>
+                    Do not use <strong>H</strong> or <strong>h</strong> to represent the hexadecimal values as application is designed in such a way that it
+                    will always consider every immediate data in hexadecimal number system only.
+                </em><br>
+                <ul>
+                    <li>
+                        MVI A, 3F&emsp;&emsp;<strong>[CORRECT]</strong>
+                    </li>
+                    <li>
+                        LXI H, 1F33&emsp;&emsp;<strong>[CORRECT]</strong>
+                    </li>
+                    <li>
+                        MVI A, 3Fh&emsp;&emsp;<strong>[WRONG]</strong>
+                    </li>
+                    <li>
+                        LXI B, 1F33H&emsp;&emsp;<strong>[WRONG]</strong>
+                    </li>
+                </ul>
+            </p><br>
+        </li>
+
+
+        <li>
+            <p>
+                <h3>How to write a avoid syntax error</h3>
+                Separate every token by a space, i.e.,
+                <table>
+                    <tbody>
+                        <tr><td>MOV A, B</td><td><strong>[CORRECT]</strong></td></tr>
+                        <tr><td>MOV A , B</td><td><strong>[CORRECT]</strong></td></tr>
+                        <tr><td>MOV A ,B</td><td><strong>[CORRECT]</strong></td></tr>
+                        <tr><td>LOOP: MVI A, 00</td><td><strong>[CORRECT]</strong></td></tr>
+                        <tr><td>MOV A,B</td><td><strong>[WRONG: There must be a white space eihter before or after the ',']</strong></td></tr>
+                        <tr><td>LOOP:MVI A, 00</td><td><strong>[WRONG: There must be a white space after Loop-Point]</strong></td></tr>
+                    </tbody>
+                </table>
+            </p>
+        </li>
+    </ol>
+</BODY>
+</HTML>
