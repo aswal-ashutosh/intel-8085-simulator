@@ -1695,7 +1695,7 @@ bool Mnemonic::JMP(const std::pair<std::string, std::string>& operands)
 	}
 	else if (!ProgramManager::IsValidJumpPoint(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_JUMP_POINT, ProgramManager::Program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_LABEL, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
@@ -1712,7 +1712,7 @@ bool Mnemonic::JC(const std::pair<std::string, std::string>& operands)
 	}
 	else if (!ProgramManager::IsValidJumpPoint(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_JUMP_POINT, ProgramManager::Program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_LABEL, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
@@ -1729,7 +1729,7 @@ bool Mnemonic::JNC(const std::pair<std::string, std::string>& operands)
 	}
 	else if (!ProgramManager::IsValidJumpPoint(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_JUMP_POINT, ProgramManager::Program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_LABEL, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
@@ -1746,7 +1746,7 @@ bool Mnemonic::JZ(const std::pair<std::string, std::string>& operands)
 	}
 	else if (!ProgramManager::IsValidJumpPoint(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_JUMP_POINT, ProgramManager::Program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_LABEL, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
@@ -1763,7 +1763,7 @@ bool Mnemonic::JNZ(const std::pair<std::string, std::string>& operands)
 	}
 	else if (!ProgramManager::IsValidJumpPoint(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_JUMP_POINT, ProgramManager::Program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_LABEL, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
@@ -1780,7 +1780,7 @@ bool Mnemonic::JPE(const std::pair<std::string, std::string>& operands)
 	}
 	else if (!ProgramManager::IsValidJumpPoint(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_JUMP_POINT, ProgramManager::Program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_LABEL, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
@@ -1797,7 +1797,7 @@ bool Mnemonic::JPO(const std::pair<std::string, std::string>& operands)
 	}
 	else if (!ProgramManager::IsValidJumpPoint(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_JUMP_POINT, ProgramManager::Program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_LABEL, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
@@ -1814,7 +1814,7 @@ bool Mnemonic::JM(const std::pair<std::string, std::string>& operands)
 	}
 	else if (!ProgramManager::IsValidJumpPoint(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_JUMP_POINT, ProgramManager::Program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_LABEL, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
@@ -1832,7 +1832,7 @@ bool Mnemonic::JP(const std::pair<std::string, std::string>& operands)
 	}
 	else if (!ProgramManager::IsValidJumpPoint(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_JUMP_POINT, ProgramManager::Program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_LABEL, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
@@ -1849,7 +1849,7 @@ bool Mnemonic::CALL(const std::pair<std::string, std::string>& operands)
 	}
 	else if (!ProgramManager::IsValidJumpPoint(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_JUMP_POINT, ProgramManager::Program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_LABEL, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
@@ -1868,7 +1868,7 @@ bool Mnemonic::CNC(const std::pair<std::string, std::string>& operands)
 	}
 	else if (!ProgramManager::IsValidJumpPoint(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_JUMP_POINT, ProgramManager::Program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_LABEL, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
@@ -1893,7 +1893,7 @@ bool Mnemonic::CC(const std::pair<std::string, std::string>& operands)
 	}
 	else if (!ProgramManager::IsValidJumpPoint(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_JUMP_POINT, ProgramManager::Program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_LABEL, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
@@ -1919,7 +1919,7 @@ bool Mnemonic::CZ(const std::pair<std::string, std::string>& operands)
 	}
 	else if (!ProgramManager::IsValidJumpPoint(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_JUMP_POINT, ProgramManager::Program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_LABEL, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
@@ -1945,7 +1945,7 @@ bool Mnemonic::CNZ(const std::pair<std::string, std::string>& operands)
 	}
 	else if (!ProgramManager::IsValidJumpPoint(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_JUMP_POINT, ProgramManager::Program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_LABEL, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
@@ -1971,7 +1971,7 @@ bool Mnemonic::CPE(const std::pair<std::string, std::string>& operands)
 	}
 	else if (!ProgramManager::IsValidJumpPoint(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_JUMP_POINT, ProgramManager::Program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_LABEL, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
@@ -1996,7 +1996,7 @@ bool Mnemonic::CPO(const std::pair<std::string, std::string>& operands)
 	}
 	else if (!ProgramManager::IsValidJumpPoint(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_JUMP_POINT, ProgramManager::Program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_LABEL, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
@@ -2022,7 +2022,7 @@ bool Mnemonic::CP(const std::pair<std::string, std::string>& operands)
 	}
 	else if (!ProgramManager::IsValidJumpPoint(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_JUMP_POINT, ProgramManager::Program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_LABEL, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
@@ -2047,7 +2047,7 @@ bool Mnemonic::CM(const std::pair<std::string, std::string>& operands)
 	}
 	else if (!ProgramManager::IsValidJumpPoint(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_JUMP_POINT, ProgramManager::Program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::INVALID_LABEL, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
@@ -2070,6 +2070,10 @@ bool Mnemonic::RET(const std::pair<std::string, std::string>& operands)
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
+	else if(ProgramManager::CallStack.empty())//There can't be a return instruction if we don't have any address to return. 
+	{
+		return Error::Throw(ERROR_TYPE::RETURN_WITHOUT_CALL);
+	}
 
 	Register::PC = ProgramManager::CallStack.top();
 	ProgramManager::CallStack.pop();
@@ -2081,6 +2085,10 @@ bool Mnemonic::RNC(const std::pair<std::string, std::string>& operands)
 	if (!Validator::ValidOperandCount(operands, 0))
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+	else if (ProgramManager::CallStack.empty())//There can't be a return instruction if we don't have any address to return. 
+	{
+		return Error::Throw(ERROR_TYPE::RETURN_WITHOUT_CALL);
 	}
 
 	if (Register::Flag::CY)
@@ -2101,6 +2109,10 @@ bool Mnemonic::RC(const std::pair<std::string, std::string>& operands)
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
+	else if (ProgramManager::CallStack.empty())//There can't be a return instruction if we don't have any address to return. 
+	{
+		return Error::Throw(ERROR_TYPE::RETURN_WITHOUT_CALL);
+	}
 
 	if (Register::Flag::CY)
 	{
@@ -2120,6 +2132,10 @@ bool Mnemonic::RZ(const std::pair<std::string, std::string>& operands)
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
+	else if (ProgramManager::CallStack.empty())//There can't be a return instruction if we don't have any address to return. 
+	{
+		return Error::Throw(ERROR_TYPE::RETURN_WITHOUT_CALL);
+	}
 
 	if (Register::Flag::ZF)
 	{
@@ -2138,6 +2154,10 @@ bool Mnemonic::RNZ(const std::pair<std::string, std::string>& operands)
 	if (!Validator::ValidOperandCount(operands, 0))
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+	else if (ProgramManager::CallStack.empty())//There can't be a return instruction if we don't have any address to return. 
+	{
+		return Error::Throw(ERROR_TYPE::RETURN_WITHOUT_CALL);
 	}
 
 	if (Register::Flag::ZF)
@@ -2159,6 +2179,10 @@ bool Mnemonic::RPE(const std::pair<std::string, std::string>& operands)
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
+	else if (ProgramManager::CallStack.empty())//There can't be a return instruction if we don't have any address to return. 
+	{
+		return Error::Throw(ERROR_TYPE::RETURN_WITHOUT_CALL);
+	}
 
 	if (Register::Flag::PF)
 	{
@@ -2177,6 +2201,10 @@ bool Mnemonic::RPO(const std::pair<std::string, std::string>& operands)
 	if (!Validator::ValidOperandCount(operands, 0))
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+	else if (ProgramManager::CallStack.empty())//There can't be a return instruction if we don't have any address to return. 
+	{
+		return Error::Throw(ERROR_TYPE::RETURN_WITHOUT_CALL);
 	}
 
 	if (Register::Flag::PF)
@@ -2197,6 +2225,10 @@ bool Mnemonic::RM(const std::pair<std::string, std::string>& operands)
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
+	else if (ProgramManager::CallStack.empty())//There can't be a return instruction if we don't have any address to return. 
+	{
+		return Error::Throw(ERROR_TYPE::RETURN_WITHOUT_CALL);
+	}
 
 	if (Register::Flag::SF)
 	{
@@ -2215,6 +2247,10 @@ bool Mnemonic::RP(const std::pair<std::string, std::string>& operands)
 	if (!Validator::ValidOperandCount(operands, 0))
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+	else if (ProgramManager::CallStack.empty())//There can't be a return instruction if we don't have any address to return. 
+	{
+		return Error::Throw(ERROR_TYPE::RETURN_WITHOUT_CALL);
 	}
 
 	if (Register::Flag::SF)

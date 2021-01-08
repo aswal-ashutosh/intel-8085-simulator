@@ -15,7 +15,8 @@ namespace ERROR_TYPE
 	const std::string INVALID_DATA = "Invalid Data Provided";
 	const std::string EMPTY_FIELD = "Empty Field Is Not Allowed";
 	const std::string EMPTY_FILE = "Empty File Found";
-	const std::string INVALID_JUMP_POINT = "Invalid Jump Point";
+	const std::string INVALID_LABEL = "Invalid Label";
+	const std::string RETURN_WITHOUT_CALL = "Control Reached Return Statement When There Exist No Subroutine Call";
 }
 
 namespace PATH
