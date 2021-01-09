@@ -87,13 +87,13 @@
                 <h3>Loop/Jump/Call</h3>
                 <em>
                     <br>
-                    In order to jump/call to a specific line of code create a <strong>Jump-Point</strong>.
-                    Jump Point is any string ending with <strong>':'</strong>.<br>
+                    In order to jump/call to a specific line of code create a <strong>label</strong>.<br>
+                    <strong>Label</strong> is any string ending with <strong>':'</strong>,
                     for example: "LOOP:", "HERE:" etc.<br><br>
-                    <strong>Note:</strong> All Jump-Point strings will be considered in their uppercase form i.e., "LOOP:", "Loop:",
+                    <strong>Note:</strong> All label strings will be considered in their uppercase form i.e., "LOOP:", "Loop:",
                     "loop:", "loOP:", . . . . . . will be considered as same Jump-Point as all of them same uppercase form "LOOP:".<br>
                     <br>
-                    <strong><u>Example of a program using Jump-Point</u></strong><br><br>
+                    <strong><u>Example of a program using label</u></strong><br><br>
                 </em>
                 LDA 2050<br>
                 MOV D, A<br>
@@ -189,6 +189,79 @@
                 </table>
             </p>
         </li>
+    </ol><br>
+    <hr>
+    <center><h3><u>SUPPORTED INSTRUCTION SET</u></h3></center>
+    <ol>
+        <li><strong> MOV</strong></li>
+        <li><strong> MVI</strong></li>
+        <li><strong> LDA</strong></li>
+        <li><strong> STA</strong></li>
+        <li><strong>LHLD</strong></li>
+        <li><strong>SHLD</strong></li>
+        <li><strong> LXI</strong></li>
+        <li><strong>LDAX</strong></li>
+        <li><strong>STAX</strong></li>
+        <li><strong>XCHG</strong></li>
+        <li><strong> ADD</strong></li>
+        <li><strong> ADI</strong></li>
+        <li><strong> ADC</strong></li>
+        <li><strong> ACI</strong></li>
+        <li><strong> SUB</strong></li>
+        <li><strong> SBB</strong></li>
+        <li><strong> SUI</strong></li>
+        <li><strong> SBI</strong></li>
+        <li><strong> INR</strong></li>
+        <li><strong> INX</strong></li>
+        <li><strong> DCR</strong></li>
+        <li><strong> DCX</strong></li>
+        <li><strong> DAD</strong></li>
+        <li><strong> ANA</strong></li>
+        <li><strong> ANI</strong></li>
+        <li><strong> ORA</strong></li>
+        <li><strong> ORI</strong></li>
+        <li><strong> XRA</strong></li>
+        <li><strong> XRI</strong></li>
+        <li><strong> CMA</strong></li>
+        <li><strong> RLC</strong></li>
+        <li><strong> RAL</strong></li>
+        <li><strong> RRC</strong></li>
+        <li><strong> RAR</strong></li>
+        <li><strong> STC</strong></li>
+        <li><strong> CMC</strong></li>
+        <li><strong> CMP</strong></li>
+        <li><strong> CPI</strong></li>
+        <li><strong> JMP</strong></li>
+        <li><strong>  JC</strong></li>
+        <li><strong> JNC</strong></li>
+        <li><strong>  JZ</strong></li>
+        <li><strong> JNZ</strong></li>
+        <li><strong> JPE</strong></li>
+        <li><strong> JPO</strong></li>
+        <li><strong>  JM</strong></li>
+        <li><strong>  JP</strong></li>
+        <li><strong> DAA</strong></li>
+        <li><strong>CALL</strong></li>
+        <li><strong> CNC</strong></li>
+        <li><strong>  CC</strong></li>
+        <li><strong> CNZ</strong></li>
+        <li><strong>  CZ</strong></li>
+        <li><strong> CPE</strong></li>
+        <li><strong> CPO</strong></li>
+        <li><strong>  CP</strong></li>
+        <li><strong>  CM</strong></li>
+        <li><strong> RET</strong></li>
+        <li><strong> RNC</strong></li>
+        <li><strong>  RC</strong></li>
+        <li><strong> RNZ</strong></li>
+        <li><strong>  RZ</strong></li>
+        <li><strong> RPO</strong></li>
+        <li><strong> RPE</strong></li>
+        <li><strong>  RP</strong></li>
+        <li><strong>  RM</strong></li>
+        <li><strong> HLT</strong></li>
+        <li><strong> NOP</strong></li>
     </ol>
+    <hr>
 </BODY>
 </HTML>

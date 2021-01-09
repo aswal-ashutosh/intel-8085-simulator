@@ -119,7 +119,7 @@ namespace MESSAGE
 namespace DIALOG
 {
 	const std::string ABOUT = "ABOUT";
-	const std::string HELP = "HLEP";
+	const std::string HELP = "HELP";
 	const std::string EXECUTION_STOPPED = "EXECUTION STOPPED";
 	const std::string ERROR_OCCURRED = "ERROR";
 }

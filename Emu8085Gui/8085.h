@@ -519,7 +519,6 @@ void Mnemonic::LoadInstructionSet()
 	Execute[MNEMONIC::STA] = STA;
 	Execute[MNEMONIC::LHLD] = LHLD;
 	Execute[MNEMONIC::SHLD] = SHLD;
-	Execute[MNEMONIC::HLT] = HLT;
 	Execute[MNEMONIC::LXI] = LXI;
 	Execute[MNEMONIC::LDAX] = LDAX;
 	Execute[MNEMONIC::STAX] = STAX;
@@ -580,6 +579,7 @@ void Mnemonic::LoadInstructionSet()
 	Execute[MNEMONIC::RPE] = RPE;
 	Execute[MNEMONIC::RP] = RP;
 	Execute[MNEMONIC::RM] = RM;
+	Execute[MNEMONIC::HLT] = HLT;
 	Execute[MNEMONIC::NOP] = NOP;
 }
 

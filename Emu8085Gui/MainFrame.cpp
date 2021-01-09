@@ -431,7 +431,7 @@ void MainFrame::OnAbout(wxCommandEvent& event)
 
 void MainFrame::OnHelp(wxCommandEvent& event)
 {
-	wxDialog helpDialog(this, wxID_ANY, DIALOG::ABOUT);
+	wxDialog helpDialog(this, wxID_ANY, DIALOG::HELP);
 	wxBoxSizer* dialogSizer = new wxBoxSizer(wxVERTICAL);
 	wxHtmlWindow* html = new wxHtmlWindow(&helpDialog, wxID_ANY, wxDefaultPosition, wxSize(800, 600));
 	html->SetBorders(1);
