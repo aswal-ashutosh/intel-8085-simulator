@@ -615,7 +615,9 @@ void Mnemonic::LoadInstructionSet()
 //Validator
 bool Validator::IsValidLabel(const std::string& expected_label)
 {
-	if (Mnemonic::IsValid(expected_label))//should not match any mnemonic
+	std::string expected_mnemonic = expected_label;
+	Converter::ToUpperString(expected_mnemonic); //Because mnemonic are stored in uppercase form.
+	if (Mnemonic::IsValid(expected_mnemonic))//should not match any mnemonic
 	{
 		return false;
 	}
@@ -2423,7 +2425,7 @@ bool ProgramManager::Read(const std::string filePath)
 		{
 			if (Validator::IsValidLabel(tokens[token_idx].substr(0, tokens[token_idx].size() - 1)))
 			{
-				Labels[tokens[token_idx].substr(0, tokens[token_idx].size() - 1)] = Program.size();
+				ProgramManager::Labels[tokens[token_idx].substr(0, tokens[token_idx].size() - 1)] = Program.size();
 				++token_idx;
 			}
 			else
