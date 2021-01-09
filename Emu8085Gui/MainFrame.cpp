@@ -108,7 +108,6 @@ MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30,
 	m_SetButton = new wxButton(m_MemoryInitPanelStaticBox, ButtonID::SET_BUTTON, BUTTON::SET, wxPoint(115, 60));
 	m_MemoryInitPanel->SetSizer(m_MemoryInitPanelStaticBoxSizer);
 
-
 	//Memory View Panel
 	m_MemoryViewPanel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize);
 	m_MemoryViewPanelStaticBox = new wxStaticBox(m_MemoryViewPanel, wxID_ANY, PANEL::MEMORY_VIEWER);
