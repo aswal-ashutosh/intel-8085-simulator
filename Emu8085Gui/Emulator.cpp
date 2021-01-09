@@ -15,7 +15,6 @@ Emulator::~Emulator()
 bool Emulator::OnInit()
 {
 	this->m_MainWindow = new MainFrame();
-	this->m_MainWindow->SetIcon(_8085icon);
 	this->m_MainWindow->Show();
 	return true;
 }
