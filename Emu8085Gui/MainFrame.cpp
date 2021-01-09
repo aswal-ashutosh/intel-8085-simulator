@@ -26,7 +26,7 @@ EVT_BUTTON(ButtonID::EXECUTE_BUTTON, MainFrame::OnExecute)
 EVT_BUTTON(ButtonID::STOP_BUTTON, MainFrame::OnStopDebug)
 END_EVENT_TABLE()
 
-MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30, 30), wxSize(600, 650))
+MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30, 30), wxSize(800, 800))
 {
 	//StatusBar
 	this->CreateStatusBar();
@@ -96,30 +96,30 @@ MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30,
 	m_RegisterPanel->SetSizer(m_RegisterPanelStaticBoxSizer);
 
 	//Memory Init Panel
-	m_MemoryInitPanel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(100, 100));
+	m_MemoryInitPanel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize);
 	m_MemoryInitPanelStaticBox = new wxStaticBox(m_MemoryInitPanel, wxID_ANY, PANEL::MEMORY_INITALIZER);
 	m_MemoryInitPanelStaticBoxSizer = new wxStaticBoxSizer(m_MemoryInitPanelStaticBox, wxVERTICAL);
-	m_MemoryLocationLabel = new wxStaticText(m_MemoryInitPanelStaticBox, wxID_ANY, "Address :", wxPoint(5, 30));
-	m_MemoryAddressTextCtrl = new wxTextCtrl(m_MemoryInitPanelStaticBox, wxID_ANY, "0000", wxPoint(55, 30), wxSize(50, 20));
+	m_MemoryLocationLabel = new wxStaticText(m_MemoryInitPanelStaticBox, wxID_ANY, "Address(HEX) :", wxPoint(5, 30));
+	m_MemoryAddressTextCtrl = new wxTextCtrl(m_MemoryInitPanelStaticBox, wxID_ANY, "0000", wxPoint(88, 30), wxSize(50, 20));
 	m_MemoryAddressTextCtrl->SetMaxLength(4);
-	m_DataLabel = new wxStaticText(m_MemoryInitPanelStaticBox, wxID_ANY, "Data :", wxPoint(110, 30));
-	m_DataTextCtrl = new wxTextCtrl(m_MemoryInitPanelStaticBox, wxID_ANY, "00", wxPoint(145, 30), wxSize(25, 20));
+	m_DataLabel = new wxStaticText(m_MemoryInitPanelStaticBox, wxID_ANY, "Data(HEX) :", wxPoint(150, 30));
+	m_DataTextCtrl = new wxTextCtrl(m_MemoryInitPanelStaticBox, wxID_ANY, "00", wxPoint(215, 30), wxSize(25, 20));
 	m_DataTextCtrl->SetMaxLength(2);
-	m_SetButton = new wxButton(m_MemoryInitPanelStaticBox, ButtonID::SET_BUTTON, BUTTON::SET, wxPoint(58, 60));
+	m_SetButton = new wxButton(m_MemoryInitPanelStaticBox, ButtonID::SET_BUTTON, BUTTON::SET, wxPoint(115, 60));
 	m_MemoryInitPanel->SetSizer(m_MemoryInitPanelStaticBoxSizer);
 
 
 	//Memory View Panel
-	m_MemoryViewPanel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(200, 200));
+	m_MemoryViewPanel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize);
 	m_MemoryViewPanelStaticBox = new wxStaticBox(m_MemoryViewPanel, wxID_ANY, PANEL::MEMORY_VIEWER);
 	m_MemoryViewPanelStaticBoxSizer = new wxStaticBoxSizer(m_MemoryViewPanelStaticBox, wxVERTICAL);
-	m_FromLabel = new wxStaticText(m_MemoryViewPanelStaticBox, wxID_ANY, "From :", wxPoint(5, 30));
-	m_FromMemoryAddressTextCtrl = new wxTextCtrl(m_MemoryViewPanelStaticBox, wxID_ANY, "0000", wxPoint(40, 30), wxSize(38, 20));
+	m_FromLabel = new wxStaticText(m_MemoryViewPanelStaticBox, wxID_ANY, "From(HEX) :", wxPoint(5, 30));
+	m_FromMemoryAddressTextCtrl = new wxTextCtrl(m_MemoryViewPanelStaticBox, wxID_ANY, "0000", wxPoint(73, 30), wxSize(38, 20));
 	m_FromMemoryAddressTextCtrl->SetMaxLength(4);
-	m_CountLabel = new wxStaticText(m_MemoryViewPanelStaticBox, wxID_ANY, "Count :", wxPoint(110, 30));
-	m_CountTextCtrl = new wxTextCtrl(m_MemoryViewPanelStaticBox, wxID_ANY, "00", wxPoint(150, 30), wxSize(20, 20));
+	m_CountLabel = new wxStaticText(m_MemoryViewPanelStaticBox, wxID_ANY, "Count(DEC) :", wxPoint(148, 30));
+	m_CountTextCtrl = new wxTextCtrl(m_MemoryViewPanelStaticBox, wxID_ANY, "00", wxPoint(220, 30), wxSize(20, 20));
 	m_CountTextCtrl->SetMaxLength(2);
-	m_ViewButton = new wxButton(m_MemoryViewPanelStaticBox, ButtonID::VIEW_BUTTON, BUTTON::VIEW, wxPoint(58, 60));
+	m_ViewButton = new wxButton(m_MemoryViewPanelStaticBox, ButtonID::VIEW_BUTTON, BUTTON::VIEW, wxPoint(115, 60));
 	m_MemoryViewList = new wxListView(m_MemoryViewPanelStaticBox, wxID_ANY, wxPoint(5, 90), wxSize(190, 315));
 	m_MemoryViewList->AppendColumn("Address");
 	m_MemoryViewList->AppendColumn("Data");
@@ -152,7 +152,8 @@ MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30,
 	m_MainSizer = new wxBoxSizer(wxHORIZONTAL);
 	m_MainSizer->Add(m_LeftPanelSizer, 1, wxEXPAND | wxALL, 1);
 	m_MainSizer->Add(m_TextBoxPanel, 2, wxEXPAND | wxTOP | wxBOTTOM, 1);
-	m_MainSizer->Add(m_RightPanelSizer, 1, wxEXPAND | wxALL, 1);
+	m_MainSizer->Add(m_RightPanelSizer, 2, wxEXPAND | wxALL, 1);
+
 	this->SetSizerAndFit(m_MainSizer);
 
 	Init();

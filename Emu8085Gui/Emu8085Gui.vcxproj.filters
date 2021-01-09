@@ -48,8 +48,5 @@
     <None Include="HELP.html">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="icon.xpm">
-      <Filter>Resource Files</Filter>
-    </None>
   </ItemGroup>
 </Project>

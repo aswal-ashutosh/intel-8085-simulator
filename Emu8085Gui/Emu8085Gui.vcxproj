@@ -32,7 +32,6 @@
     <Text Include="debug_lex.txt" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="icon.xpm" />
     <None Include="ABOUT.html" />
     <None Include="HELP.html" />
   </ItemGroup>

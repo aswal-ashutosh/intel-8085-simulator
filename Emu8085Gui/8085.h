@@ -3,6 +3,7 @@
 #include<fstream>
 #include<sstream>
 #include<map>
+#include<set>
 #include"constants.h"
 #include<chrono>
 
@@ -41,7 +42,10 @@ public:
 
 	static bool IsValidRegister(const std::string&);
 
+	static bool IsValidLabel(const std::string&);
 };
+
+
 
 bool Validator::IsValidInt(const std::string& data)
 {
@@ -63,7 +67,7 @@ bool Validator::IsValidHex(const std::string& hex)
 {
 	for (const char& x : hex)
 	{
-		if ((x >= '0' && x <= '9') || (x >= 'A' && x <= 'F'))
+		if ((x >= '0' && x <= '9') || (x >= 'A' && x <= 'F')  || (x >= 'a' && x <= 'f'))
 		{
 			continue;
 		}
@@ -370,7 +374,7 @@ class ProgramManager
 {
 
 public:
-	static std::map<std::string, int> JumpPoint;
+	static std::map<std::string, int> Labels;
 	static std::vector<Instruction> Program;
 	static std::vector<int> CallStack;
 	static bool HLT;
@@ -379,7 +383,7 @@ public:
 
 	static void Run();
 
-	static bool IsValidJumpPoint(const std::string&);
+	static bool IsExistingLabel(const std::string&);
 
 	static void Clear();
 
@@ -388,13 +392,13 @@ public:
 
 
 std::vector<Instruction> ProgramManager::Program;
-std::map<std::string, int> ProgramManager::JumpPoint;
+std::map<std::string, int> ProgramManager::Labels;
 std::vector<int> ProgramManager::CallStack;
 bool ProgramManager::HLT;
 
-bool ProgramManager::IsValidJumpPoint(const std::string& expected_jump_point)
+bool ProgramManager::IsExistingLabel(const std::string& expected_jump_point)
 {
-	return JumpPoint.count(expected_jump_point);
+	return Labels.count(expected_jump_point);
 }
 
 bool ProgramManager::CanRunFurther()
@@ -412,7 +416,7 @@ bool ProgramManager::CanRunFurther()
 void ProgramManager::Clear()
 {
 	ProgramManager::Program.clear();
-	ProgramManager::JumpPoint.clear();
+	ProgramManager::Labels.clear();
 	ProgramManager::CallStack.clear(); 
 	ProgramManager::HLT = false;
 }
@@ -422,10 +426,14 @@ class Mnemonic
 public:
 	static std::map<std::string, bool (*)(const std::pair<std::string, std::string>&)> Execute;
 
+	static std::set<std::string> JCallInstructions;
+
 	static void LoadInstructionSet();
 
 
-	static bool isValid(const std::string mnemonic);
+	static bool IsValid(const std::string& mnemonic);
+
+	static bool IsJCallInstruction(const std::string& mnemonic);
 
 	static bool MOV(const std::pair<std::string, std::string>&);
 	static bool MVI(const std::pair<std::string, std::string>&);
@@ -509,7 +517,7 @@ public:
 };
 
 std::map<std::string, bool (*)(const std::pair<std::string, std::string>&)> Mnemonic::Execute;
-
+std::set<std::string> Mnemonic::JCallInstructions;
 
 void Mnemonic::LoadInstructionSet()
 {
@@ -581,11 +589,61 @@ void Mnemonic::LoadInstructionSet()
 	Execute[MNEMONIC::RM] = RM;
 	Execute[MNEMONIC::HLT] = HLT;
 	Execute[MNEMONIC::NOP] = NOP;
-}
 
-bool Mnemonic::isValid(const std::string mnemonic)
+	//Loading Jump/Call Instruction
+	JCallInstructions.insert(MNEMONIC::JMP);
+	JCallInstructions.insert(MNEMONIC::JC);
+	JCallInstructions.insert(MNEMONIC::JNC);
+	JCallInstructions.insert(MNEMONIC::JZ);
+	JCallInstructions.insert(MNEMONIC::JNZ);
+	JCallInstructions.insert(MNEMONIC::JPE);
+	JCallInstructions.insert(MNEMONIC::JPO);
+	JCallInstructions.insert(MNEMONIC::JM);
+	JCallInstructions.insert(MNEMONIC::JP);
+	JCallInstructions.insert(MNEMONIC::CALL);
+	JCallInstructions.insert(MNEMONIC::CNC);
+	JCallInstructions.insert(MNEMONIC::CC);
+	JCallInstructions.insert(MNEMONIC::CNZ);
+	JCallInstructions.insert(MNEMONIC::CZ);
+	JCallInstructions.insert(MNEMONIC::CPE);
+	JCallInstructions.insert(MNEMONIC::CPO);
+	JCallInstructions.insert(MNEMONIC::CP);
+	JCallInstructions.insert(MNEMONIC::CM);
+
+}	
+
+//Validator
+bool Validator::IsValidLabel(const std::string& expected_label)
+{
+	if (Mnemonic::IsValid(expected_label))//should not match any mnemonic
+	{
+		return false;
+	}
+
+	for (const char& x: expected_label)
+	{
+		if ((x >= 'a' && x <= 'z') || (x >= 'A' && x <= 'Z') || (x >= '0' && x <= '9'))
+		{
+			continue;
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+//
+
+bool Mnemonic::IsValid(const std::string& mnemonic)
 {
 	return Execute.count(mnemonic);
+}
+
+bool Mnemonic::IsJCallInstruction(const std::string& mnemonic)
+{
+	return JCallInstructions.count(mnemonic);
 }
 
 bool Mnemonic::MOV(const std::pair<std::string, std::string>& operands)
@@ -1716,13 +1774,13 @@ bool Mnemonic::JMP(const std::pair<std::string, std::string>& operands)
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
-	else if (!ProgramManager::IsValidJumpPoint(operands.first))
+	else if (!ProgramManager::IsExistingLabel(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_LABEL, ProgramManager::Program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
-		Register::PC = ProgramManager::JumpPoint[operands.first];
+		Register::PC = ProgramManager::Labels[operands.first];
 	}
 	return ProgramManager::CanRunFurther();
 }
@@ -1733,13 +1791,13 @@ bool Mnemonic::JC(const std::pair<std::string, std::string>& operands)
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
-	else if (!ProgramManager::IsValidJumpPoint(operands.first))
+	else if (!ProgramManager::IsExistingLabel(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_LABEL, ProgramManager::Program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
-		Register::PC = Register::Flag::CY ? ProgramManager::JumpPoint[operands.first] : Register::PC + 1;
+		Register::PC = Register::Flag::CY ? ProgramManager::Labels[operands.first] : Register::PC + 1;
 	}
 	return ProgramManager::CanRunFurther();
 }
@@ -1750,13 +1808,13 @@ bool Mnemonic::JNC(const std::pair<std::string, std::string>& operands)
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
-	else if (!ProgramManager::IsValidJumpPoint(operands.first))
+	else if (!ProgramManager::IsExistingLabel(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_LABEL, ProgramManager::Program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
-		Register::PC = Register::Flag::CY ? Register::PC + 1 : ProgramManager::JumpPoint[operands.first];
+		Register::PC = Register::Flag::CY ? Register::PC + 1 : ProgramManager::Labels[operands.first];
 	}
 	return ProgramManager::CanRunFurther();
 }
@@ -1767,13 +1825,13 @@ bool Mnemonic::JZ(const std::pair<std::string, std::string>& operands)
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
-	else if (!ProgramManager::IsValidJumpPoint(operands.first))
+	else if (!ProgramManager::IsExistingLabel(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_LABEL, ProgramManager::Program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
-		Register::PC = Register::Flag::ZF ? ProgramManager::JumpPoint[operands.first] : Register::PC + 1;
+		Register::PC = Register::Flag::ZF ? ProgramManager::Labels[operands.first] : Register::PC + 1;
 	}
 	return ProgramManager::CanRunFurther();
 }
@@ -1784,13 +1842,13 @@ bool Mnemonic::JNZ(const std::pair<std::string, std::string>& operands)
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
-	else if (!ProgramManager::IsValidJumpPoint(operands.first))
+	else if (!ProgramManager::IsExistingLabel(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_LABEL, ProgramManager::Program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
-		Register::PC = Register::Flag::ZF ? Register::PC + 1 : ProgramManager::JumpPoint[operands.first];
+		Register::PC = Register::Flag::ZF ? Register::PC + 1 : ProgramManager::Labels[operands.first];
 	}
 	return ProgramManager::CanRunFurther();
 }
@@ -1801,13 +1859,13 @@ bool Mnemonic::JPE(const std::pair<std::string, std::string>& operands)
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
-	else if (!ProgramManager::IsValidJumpPoint(operands.first))
+	else if (!ProgramManager::IsExistingLabel(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_LABEL, ProgramManager::Program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
-		Register::PC = Register::Flag::PF ? ProgramManager::JumpPoint[operands.first] : Register::PC + 1;
+		Register::PC = Register::Flag::PF ? ProgramManager::Labels[operands.first] : Register::PC + 1;
 	}
 	return ProgramManager::CanRunFurther();
 }
@@ -1818,13 +1876,13 @@ bool Mnemonic::JPO(const std::pair<std::string, std::string>& operands)
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
-	else if (!ProgramManager::IsValidJumpPoint(operands.first))
+	else if (!ProgramManager::IsExistingLabel(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_LABEL, ProgramManager::Program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
-		Register::PC = Register::Flag::PF ? Register::PC + 1 : ProgramManager::JumpPoint[operands.first];
+		Register::PC = Register::Flag::PF ? Register::PC + 1 : ProgramManager::Labels[operands.first];
 	}
 	return ProgramManager::CanRunFurther();
 }
@@ -1835,13 +1893,13 @@ bool Mnemonic::JM(const std::pair<std::string, std::string>& operands)
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
-	else if (!ProgramManager::IsValidJumpPoint(operands.first))
+	else if (!ProgramManager::IsExistingLabel(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_LABEL, ProgramManager::Program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
-		Register::PC = Register::Flag::SF ? ProgramManager::JumpPoint[operands.first] : Register::PC + 1;
+		Register::PC = Register::Flag::SF ? ProgramManager::Labels[operands.first] : Register::PC + 1;
 	}
 	return ProgramManager::CanRunFurther();
 }
@@ -1853,13 +1911,13 @@ bool Mnemonic::JP(const std::pair<std::string, std::string>& operands)
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
-	else if (!ProgramManager::IsValidJumpPoint(operands.first))
+	else if (!ProgramManager::IsExistingLabel(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_LABEL, ProgramManager::Program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
-		Register::PC = Register::Flag::SF ? Register::PC + 1 : ProgramManager::JumpPoint[operands.first];
+		Register::PC = Register::Flag::SF ? Register::PC + 1 : ProgramManager::Labels[operands.first];
 	}
 	return ProgramManager::CanRunFurther();
 }
@@ -1870,14 +1928,14 @@ bool Mnemonic::CALL(const std::pair<std::string, std::string>& operands)
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
-	else if (!ProgramManager::IsValidJumpPoint(operands.first))
+	else if (!ProgramManager::IsExistingLabel(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_LABEL, ProgramManager::Program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
 		ProgramManager::CallStack.push_back(Register::PC + 1);
-		Register::PC = ProgramManager::JumpPoint[operands.first];
+		Register::PC = ProgramManager::Labels[operands.first];
 	}
 	return ProgramManager::CanRunFurther();
 }
@@ -1889,9 +1947,9 @@ bool Mnemonic::CNC(const std::pair<std::string, std::string>& operands)
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
-	else if (!ProgramManager::IsValidJumpPoint(operands.first))
+	else if (!ProgramManager::IsExistingLabel(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_LABEL, ProgramManager::Program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
@@ -1902,7 +1960,7 @@ bool Mnemonic::CNC(const std::pair<std::string, std::string>& operands)
 		else
 		{
 			ProgramManager::CallStack.push_back(Register::PC + 1);
-			Register::PC = ProgramManager::JumpPoint[operands.first];
+			Register::PC = ProgramManager::Labels[operands.first];
 		}
 	}
 	return ProgramManager::CanRunFurther();
@@ -1914,16 +1972,16 @@ bool Mnemonic::CC(const std::pair<std::string, std::string>& operands)
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
-	else if (!ProgramManager::IsValidJumpPoint(operands.first))
+	else if (!ProgramManager::IsExistingLabel(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_LABEL, ProgramManager::Program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
 		if (Register::Flag::CY)
 		{
 			ProgramManager::CallStack.push_back(Register::PC + 1);
-			Register::PC = ProgramManager::JumpPoint[operands.first];
+			Register::PC = ProgramManager::Labels[operands.first];
 		}
 		else
 		{
@@ -1940,16 +1998,16 @@ bool Mnemonic::CZ(const std::pair<std::string, std::string>& operands)
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
-	else if (!ProgramManager::IsValidJumpPoint(operands.first))
+	else if (!ProgramManager::IsExistingLabel(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_LABEL, ProgramManager::Program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
 		if (Register::Flag::ZF)
 		{
 			ProgramManager::CallStack.push_back(Register::PC + 1);
-			Register::PC = ProgramManager::JumpPoint[operands.first];
+			Register::PC = ProgramManager::Labels[operands.first];
 		}
 		else
 		{
@@ -1966,9 +2024,9 @@ bool Mnemonic::CNZ(const std::pair<std::string, std::string>& operands)
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
-	else if (!ProgramManager::IsValidJumpPoint(operands.first))
+	else if (!ProgramManager::IsExistingLabel(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_LABEL, ProgramManager::Program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
@@ -1979,7 +2037,7 @@ bool Mnemonic::CNZ(const std::pair<std::string, std::string>& operands)
 		else
 		{
 			ProgramManager::CallStack.push_back(Register::PC + 1);
-			Register::PC = ProgramManager::JumpPoint[operands.first];
+			Register::PC = ProgramManager::Labels[operands.first];
 		}
 	}
 	return ProgramManager::CanRunFurther();
@@ -1992,16 +2050,16 @@ bool Mnemonic::CPE(const std::pair<std::string, std::string>& operands)
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
-	else if (!ProgramManager::IsValidJumpPoint(operands.first))
+	else if (!ProgramManager::IsExistingLabel(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_LABEL, ProgramManager::Program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
 		if (Register::Flag::PF)
 		{
 			ProgramManager::CallStack.push_back(Register::PC + 1);
-			Register::PC = ProgramManager::JumpPoint[operands.first];
+			Register::PC = ProgramManager::Labels[operands.first];
 		}
 		else
 		{
@@ -2017,9 +2075,9 @@ bool Mnemonic::CPO(const std::pair<std::string, std::string>& operands)
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
-	else if (!ProgramManager::IsValidJumpPoint(operands.first))
+	else if (!ProgramManager::IsExistingLabel(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_LABEL, ProgramManager::Program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
@@ -2030,7 +2088,7 @@ bool Mnemonic::CPO(const std::pair<std::string, std::string>& operands)
 		else
 		{
 			ProgramManager::CallStack.push_back(Register::PC + 1);
-			Register::PC = ProgramManager::JumpPoint[operands.first];
+			Register::PC = ProgramManager::Labels[operands.first];
 		}
 	}
 	return ProgramManager::CanRunFurther();
@@ -2043,9 +2101,9 @@ bool Mnemonic::CP(const std::pair<std::string, std::string>& operands)
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
-	else if (!ProgramManager::IsValidJumpPoint(operands.first))
+	else if (!ProgramManager::IsExistingLabel(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_LABEL, ProgramManager::Program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
@@ -2056,7 +2114,7 @@ bool Mnemonic::CP(const std::pair<std::string, std::string>& operands)
 		else
 		{
 			ProgramManager::CallStack.push_back(Register::PC + 1);
-			Register::PC = ProgramManager::JumpPoint[operands.first];
+			Register::PC = ProgramManager::Labels[operands.first];
 		}
 	}
 	return ProgramManager::CanRunFurther();
@@ -2068,16 +2126,16 @@ bool Mnemonic::CM(const std::pair<std::string, std::string>& operands)
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
-	else if (!ProgramManager::IsValidJumpPoint(operands.first))
+	else if (!ProgramManager::IsExistingLabel(operands.first))
 	{
-		return Error::Throw(ERROR_TYPE::INVALID_LABEL, ProgramManager::Program[Register::PC].line_number);
+		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
 	}
 	else
 	{
 		if (Register::Flag::SF)
 		{
 			ProgramManager::CallStack.push_back(Register::PC + 1);
-			Register::PC = ProgramManager::JumpPoint[operands.first];
+			Register::PC = ProgramManager::Labels[operands.first];
 		}
 		else
 		{
@@ -2361,18 +2419,25 @@ bool ProgramManager::Read(const std::string filePath)
 		int token_idx = 0;
 
 		//First token can either be a loop point or a mnemonic
-		if (tokens[token_idx].back() == ':') //If it is a loop
+		if (tokens[token_idx].back() == ':') //If it is a label
 		{
-			Converter::ToUpperString(tokens[token_idx]);
-			JumpPoint[tokens[token_idx].substr(0, tokens[token_idx].size() - 1)] = Program.size();
-			++token_idx;
+			if (Validator::IsValidLabel(tokens[token_idx].substr(0, tokens[token_idx].size() - 1)))
+			{
+				Labels[tokens[token_idx].substr(0, tokens[token_idx].size() - 1)] = Program.size();
+				++token_idx;
+			}
+			else
+			{
+				//error as string containg ':' as suffix must be label only
+				return Error::Throw(ERROR_TYPE::INVALID_LABEL, line_number);
+			}
 		}
 
 		//Checking for mnemonic
 		if (token_idx < token_count)
 		{
 			Converter::ToUpperString(tokens[token_idx]);
-			if (Mnemonic::isValid(tokens[token_idx]))
+			if (Mnemonic::IsValid(tokens[token_idx]))
 			{
 				instruction.mnemonic = tokens[token_idx++];
 			}
@@ -2397,8 +2462,12 @@ bool ProgramManager::Read(const std::string filePath)
 				operand.erase(operand.end() - 1);//removing comma
 				comma_found = true;
 			}
-
-			Converter::ToUpperString(operand);
+			//Special check for label(this token can be a label if previous instruction is any jump/call instrunction)
+			if (!Mnemonic::IsJCallInstruction(instruction.mnemonic))
+			{
+				Converter::ToUpperString(operand);
+			}
+			
 			instruction.operands.first = operand;
 			++token_idx;
 		}
