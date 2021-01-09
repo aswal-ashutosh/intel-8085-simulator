@@ -204,7 +204,7 @@ void MainFrame::OnExit(wxCommandEvent& event)
 
 void MainFrame::Init()
 {
-	Mnemonic::LoadInsctructionSet();
+	Mnemonic::LoadInstructionSet();
 }
 
 void MainFrame::OnRun(wxCommandEvent& event)

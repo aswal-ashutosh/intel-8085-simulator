@@ -299,20 +299,6 @@ int Register::DE()
 
 void Register::UpdateFlags(int aux, bool preserve_carry = false)
 {
-	/*
-		Some calculation also cause carry at 10th bit but all online 8085 sim do not consider that as carry.
-		Considering the above fact, I am doing the same.
-		Eg: CY(1), A(80), B(40)
-		and after executing the SBB B instruction the result should be:
-		2sc(1H)  ------->	1111 1111
-		A(80H)	 ------->	1000 0000
-		2sc(40H) ------->	1100 0000
-						 -------------
-						 10 0011 1111
-						 -------------
-		Here carry is generated from 8th bit(D7) is '10' but because the set bit falls on 10th bit(D9),
-		it is not considered as carry.
-	*/
 	if (!preserve_carry)
 	{
 		Register::Flag::CY = Register::Main[REGISTER::A] & (1 << 8); //@Carry Flag
@@ -402,7 +388,7 @@ class Mnemonic
 public:
 	static std::map<std::string, bool (*)(const std::pair<std::string, std::string>&)> Execute;
 
-	static void LoadInsctructionSet();
+	static void LoadInstructionSet();
 
 
 	static bool isValid(const std::string mnemonic);
@@ -491,7 +477,7 @@ public:
 std::map<std::string, bool (*)(const std::pair<std::string, std::string>&)> Mnemonic::Execute;
 
 
-void Mnemonic::LoadInsctructionSet()
+void Mnemonic::LoadInstructionSet()
 {
 	Execute[MNEMONIC::MVI] = MVI;
 	Execute[MNEMONIC::MOV] = MOV;
