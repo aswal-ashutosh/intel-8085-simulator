@@ -94,6 +94,7 @@ namespace MNEMONIC
 	const std::string RPO = "RPO";
 	const std::string RP = "RP";
 	const std::string RM = "RM";
+	const std::string NOP = "NOP";
 }
 
 namespace REGISTER

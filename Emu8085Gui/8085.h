@@ -462,7 +462,6 @@ public:
 	static bool JPO(const std::pair<std::string, std::string>&);
 	static bool JM(const std::pair<std::string, std::string>&);
 	static bool JP(const std::pair<std::string, std::string>&);
-	static bool HLT(const std::pair<std::string, std::string>&);
 
 	//subroutine
 	static bool CALL(const std::pair<std::string, std::string>&);
@@ -484,6 +483,9 @@ public:
 	static bool RP(const std::pair<std::string, std::string>&);
 	static bool RM(const std::pair<std::string, std::string>&);
 
+	//Other
+	static bool HLT(const std::pair<std::string, std::string>&);
+	static bool NOP(const std::pair<std::string, std::string>&);
 };
 
 std::map<std::string, bool (*)(const std::pair<std::string, std::string>&)> Mnemonic::Execute;
@@ -558,6 +560,7 @@ void Mnemonic::LoadInsctructionSet()
 	Execute[MNEMONIC::RPE] = RPE;
 	Execute[MNEMONIC::RP] = RP;
 	Execute[MNEMONIC::RM] = RM;
+	Execute[MNEMONIC::NOP] = NOP;
 }
 
 bool Mnemonic::isValid(const std::string mnemonic)
@@ -2273,6 +2276,16 @@ bool Mnemonic::HLT(const std::pair<std::string, std::string>& operands)//return 
 	}
 	ProgramManager::HLT = true;
 	return false;
+}
+
+bool Mnemonic::NOP(const std::pair<std::string, std::string>& operands)
+{
+	if (!Validator::ValidOperandCount(operands, 0))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+	++Register::PC;
+	return ProgramManager::CanRunFurther();
 }
 
 //Function to print the lexer output to a file
