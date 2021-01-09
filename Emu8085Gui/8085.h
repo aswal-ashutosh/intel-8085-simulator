@@ -3,8 +3,32 @@
 #include<fstream>
 #include<sstream>
 #include<map>
-#include<stack>
 #include"constants.h"
+#include<chrono>
+
+class TimeManager
+{
+	static const std::chrono::milliseconds MAX_EXPECTED_TIME; //in milliseconds
+	static std::chrono::steady_clock::time_point start;
+public:
+	static void Reset();
+	static bool TLE();
+};
+
+std::chrono::steady_clock::time_point TimeManager::start;
+const std::chrono::milliseconds TimeManager::MAX_EXPECTED_TIME(5000);
+
+void TimeManager::Reset()
+{
+	start = std::chrono::high_resolution_clock::now();
+}
+
+bool TimeManager::TLE()
+{
+	std::chrono::steady_clock::time_point end = std::chrono::high_resolution_clock::now();
+	std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+	return duration > MAX_EXPECTED_TIME;
+}
 
 class Validator
 {
@@ -348,7 +372,7 @@ class ProgramManager
 public:
 	static std::map<std::string, int> JumpPoint;
 	static std::vector<Instruction> Program;
-	static std::stack<int> CallStack;
+	static std::vector<int> CallStack;
 	static bool HLT;
 
 	static bool Read(const std::string filePath);
@@ -357,13 +381,15 @@ public:
 
 	static bool IsValidJumpPoint(const std::string&);
 
+	static void Clear();
+
 	static bool CanRunFurther();//It will check whether there exist a instruction at Index = PC
 };
 
 
 std::vector<Instruction> ProgramManager::Program;
 std::map<std::string, int> ProgramManager::JumpPoint;
-std::stack<int> ProgramManager::CallStack;
+std::vector<int> ProgramManager::CallStack;
 bool ProgramManager::HLT;
 
 bool ProgramManager::IsValidJumpPoint(const std::string& expected_jump_point)
@@ -381,6 +407,14 @@ bool ProgramManager::CanRunFurther()
 	{
 		return Error::Throw(ERROR_TYPE::NEVER_REACHED_HLT);
 	}
+}
+
+void ProgramManager::Clear()
+{
+	ProgramManager::Program.clear();
+	ProgramManager::JumpPoint.clear();
+	ProgramManager::CallStack.clear(); 
+	ProgramManager::HLT = false;
 }
 
 class Mnemonic
@@ -1842,7 +1876,7 @@ bool Mnemonic::CALL(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		ProgramManager::CallStack.push(Register::PC + 1);
+		ProgramManager::CallStack.push_back(Register::PC + 1);
 		Register::PC = ProgramManager::JumpPoint[operands.first];
 	}
 	return ProgramManager::CanRunFurther();
@@ -1867,7 +1901,7 @@ bool Mnemonic::CNC(const std::pair<std::string, std::string>& operands)
 		}
 		else
 		{
-			ProgramManager::CallStack.push(Register::PC + 1);
+			ProgramManager::CallStack.push_back(Register::PC + 1);
 			Register::PC = ProgramManager::JumpPoint[operands.first];
 		}
 	}
@@ -1888,7 +1922,7 @@ bool Mnemonic::CC(const std::pair<std::string, std::string>& operands)
 	{
 		if (Register::Flag::CY)
 		{
-			ProgramManager::CallStack.push(Register::PC + 1);
+			ProgramManager::CallStack.push_back(Register::PC + 1);
 			Register::PC = ProgramManager::JumpPoint[operands.first];
 		}
 		else
@@ -1914,7 +1948,7 @@ bool Mnemonic::CZ(const std::pair<std::string, std::string>& operands)
 	{
 		if (Register::Flag::ZF)
 		{
-			ProgramManager::CallStack.push(Register::PC + 1);
+			ProgramManager::CallStack.push_back(Register::PC + 1);
 			Register::PC = ProgramManager::JumpPoint[operands.first];
 		}
 		else
@@ -1944,7 +1978,7 @@ bool Mnemonic::CNZ(const std::pair<std::string, std::string>& operands)
 		}
 		else
 		{
-			ProgramManager::CallStack.push(Register::PC + 1);
+			ProgramManager::CallStack.push_back(Register::PC + 1);
 			Register::PC = ProgramManager::JumpPoint[operands.first];
 		}
 	}
@@ -1966,7 +2000,7 @@ bool Mnemonic::CPE(const std::pair<std::string, std::string>& operands)
 	{
 		if (Register::Flag::PF)
 		{
-			ProgramManager::CallStack.push(Register::PC + 1);
+			ProgramManager::CallStack.push_back(Register::PC + 1);
 			Register::PC = ProgramManager::JumpPoint[operands.first];
 		}
 		else
@@ -1995,7 +2029,7 @@ bool Mnemonic::CPO(const std::pair<std::string, std::string>& operands)
 		}
 		else
 		{
-			ProgramManager::CallStack.push(Register::PC + 1);
+			ProgramManager::CallStack.push_back(Register::PC + 1);
 			Register::PC = ProgramManager::JumpPoint[operands.first];
 		}
 	}
@@ -2021,7 +2055,7 @@ bool Mnemonic::CP(const std::pair<std::string, std::string>& operands)
 		}
 		else
 		{
-			ProgramManager::CallStack.push(Register::PC + 1);
+			ProgramManager::CallStack.push_back(Register::PC + 1);
 			Register::PC = ProgramManager::JumpPoint[operands.first];
 		}
 	}
@@ -2042,7 +2076,7 @@ bool Mnemonic::CM(const std::pair<std::string, std::string>& operands)
 	{
 		if (Register::Flag::SF)
 		{
-			ProgramManager::CallStack.push(Register::PC + 1);
+			ProgramManager::CallStack.push_back(Register::PC + 1);
 			Register::PC = ProgramManager::JumpPoint[operands.first];
 		}
 		else
@@ -2064,8 +2098,8 @@ bool Mnemonic::RET(const std::pair<std::string, std::string>& operands)
 		return Error::Throw(ERROR_TYPE::RETURN_WITHOUT_CALL);
 	}
 
-	Register::PC = ProgramManager::CallStack.top();
-	ProgramManager::CallStack.pop();
+	Register::PC = ProgramManager::CallStack.back();
+	ProgramManager::CallStack.pop_back();
 	return ProgramManager::CanRunFurther();
 }
 
@@ -2086,8 +2120,8 @@ bool Mnemonic::RNC(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		Register::PC = ProgramManager::CallStack.top();
-		ProgramManager::CallStack.pop();
+		Register::PC = ProgramManager::CallStack.back();
+		ProgramManager::CallStack.pop_back();
 	}
 	return ProgramManager::CanRunFurther();
 }
@@ -2105,8 +2139,8 @@ bool Mnemonic::RC(const std::pair<std::string, std::string>& operands)
 
 	if (Register::Flag::CY)
 	{
-		Register::PC = ProgramManager::CallStack.top();
-		ProgramManager::CallStack.pop();
+		Register::PC = ProgramManager::CallStack.back();
+		ProgramManager::CallStack.pop_back();
 	}
 	else
 	{
@@ -2128,8 +2162,8 @@ bool Mnemonic::RZ(const std::pair<std::string, std::string>& operands)
 
 	if (Register::Flag::ZF)
 	{
-		Register::PC = ProgramManager::CallStack.top();
-		ProgramManager::CallStack.pop();
+		Register::PC = ProgramManager::CallStack.back();
+		ProgramManager::CallStack.pop_back();
 	}
 	else
 	{
@@ -2155,8 +2189,8 @@ bool Mnemonic::RNZ(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		Register::PC = ProgramManager::CallStack.top();
-		ProgramManager::CallStack.pop();
+		Register::PC = ProgramManager::CallStack.back();
+		ProgramManager::CallStack.pop_back();
 	}
 	return ProgramManager::CanRunFurther();
 }
@@ -2175,8 +2209,8 @@ bool Mnemonic::RPE(const std::pair<std::string, std::string>& operands)
 
 	if (Register::Flag::PF)
 	{
-		Register::PC = ProgramManager::CallStack.top();
-		ProgramManager::CallStack.pop();
+		Register::PC = ProgramManager::CallStack.back();
+		ProgramManager::CallStack.pop_back();
 	}
 	else
 	{
@@ -2202,8 +2236,8 @@ bool Mnemonic::RPO(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		Register::PC = ProgramManager::CallStack.top();
-		ProgramManager::CallStack.pop();
+		Register::PC = ProgramManager::CallStack.back();
+		ProgramManager::CallStack.pop_back();
 	}
 	return ProgramManager::CanRunFurther();
 }
@@ -2221,8 +2255,8 @@ bool Mnemonic::RM(const std::pair<std::string, std::string>& operands)
 
 	if (Register::Flag::SF)
 	{
-		Register::PC = ProgramManager::CallStack.top();
-		ProgramManager::CallStack.pop();
+		Register::PC = ProgramManager::CallStack.back();
+		ProgramManager::CallStack.pop_back();
 	}
 	else
 	{
@@ -2248,8 +2282,8 @@ bool Mnemonic::RP(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		Register::PC = ProgramManager::CallStack.top();
-		ProgramManager::CallStack.pop();
+		Register::PC = ProgramManager::CallStack.back();
+		ProgramManager::CallStack.pop_back();
 	}
 	return ProgramManager::CanRunFurther();
 }
@@ -2289,10 +2323,8 @@ void DebugLex()
 bool ProgramManager::Read(const std::string filePath)
 {
 	//Resetting
-	ProgramManager::Program.clear();
-	ProgramManager::JumpPoint.clear();
+	ProgramManager::Clear();
 	Register::Clear();
-	ProgramManager::HLT = false;
 
 	std::fstream file;
 	file.open(filePath, std::ios::in);
@@ -2438,5 +2470,13 @@ bool ProgramManager::Read(const std::string filePath)
 
 void ProgramManager::Run()
 {
-	while (Mnemonic::Execute[Program[Register::PC].mnemonic](Program[Register::PC].operands));
+	TimeManager::Reset();
+	while (Mnemonic::Execute[Program[Register::PC].mnemonic](Program[Register::PC].operands))
+	{
+		if (TimeManager::TLE())
+		{
+			Error::Throw(ERROR_TYPE::INFINITE_LOOP_OR_RECURSIVE_CALL);
+			break;
+		}
+	}
 }

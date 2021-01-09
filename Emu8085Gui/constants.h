@@ -17,6 +17,7 @@ namespace ERROR_TYPE
 	const std::string EMPTY_FILE = "Empty File Found";
 	const std::string INVALID_LABEL = "Invalid Label";
 	const std::string RETURN_WITHOUT_CALL = "Control Reached Return Statement When There Exist No Subroutine Call";
+	const std::string INFINITE_LOOP_OR_RECURSIVE_CALL = "There May Be An Infinite Loop Or A Never Ending Recursion";
 }
 
 namespace PATH
