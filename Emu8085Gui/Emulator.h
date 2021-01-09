@@ -2,6 +2,7 @@
 
 #include<wx\wx.h>
 #include"MainFrame.h"
+#include"icon.xpm"
 
 class Emulator : public wxApp
 {

@@ -42,10 +42,13 @@
     </Text>
   </ItemGroup>
   <ItemGroup>
-    <None Include="res\about_doc.html">
+    <None Include="ABOUT.html">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="res\help_doc.html">
+    <None Include="HELP.html">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="icon.xpm">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>
