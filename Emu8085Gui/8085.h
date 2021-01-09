@@ -399,7 +399,7 @@ bool ProgramManager::IsValidJumpPoint(const std::string& expected_jump_point)
 
 bool ProgramManager::CanRunFurther()
 {
-	if (Register::PC < Program.size())
+	if (Register::PC < (int)Program.size())
 	{
 		return true;
 	}
