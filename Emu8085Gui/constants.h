@@ -129,7 +129,7 @@ namespace PANEL
 {
 	const std::string REGISTER = "REGISTERS";
 	const std::string FLAG_REGISTER = "FLAG REGISTER";
-	const std::string MEMORY_INITALIZER = "MEMORY INITIALIZER";
+	const std::string MEMORY_INITIALIZER = "MEMORY INITIALIZER";
 	const std::string MEMORY_VIEWER = "MEMORY VIEWER";
 	const std::string DEBUGGER = "DEBUGGER";
 }
