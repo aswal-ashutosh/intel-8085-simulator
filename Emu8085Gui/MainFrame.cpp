@@ -290,7 +290,7 @@ void MainFrame::UpdateMemory()
 		int nFrom = Converter::HexToDec(sFrom);
 		int nCount = std::stoi(sCount);
 
-		for (int i = 0; i < nCount; ++i)
+		for (int i = 0; i < nCount && (nFrom + i) <= 0xffff; ++i)
 		{
 			std::string address = Converter::DecToHex(nFrom + i, 16);
 			std::string data = Converter::DecToHex(MemoryManager::Memory[nFrom + i]);
