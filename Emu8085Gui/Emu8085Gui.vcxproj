@@ -21,8 +21,15 @@
   <ItemGroup>
     <ClInclude Include="8085.h" />
     <ClInclude Include="constants.h" />
+    <ClInclude Include="converter.h" />
     <ClInclude Include="Emulator.h" />
+    <ClInclude Include="error_handler.h" />
     <ClInclude Include="MainFrame.h" />
+    <ClInclude Include="memory_manager.h" />
+    <ClInclude Include="registers.h" />
+    <ClInclude Include="time_manager.h" />
+    <ClInclude Include="utility.h" />
+    <ClInclude Include="validator.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Emulator.cpp" />
