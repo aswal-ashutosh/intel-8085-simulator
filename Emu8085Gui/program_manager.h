@@ -504,9 +504,9 @@ bool ProgramManager::IsJCallInstruction(const std::string& mnemonic)
 }
 
 
-bool ProgramManager::IsExistingLabel(const std::string& expected_jump_point)
+bool ProgramManager::IsExistingLabel(const std::string& expected_label)
 {
-	return Labels.count(expected_jump_point);
+	return Labels.count(expected_label);
 }
 
 bool ProgramManager::CanRunFurther()
@@ -1758,9 +1758,9 @@ bool ProgramManager::CPI(const Instruction& instruction)
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
 	}
 
-	int R = Converter::HexToDec(operands.first);
+	int DATA = Converter::HexToDec(operands.first);
 
-	if (R < 0x00 || R > 0xFF)
+	if (DATA < 0x00 || DATA > 0xFF)
 	{
 		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, instruction.line_number);
 	}
@@ -1773,7 +1773,7 @@ bool ProgramManager::CPI(const Instruction& instruction)
 		//CPI_DATA
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_DATA"];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
-		MemoryManager::SetMemory(Current_Address + 1, R);
+		MemoryManager::SetMemory(Current_Address + 1, DATA);
 		Current_Address += info.size;
 	}
 
