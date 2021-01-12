@@ -205,6 +205,7 @@ void MainFrame::OnExit(wxCommandEvent& event)
 void MainFrame::Init()
 {
 	Mnemonic::LoadInstructionSet();
+	ProgramManager::LoadProgramLoadingInstruction();
 }
 
 void MainFrame::OnRun(wxCommandEvent& event)
@@ -342,7 +343,7 @@ void MainFrame::OnDebug(wxCommandEvent& event)
 void MainFrame::Run8085(const std::string& filePath)
 {
 	Clear();//Clearing Frontend
-	if (ProgramManager::Read(filePath))//Read function is responsible for clearing the backend
+	if (ProgramManager::LoadProgramInMemory(filePath))//Read function int LoadProgramInMemory is responsible for clearing the backend
 	{
 		ProgramManager::Run();
 		if (ProgramManager::HALT)
@@ -358,7 +359,7 @@ void MainFrame::Run8085(const std::string& filePath)
 void MainFrame::Debug8085(const std::string& filePath)
 {
 	Clear();//Clearing Front End
-	if (ProgramManager::Read(filePath))//Read function is responsible for clearing the backend
+	if (ProgramManager::LoadProgramInMemory(filePath))//Read function int LoadProgramInMemory is responsible for clearing the backend
 	{
 		m_ExecuteButton->Enable();
 		m_DebugButton->Disable();

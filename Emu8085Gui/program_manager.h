@@ -124,7 +124,7 @@ public:
 
 	static bool HALT;
 
-	static void LoadInstructionSet();
+	static void LoadProgramLoadingInstruction();
 
 
 	static bool Read(const std::string filePath);
@@ -138,6 +138,10 @@ public:
 	static void Clear();
 
 	static bool CanRunFurther();
+
+	static bool LoadProgramInMemory(const std::string&);
+
+	static void LoadLabelAddress();
 };
 
 
@@ -163,7 +167,18 @@ void ProgramManager::Clear()
 	ProgramManager::Current_Address = 0;
 }
 
-
+void ProgramManager::LoadLabelAddress()
+{
+	for (std::pair<const std::string, int>& label : LabelsAddress)
+	{
+		int address = label.second;
+		for (int location : LabelPosition[label.first])
+		{
+			MemoryManager::SetMemory(location, address & 0x00ff);
+			MemoryManager::SetMemory(location + 1, (address & 0xff00) >> 8);
+		}
+	}
+}
 
 std::map<std::string, OpcodeInfo> ProgramManager::OP_INFO =
 {
@@ -409,7 +424,7 @@ MNEMONIC::CP	,
 MNEMONIC::CM 
 };
 
-void ProgramManager::LoadInstructionSet()
+void ProgramManager::LoadProgramLoadingInstruction()
 {
 	Load[MNEMONIC::MVI] = MVI;
 	Load[MNEMONIC::MOV] = MOV;

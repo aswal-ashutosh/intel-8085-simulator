@@ -2135,3 +2135,26 @@ void ProgramManager::Run()
 		}
 	}
 }
+
+bool ProgramManager::LoadProgramInMemory(const std::string& filePath)
+{
+	if (!ProgramManager::Read(filePath))
+	{
+		return false;
+	}
+	for (const Instruction& instruction: ProgramManager::Program)
+	{
+		if (ProgramManager::Load[instruction.mnemonic](instruction))
+		{
+			continue;
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+	//Loading label Address
+	ProgramManager::LoadLabelAddress();
+	return true;
+}
