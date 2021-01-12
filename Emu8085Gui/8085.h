@@ -7,16 +7,8 @@
 #include"converter.h"
 #include"memory_manager.h"
 #include"registers.h"
+#include"instruction.h"
 
-
-
-class Instruction
-{
-public:
-	int line_number;
-	std::string mnemonic;
-	std::pair<std::string, std::string> operands;
-};
 
 
 class ProgramManager
@@ -491,27 +483,28 @@ bool Mnemonic::LXI(const std::pair<std::string, std::string>& operands)
 
 	const std::string reg = operands.first;
 
-	std::string data = operands.second;
+	const std::string data = operands.second;
 	if (!Validator::IsValidHex(data))
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_HEX, ProgramManager::Program[Register::PC].line_number);
 	}
 
-	Utility::_16Bit(data);
+	int nData = Converter::HexToDec(data);
+
 	if (reg == REGISTER::B)
 	{
-		Register::Main[REGISTER::B] = Converter::HexToDec(data.substr(0, 2));
-		Register::Main[REGISTER::C] = Converter::HexToDec(data.substr(2, 2));
+		Register::Main[REGISTER::B] = (nData & 0xff00) >> 8;
+		Register::Main[REGISTER::C] = nData & 0x00ff;
 	}
 	else if (reg == REGISTER::H)
 	{
-		Register::Main[REGISTER::H] = Converter::HexToDec(data.substr(0, 2));
-		Register::Main[REGISTER::L] = Converter::HexToDec(data.substr(2, 2));
+		Register::Main[REGISTER::H] = (nData & 0xff00) >> 8;
+		Register::Main[REGISTER::L] = nData & 0x00ff;
 	}
 	else if (reg == REGISTER::D)
 	{
-		Register::Main[REGISTER::D] = Converter::HexToDec(data.substr(0, 2));
-		Register::Main[REGISTER::E] = Converter::HexToDec(data.substr(2, 2));
+		Register::Main[REGISTER::D] = (nData & 0xff00) >> 8;
+		Register::Main[REGISTER::E] = nData & 0x00ff;
 	}
 	else
 	{
@@ -2074,7 +2067,8 @@ bool ProgramManager::Read(const std::string filePath)
 		{
 			if (Validator::IsValidLabel(tokens[token_idx].substr(0, tokens[token_idx].size() - 1)))
 			{
-				ProgramManager::Labels[tokens[token_idx].substr(0, tokens[token_idx].size() - 1)] = Program.size();
+				instruction.label = tokens[token_idx].substr(0, tokens[token_idx].size() - 1);
+				ProgramManager::Labels[instruction.label] = Program.size();
 				++token_idx;
 			}
 			else

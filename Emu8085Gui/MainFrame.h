@@ -83,13 +83,6 @@ private:
 	wxBoxSizer* m_LeftPanelSizer = nullptr;
 	wxBoxSizer* m_RightPanelSizer = nullptr;
 
-	//About Diaglog
-	
-
-	//Help Dialog
-	wxHtmlWindow* m_HelpHtmlViewer = nullptr;
-	wxBoxSizer* m_HelpDialogSizer = nullptr;
-
 	//Other
 	std::map<std::string, wxTextCtrl*> m_MainRegister;
 	std::map<std::string, wxStaticText*> m_MainRegisterLabel;

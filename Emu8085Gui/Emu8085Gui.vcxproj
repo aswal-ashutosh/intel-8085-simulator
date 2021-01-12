@@ -24,8 +24,10 @@
     <ClInclude Include="converter.h" />
     <ClInclude Include="Emulator.h" />
     <ClInclude Include="error_handler.h" />
+    <ClInclude Include="instruction.h" />
     <ClInclude Include="MainFrame.h" />
     <ClInclude Include="memory_manager.h" />
+    <ClInclude Include="opcode_manager.h" />
     <ClInclude Include="registers.h" />
     <ClInclude Include="time_manager.h" />
     <ClInclude Include="utility.h" />

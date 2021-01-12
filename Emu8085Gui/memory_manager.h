@@ -10,6 +10,10 @@ class MemoryManager
 public:
 	static std::vector<int> Memory;
 	static bool SetMemory(const std::string&, const std::string&);
+	
+	//Opcode Helper
+	static void SetMemory(const int, const int);
+	//static void SetMemory(const int, const std::string&);
 };
 
 std::vector<int> MemoryManager::Memory(1 << 16, 0);
@@ -33,3 +37,16 @@ bool MemoryManager::SetMemory(const std::string& location, const std::string& da
 
 	return true;
 }
+
+
+//Will help in opcode loading
+void MemoryManager::SetMemory(const int location, const int data)
+{
+	Memory[location] = data;
+}
+
+//void MemoryManager::SetMemory(const int location, const std::string& data)
+//{
+//	int nData = Converter::HexToDec(data);
+//	Memory[location] = nData;
+//}
