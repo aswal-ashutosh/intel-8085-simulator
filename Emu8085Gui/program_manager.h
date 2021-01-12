@@ -29,7 +29,8 @@ public:
 
 	static std::map<std::string, bool (*)(const Instruction&)> Load;
 	static std::map<std::string, OpcodeInfo> OP_INFO;
-
+	static std::map<std::string, std::vector<int>> LabelPosition;
+	static std::map<std::string, int> LabelsAddress;
 	static int Current_Address;
 
 	static void LoadInstructionSet();
@@ -132,15 +133,19 @@ public:
 
 	static void Clear();
 
-	static bool CanRunFurther();//It will check whether there exist a instruction at Index = PC
+	//static bool CanRunFurther();//It will check whether there exist a instruction at Index = PC
 };
 
 
 std::vector<Instruction> ProgramManager::Program;
 std::map<std::string, int> ProgramManager::Labels;
 std::vector<int> ProgramManager::CallStack;
+std::map<std::string, std::vector<int>> ProgramManager::LabelPosition;
+std::map<std::string, int> ProgramManager::LabelsAddress;
+std::map<std::string, bool (*)(const Instruction&)> ProgramManager::Load;
 std::set<std::string> ProgramManager::JCallInstructions;
 bool ProgramManager::HALT;
+int ProgramManager::Current_Address = 0;
 
 bool ProgramManager::IsJCallInstruction(const std::string& mnemonic)
 {
@@ -173,9 +178,7 @@ void ProgramManager::Clear()
 	ProgramManager::HALT = false;
 }
 
-int ProgramManager::Current_Address = 0;
-std::map<std::string, bool (*)(const Instruction&)> ProgramManager::Load;
-std::set<std::string> ProgramManager::JCallInstructions;
+
 
 std::map<std::string, OpcodeInfo> ProgramManager::OP_INFO =
 {
@@ -1619,602 +1622,612 @@ bool ProgramManager::CPI(const Instruction& instruction)
 	return true;
 }
 
-//bool ProgramManager::JMP(const Instruction& instruction)
-//{
-//	const std::pair<std::string, std::string>& operands = instruction.operands;
+bool ProgramManager::JMP(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
+	}
+	else if (!ProgramManager::IsExistingLabel(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, instruction.line_number);
+	}
+	else
+	{
+		//JMP
+		OpcodeInfo info = OP_INFO[instruction.mnemonic];
+		MemoryManager::SetMemory(Current_Address, info.opcode);
+		//Label Handling
+		LabelPosition[operands.first].push_back(Current_Address + 1);
+		Current_Address += info.size;
+	}
+	return true;
+}
+
+bool ProgramManager::JC(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+	else if (!ProgramManager::IsExistingLabel(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
+	}
+	else
+	{
+		//JC
+		OpcodeInfo info = OP_INFO[instruction.mnemonic];
+		MemoryManager::SetMemory(Current_Address, info.opcode);
+		//Label Handling
+		LabelPosition[operands.first].push_back(Current_Address + 1);
+		Current_Address += info.size;
+	}
+	return true;
+}
+
+bool ProgramManager::JNC(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+	else if (!ProgramManager::IsExistingLabel(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
+	}
+	else
+	{
+		//JNC
+		OpcodeInfo info = OP_INFO[instruction.mnemonic];
+		MemoryManager::SetMemory(Current_Address, info.opcode);
+		//Label Handling
+		LabelPosition[operands.first].push_back(Current_Address + 1);
+		Current_Address += info.size;
+	}
+	return true;
+}
+
+bool ProgramManager::JZ(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+	else if (!ProgramManager::IsExistingLabel(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
+	}
+	else
+	{
+		//JZ
+		OpcodeInfo info = OP_INFO[instruction.mnemonic];
+		MemoryManager::SetMemory(Current_Address, info.opcode);
+		//Label Handling
+		LabelPosition[operands.first].push_back(Current_Address + 1);
+		Current_Address += info.size;
+	}
+	return true;
+}
+
+bool ProgramManager::JNZ(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+	else if (!ProgramManager::IsExistingLabel(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
+	}
+	else
+	{
+		//JNZ
+		OpcodeInfo info = OP_INFO[instruction.mnemonic];
+		MemoryManager::SetMemory(Current_Address, info.opcode);
+		//Label Handling
+		LabelPosition[operands.first].push_back(Current_Address + 1);
+		Current_Address += info.size;
+	}
+	return true;
+}
+
+bool ProgramManager::JPE(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+	else if (!ProgramManager::IsExistingLabel(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
+	}
+	else
+	{
+		//JPE
+		OpcodeInfo info = OP_INFO[instruction.mnemonic];
+		MemoryManager::SetMemory(Current_Address, info.opcode);
+		//Label Handling
+		LabelPosition[operands.first].push_back(Current_Address + 1);
+		Current_Address += info.size;
+	}
+	return true;
+}
+
+bool ProgramManager::JPO(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+	else if (!ProgramManager::IsExistingLabel(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
+	}
+	else
+	{
+		//JPO
+		OpcodeInfo info = OP_INFO[instruction.mnemonic];
+		MemoryManager::SetMemory(Current_Address, info.opcode);
+		//Label Handling
+		LabelPosition[operands.first].push_back(Current_Address + 1);
+		Current_Address += info.size;
+	}
+	return true;
+}
+
+bool ProgramManager::JM(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+	else if (!ProgramManager::IsExistingLabel(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
+	}
+	else
+	{
+		//JM
+		OpcodeInfo info = OP_INFO[instruction.mnemonic];
+		MemoryManager::SetMemory(Current_Address, info.opcode);
+		//Label Handling
+		LabelPosition[operands.first].push_back(Current_Address + 1);
+		Current_Address += info.size;
+	}
+	return true;
+}
+
+bool ProgramManager::JP(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+	else if (!ProgramManager::IsExistingLabel(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
+	}
+	else
+	{
+		//JP
+		OpcodeInfo info = OP_INFO[instruction.mnemonic];
+		MemoryManager::SetMemory(Current_Address, info.opcode);
+		//Label Handling
+		LabelPosition[operands.first].push_back(Current_Address + 1);
+		Current_Address += info.size;
+	}
+	return true;
+}
+
+bool ProgramManager::CALL(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+	else if (!ProgramManager::IsExistingLabel(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
+	}
+	else
+	{
+		//CALL
+		OpcodeInfo info = OP_INFO[instruction.mnemonic];
+		MemoryManager::SetMemory(Current_Address, info.opcode);
+		//Label Handling
+		LabelPosition[operands.first].push_back(Current_Address + 1);
+		Current_Address += info.size;
+	}
+	return true;
+}
+
+
+bool ProgramManager::CNC(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+	else if (!ProgramManager::IsExistingLabel(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
+	}
+	else
+	{
+		//CNC
+		OpcodeInfo info = OP_INFO[instruction.mnemonic];
+		MemoryManager::SetMemory(Current_Address, info.opcode);
+		//Label Handling
+		LabelPosition[operands.first].push_back(Current_Address + 1);
+		Current_Address += info.size;
+	}
+	return true;
+}
+
+bool ProgramManager::CC(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+	else if (!ProgramManager::IsExistingLabel(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
+	}
+	else
+	{
+		//CC
+		OpcodeInfo info = OP_INFO[instruction.mnemonic];
+		MemoryManager::SetMemory(Current_Address, info.opcode);
+		//Label Handling
+		LabelPosition[operands.first].push_back(Current_Address + 1);
+		Current_Address += info.size;
+	}
+	return true;
+}
+
+
+bool ProgramManager::CZ(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+	else if (!ProgramManager::IsExistingLabel(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
+	}
+	else
+	{
+		//CZ
+		OpcodeInfo info = OP_INFO[instruction.mnemonic];
+		MemoryManager::SetMemory(Current_Address, info.opcode);
+		//Label Handling
+		LabelPosition[operands.first].push_back(Current_Address + 1);
+		Current_Address += info.size;
+	}
+	return true;
+}
+
+
+bool ProgramManager::CNZ(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+	else if (!ProgramManager::IsExistingLabel(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
+	}
+	else
+	{
+		//CNZ
+		OpcodeInfo info = OP_INFO[instruction.mnemonic];
+		MemoryManager::SetMemory(Current_Address, info.opcode);
+		//Label Handling
+		LabelPosition[operands.first].push_back(Current_Address + 1);
+		Current_Address += info.size;
+	}
+	return true;
+}
+
+
+bool ProgramManager::CPE(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+	else if (!ProgramManager::IsExistingLabel(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
+	}
+	else
+	{
+		//CPE
+		OpcodeInfo info = OP_INFO[instruction.mnemonic];
+		MemoryManager::SetMemory(Current_Address, info.opcode);
+		//Label Handling
+		LabelPosition[operands.first].push_back(Current_Address + 1);
+		Current_Address += info.size;
+	}
+	return true;
+}
+
+bool ProgramManager::CPO(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+	else if (!ProgramManager::IsExistingLabel(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
+	}
+	else
+	{
+		//CPO
+		OpcodeInfo info = OP_INFO[instruction.mnemonic];
+		MemoryManager::SetMemory(Current_Address, info.opcode);
+		//Label Handling
+		LabelPosition[operands.first].push_back(Current_Address + 1);
+		Current_Address += info.size;
+	}
+	return true;
+}
+
+
+bool ProgramManager::CP(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+	else if (!ProgramManager::IsExistingLabel(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
+	}
+	else
+	{
+		//CP
+		OpcodeInfo info = OP_INFO[instruction.mnemonic];
+		MemoryManager::SetMemory(Current_Address, info.opcode);
+		//Label Handling
+		LabelPosition[operands.first].push_back(Current_Address + 1);
+		Current_Address += info.size;
+	}
+	return true;
+}
+
+bool ProgramManager::CM(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+	else if (!ProgramManager::IsExistingLabel(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
+	}
+	else
+	{
+		//CM
+		OpcodeInfo info = OP_INFO[instruction.mnemonic];
+		MemoryManager::SetMemory(Current_Address, info.opcode);
+		//Label Handling
+		LabelPosition[operands.first].push_back(Current_Address + 1);
+		Current_Address += info.size;
+	}
+	return true;
+}
+
+bool ProgramManager::RET(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 0))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+	//RET
+	OpcodeInfo info = OP_INFO[instruction.mnemonic];
+	MemoryManager::SetMemory(Current_Address, info.opcode);
+	Current_Address += info.size;
+	return true;
+}
+
+bool ProgramManager::RNC(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 0))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+
+	//RNC
+	OpcodeInfo info = OP_INFO[instruction.mnemonic];
+	MemoryManager::SetMemory(Current_Address, info.opcode);
+	Current_Address += info.size;
+	return true;
+}
+
+bool ProgramManager::RC(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 0))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+
+	//RC
+	OpcodeInfo info = OP_INFO[instruction.mnemonic];
+	MemoryManager::SetMemory(Current_Address, info.opcode);
+	Current_Address += info.size;
+	return true;
+}
 //
-//	if (!Validator::ValidOperandCount(operands, 1))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
-//	}
-//	else if (!ProgramManager::IsExistingLabel(operands.first))
-//	{
-//		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, instruction.line_number);
-//	}
-//	else
-//	{
-//		Register::PC = ProgramManager::Labels[operands.first];
-//	}
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//bool ProgramManager::JC(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 1))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else if (!ProgramManager::IsExistingLabel(operands.first))
-//	{
-//		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else
-//	{
-//		Register::PC = Register::Flag::CY ? ProgramManager::Labels[operands.first] : Register::PC + 1;
-//	}
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//bool ProgramManager::JNC(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 1))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else if (!ProgramManager::IsExistingLabel(operands.first))
-//	{
-//		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else
-//	{
-//		Register::PC = Register::Flag::CY ? Register::PC + 1 : ProgramManager::Labels[operands.first];
-//	}
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//bool ProgramManager::JZ(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 1))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else if (!ProgramManager::IsExistingLabel(operands.first))
-//	{
-//		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else
-//	{
-//		Register::PC = Register::Flag::ZF ? ProgramManager::Labels[operands.first] : Register::PC + 1;
-//	}
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//bool ProgramManager::JNZ(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 1))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else if (!ProgramManager::IsExistingLabel(operands.first))
-//	{
-//		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else
-//	{
-//		Register::PC = Register::Flag::ZF ? Register::PC + 1 : ProgramManager::Labels[operands.first];
-//	}
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//bool ProgramManager::JPE(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 1))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else if (!ProgramManager::IsExistingLabel(operands.first))
-//	{
-//		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else
-//	{
-//		Register::PC = Register::Flag::PF ? ProgramManager::Labels[operands.first] : Register::PC + 1;
-//	}
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//bool ProgramManager::JPO(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 1))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else if (!ProgramManager::IsExistingLabel(operands.first))
-//	{
-//		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else
-//	{
-//		Register::PC = Register::Flag::PF ? Register::PC + 1 : ProgramManager::Labels[operands.first];
-//	}
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//bool ProgramManager::JM(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 1))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else if (!ProgramManager::IsExistingLabel(operands.first))
-//	{
-//		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else
-//	{
-//		Register::PC = Register::Flag::SF ? ProgramManager::Labels[operands.first] : Register::PC + 1;
-//	}
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//bool ProgramManager::JP(const std::pair<std::string, std::string>& operands)
-//{
-//
-//	if (!Validator::ValidOperandCount(operands, 1))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else if (!ProgramManager::IsExistingLabel(operands.first))
-//	{
-//		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else
-//	{
-//		Register::PC = Register::Flag::SF ? Register::PC + 1 : ProgramManager::Labels[operands.first];
-//	}
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//bool ProgramManager::CALL(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 1))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else if (!ProgramManager::IsExistingLabel(operands.first))
-//	{
-//		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else
-//	{
-//		ProgramManager::CallStack.push_back(Register::PC + 1);
-//		Register::PC = ProgramManager::Labels[operands.first];
-//	}
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//
-//bool ProgramManager::CNC(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 1))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else if (!ProgramManager::IsExistingLabel(operands.first))
-//	{
-//		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else
-//	{
-//		if (Register::Flag::CY)
-//		{
-//			++Register::PC;
-//		}
-//		else
-//		{
-//			ProgramManager::CallStack.push_back(Register::PC + 1);
-//			Register::PC = ProgramManager::Labels[operands.first];
-//		}
-//	}
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//bool ProgramManager::CC(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 1))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else if (!ProgramManager::IsExistingLabel(operands.first))
-//	{
-//		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else
-//	{
-//		if (Register::Flag::CY)
-//		{
-//			ProgramManager::CallStack.push_back(Register::PC + 1);
-//			Register::PC = ProgramManager::Labels[operands.first];
-//		}
-//		else
-//		{
-//			++Register::PC;
-//		}
-//	}
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//
-//bool ProgramManager::CZ(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 1))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else if (!ProgramManager::IsExistingLabel(operands.first))
-//	{
-//		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else
-//	{
-//		if (Register::Flag::ZF)
-//		{
-//			ProgramManager::CallStack.push_back(Register::PC + 1);
-//			Register::PC = ProgramManager::Labels[operands.first];
-//		}
-//		else
-//		{
-//			++Register::PC;
-//		}
-//	}
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//
-//bool ProgramManager::CNZ(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 1))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else if (!ProgramManager::IsExistingLabel(operands.first))
-//	{
-//		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else
-//	{
-//		if (Register::Flag::CY)
-//		{
-//			++Register::PC;
-//		}
-//		else
-//		{
-//			ProgramManager::CallStack.push_back(Register::PC + 1);
-//			Register::PC = ProgramManager::Labels[operands.first];
-//		}
-//	}
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//
-//bool ProgramManager::CPE(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 1))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else if (!ProgramManager::IsExistingLabel(operands.first))
-//	{
-//		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else
-//	{
-//		if (Register::Flag::PF)
-//		{
-//			ProgramManager::CallStack.push_back(Register::PC + 1);
-//			Register::PC = ProgramManager::Labels[operands.first];
-//		}
-//		else
-//		{
-//			++Register::PC;
-//		}
-//	}
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//bool ProgramManager::CPO(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 1))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else if (!ProgramManager::IsExistingLabel(operands.first))
-//	{
-//		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else
-//	{
-//		if (Register::Flag::PF)
-//		{
-//			++Register::PC;
-//		}
-//		else
-//		{
-//			ProgramManager::CallStack.push_back(Register::PC + 1);
-//			Register::PC = ProgramManager::Labels[operands.first];
-//		}
-//	}
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//
-//bool ProgramManager::CP(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 1))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else if (!ProgramManager::IsExistingLabel(operands.first))
-//	{
-//		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else
-//	{
-//		if (Register::Flag::SF)
-//		{
-//			++Register::PC;
-//		}
-//		else
-//		{
-//			ProgramManager::CallStack.push_back(Register::PC + 1);
-//			Register::PC = ProgramManager::Labels[operands.first];
-//		}
-//	}
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//bool ProgramManager::CM(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 1))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else if (!ProgramManager::IsExistingLabel(operands.first))
-//	{
-//		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else
-//	{
-//		if (Register::Flag::SF)
-//		{
-//			ProgramManager::CallStack.push_back(Register::PC + 1);
-//			Register::PC = ProgramManager::Labels[operands.first];
-//		}
-//		else
-//		{
-//			++Register::PC;
-//		}
-//	}
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//bool ProgramManager::RET(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 0))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else if (ProgramManager::CallStack.empty())//There can't be a return instruction if we don't have any address to return. 
-//	{
-//		return Error::Throw(ERROR_TYPE::RETURN_WITHOUT_CALL);
-//	}
-//
-//	Register::PC = ProgramManager::CallStack.back();
-//	ProgramManager::CallStack.pop_back();
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//bool ProgramManager::RNC(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 0))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else if (ProgramManager::CallStack.empty())//There can't be a return instruction if we don't have any address to return. 
-//	{
-//		return Error::Throw(ERROR_TYPE::RETURN_WITHOUT_CALL);
-//	}
-//
-//	if (Register::Flag::CY)
-//	{
-//		++Register::PC;
-//	}
-//	else
-//	{
-//		Register::PC = ProgramManager::CallStack.back();
-//		ProgramManager::CallStack.pop_back();
-//	}
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//bool ProgramManager::RC(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 0))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else if (ProgramManager::CallStack.empty())//There can't be a return instruction if we don't have any address to return. 
-//	{
-//		return Error::Throw(ERROR_TYPE::RETURN_WITHOUT_CALL);
-//	}
-//
-//	if (Register::Flag::CY)
-//	{
-//		Register::PC = ProgramManager::CallStack.back();
-//		ProgramManager::CallStack.pop_back();
-//	}
-//	else
-//	{
-//		++Register::PC;
-//	}
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//bool ProgramManager::RZ(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 0))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else if (ProgramManager::CallStack.empty())//There can't be a return instruction if we don't have any address to return. 
-//	{
-//		return Error::Throw(ERROR_TYPE::RETURN_WITHOUT_CALL);
-//	}
-//
-//	if (Register::Flag::ZF)
-//	{
-//		Register::PC = ProgramManager::CallStack.back();
-//		ProgramManager::CallStack.pop_back();
-//	}
-//	else
-//	{
-//		++Register::PC;
-//	}
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//bool ProgramManager::RNZ(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 0))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else if (ProgramManager::CallStack.empty())//There can't be a return instruction if we don't have any address to return. 
-//	{
-//		return Error::Throw(ERROR_TYPE::RETURN_WITHOUT_CALL);
-//	}
-//
-//	if (Register::Flag::ZF)
-//	{
-//		++Register::PC;
-//	}
-//	else
-//	{
-//		Register::PC = ProgramManager::CallStack.back();
-//		ProgramManager::CallStack.pop_back();
-//	}
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//
-//bool ProgramManager::RPE(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 0))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else if (ProgramManager::CallStack.empty())//There can't be a return instruction if we don't have any address to return. 
-//	{
-//		return Error::Throw(ERROR_TYPE::RETURN_WITHOUT_CALL);
-//	}
-//
-//	if (Register::Flag::PF)
-//	{
-//		Register::PC = ProgramManager::CallStack.back();
-//		ProgramManager::CallStack.pop_back();
-//	}
-//	else
-//	{
-//		++Register::PC;
-//	}
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//bool ProgramManager::RPO(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 0))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else if (ProgramManager::CallStack.empty())//There can't be a return instruction if we don't have any address to return. 
-//	{
-//		return Error::Throw(ERROR_TYPE::RETURN_WITHOUT_CALL);
-//	}
-//
-//	if (Register::Flag::PF)
-//	{
-//		++Register::PC;
-//	}
-//	else
-//	{
-//		Register::PC = ProgramManager::CallStack.back();
-//		ProgramManager::CallStack.pop_back();
-//	}
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//bool ProgramManager::RM(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 0))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else if (ProgramManager::CallStack.empty())//There can't be a return instruction if we don't have any address to return. 
-//	{
-//		return Error::Throw(ERROR_TYPE::RETURN_WITHOUT_CALL);
-//	}
-//
-//	if (Register::Flag::SF)
-//	{
-//		Register::PC = ProgramManager::CallStack.back();
-//		ProgramManager::CallStack.pop_back();
-//	}
-//	else
-//	{
-//		++Register::PC;
-//	}
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//bool ProgramManager::RP(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 0))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else if (ProgramManager::CallStack.empty())//There can't be a return instruction if we don't have any address to return. 
-//	{
-//		return Error::Throw(ERROR_TYPE::RETURN_WITHOUT_CALL);
-//	}
-//
-//	if (Register::Flag::SF)
-//	{
-//		++Register::PC;
-//	}
-//	else
-//	{
-//		Register::PC = ProgramManager::CallStack.back();
-//		ProgramManager::CallStack.pop_back();
-//	}
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//bool ProgramManager::HLT(const std::pair<std::string, std::string>& operands)//return false even on successful execcution But will change Program::HLT = true
-//{
-//	if (!Validator::ValidOperandCount(operands, 0))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	ProgramManager::HALT = true;
-//	return false;
-//}
-//
-//bool ProgramManager::NOP(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 0))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	++Register::PC;
-//	return ProgramManager::CanRunFurther();
-//}
+bool ProgramManager::RZ(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 0))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+
+	//RZ
+	OpcodeInfo info = OP_INFO[instruction.mnemonic];
+	MemoryManager::SetMemory(Current_Address, info.opcode);
+	Current_Address += info.size;
+	return true;
+}
+
+bool ProgramManager::RNZ(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 0))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+
+	//RNZ
+	OpcodeInfo info = OP_INFO[instruction.mnemonic];
+	MemoryManager::SetMemory(Current_Address, info.opcode);
+	Current_Address += info.size;
+	return true;
+}
+
+
+bool ProgramManager::RPE(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 0))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+
+	//RPE
+	OpcodeInfo info = OP_INFO[instruction.mnemonic];
+	MemoryManager::SetMemory(Current_Address, info.opcode);
+	Current_Address += info.size;
+	return true;
+}
+
+bool ProgramManager::RPO(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 0))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+	//RPO
+	OpcodeInfo info = OP_INFO[instruction.mnemonic];
+	MemoryManager::SetMemory(Current_Address, info.opcode);
+	Current_Address += info.size;
+	return true;
+}
+
+bool ProgramManager::RM(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 0))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+
+	//RM
+	OpcodeInfo info = OP_INFO[instruction.mnemonic];
+	MemoryManager::SetMemory(Current_Address, info.opcode);
+	Current_Address += info.size;
+	return true;
+}
+
+bool ProgramManager::RP(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 0))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+
+	//RP
+	OpcodeInfo info = OP_INFO[instruction.mnemonic];
+	MemoryManager::SetMemory(Current_Address, info.opcode);
+	Current_Address += info.size;
+	return true;
+}
+
+bool ProgramManager::HLT(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 0))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+	//HLT
+	OpcodeInfo info = OP_INFO[instruction.mnemonic];
+	MemoryManager::SetMemory(Current_Address, info.opcode);
+	Current_Address += info.size;
+	return true;
+}
+
+bool ProgramManager::NOP(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 0))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+	//NOP
+	OpcodeInfo info = OP_INFO[instruction.mnemonic];
+	MemoryManager::SetMemory(Current_Address, info.opcode);
+	Current_Address += info.size;
+	return true;
+}
