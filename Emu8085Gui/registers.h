@@ -39,17 +39,17 @@ bool Register::Flag::ZF;
 
 int Register::HL()
 {
-	return Converter::HexToDec(Converter::DecToHex(Main[REGISTER::H]) + Converter::DecToHex(Main[REGISTER::L]));
+	return (Main[REGISTER::H] << 8) | Main[REGISTER::L];
 }
 
 int Register::BC()
 {
-	return Converter::HexToDec(Converter::DecToHex(Main[REGISTER::B]) + Converter::DecToHex(Main[REGISTER::C]));
+	return (Main[REGISTER::B] << 8) | Main[REGISTER::C];
 }
 
 int Register::DE()
 {
-	return Converter::HexToDec(Converter::DecToHex(Main[REGISTER::D]) + Converter::DecToHex(Main[REGISTER::E]));
+	return (Main[REGISTER::D] << 8) | Main[REGISTER::E];
 }
 
 void Register::UpdateFlags(int aux, bool preserve_carry = false)

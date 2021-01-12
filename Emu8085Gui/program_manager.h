@@ -15,12 +15,12 @@ class OpcodeInfo
 public:
 	const int opcode;
 	const int size;
-	OpcodeInfo():opcode(0), size(0)
+	OpcodeInfo() :opcode(0), size(0)
 	{
 
 	}
 
-	OpcodeInfo(const int code, const int sz) : opcode(code), size(sz){}
+	OpcodeInfo(const int code, const int sz) : opcode(code), size(sz) {}
 };
 
 
@@ -37,7 +37,7 @@ public:
 	static std::map<std::string, OpcodeInfo> OP_INFO;
 	static std::map<std::string, std::vector<int>> LabelPosition;
 	static std::map<std::string, int> LabelsAddress;
-	static int Current_Address;
+	static int CurrentLoadingLocation;
 
 
 
@@ -139,9 +139,11 @@ public:
 
 	static bool CanRunFurther();
 
-	static bool LoadProgramInMemory(const std::string&);
+	static bool LoadProgramInMemory(const std::string&, int);
 
 	static void LoadLabelAddress();
+
+	static bool CanLoadInstruction(int, int);
 };
 
 
@@ -153,7 +155,7 @@ std::map<std::string, int> ProgramManager::LabelsAddress;
 std::map<std::string, bool (*)(const Instruction&)> ProgramManager::Load;
 
 bool ProgramManager::HALT;
-int ProgramManager::Current_Address = 0;
+int ProgramManager::CurrentLoadingLocation;
 
 
 void ProgramManager::Clear()
@@ -164,7 +166,6 @@ void ProgramManager::Clear()
 	ProgramManager::HALT = false;
 	ProgramManager::LabelPosition.clear();
 	ProgramManager::LabelsAddress.clear();
-	ProgramManager::Current_Address = 0;
 }
 
 void ProgramManager::LoadLabelAddress()
@@ -421,7 +422,7 @@ MNEMONIC::CZ	,
 MNEMONIC::CPE	,
 MNEMONIC::CPO	,
 MNEMONIC::CP	,
-MNEMONIC::CM 
+MNEMONIC::CM
 };
 
 void ProgramManager::LoadProgramLoadingInstruction()
@@ -498,6 +499,11 @@ void ProgramManager::LoadProgramLoadingInstruction()
 }
 
 
+bool ProgramManager::CanLoadInstruction(int address, int size)
+{
+	return (address + size - 1) <= 0xffff;
+}
+
 bool ProgramManager::IsJCallInstruction(const std::string& mnemonic)
 {
 	return JCallInstructions.count(mnemonic);
@@ -546,12 +552,16 @@ bool ProgramManager::MOV(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//MOV_R|M_R|M
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + destination + "_" + source];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
-		Current_Address += info.size;
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+		CurrentLoadingLocation += info.size;
 	}
 	else
 	{
@@ -594,13 +604,17 @@ bool ProgramManager::MVI(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//MVI_R|M_DATA
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg + "_DATA"];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
-		MemoryManager::SetMemory(Current_Address + 1, nValue);
-		Current_Address += info.size;
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+		MemoryManager::SetMemory(CurrentLoadingLocation + 1, nValue);
+		CurrentLoadingLocation += info.size;
 	}
 	else
 	{
@@ -629,14 +643,18 @@ bool ProgramManager::LDA(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//LDA_ADDRESS
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_ADDRESS"];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
-		MemoryManager::SetMemory(Current_Address + 1, nAddress & 0x00ff);
-		MemoryManager::SetMemory(Current_Address + 2, (nAddress & 0xff00) >> 8);
-		Current_Address += info.size;
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+		MemoryManager::SetMemory(CurrentLoadingLocation + 1, nAddress & 0x00ff);
+		MemoryManager::SetMemory(CurrentLoadingLocation + 2, (nAddress & 0xff00) >> 8);
+		CurrentLoadingLocation += info.size;
 	}
 	else
 	{
@@ -664,14 +682,18 @@ bool ProgramManager::STA(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//STA_ADDRESS
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_ADDRESS"];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
-		MemoryManager::SetMemory(Current_Address + 1, nAddress & 0x00ff);
-		MemoryManager::SetMemory(Current_Address + 2, (nAddress & 0xff00) >> 8);
-		Current_Address += info.size;
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+		MemoryManager::SetMemory(CurrentLoadingLocation + 1, nAddress & 0x00ff);
+		MemoryManager::SetMemory(CurrentLoadingLocation + 2, (nAddress & 0xff00) >> 8);
+		CurrentLoadingLocation += info.size;
 	}
 	else
 	{
@@ -700,14 +722,18 @@ bool ProgramManager::LHLD(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//LHLD_ADDRESS
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_ADDRESS"];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
-		MemoryManager::SetMemory(Current_Address + 1, nAddress & 0x00ff);
-		MemoryManager::SetMemory(Current_Address + 2, (nAddress & 0xff00) >> 8);
-		Current_Address += info.size;
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+		MemoryManager::SetMemory(CurrentLoadingLocation + 1, nAddress & 0x00ff);
+		MemoryManager::SetMemory(CurrentLoadingLocation + 2, (nAddress & 0xff00) >> 8);
+		CurrentLoadingLocation += info.size;
 	}
 	else
 	{
@@ -739,14 +765,18 @@ bool ProgramManager::SHLD(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//SHLD_ADDRESS
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_ADDRESS"];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
-		MemoryManager::SetMemory(Current_Address + 1, nAddress & 0x00ff);
-		MemoryManager::SetMemory(Current_Address + 2, (nAddress & 0xff00) >> 8);
-		Current_Address += info.size;
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+		MemoryManager::SetMemory(CurrentLoadingLocation + 1, nAddress & 0x00ff);
+		MemoryManager::SetMemory(CurrentLoadingLocation + 2, (nAddress & 0xff00) >> 8);
+		CurrentLoadingLocation += info.size;
 	}
 	else
 	{
@@ -791,14 +821,18 @@ bool ProgramManager::LXI(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//LXI_B|D|H
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
-		MemoryManager::SetMemory(Current_Address + 1, nData & 0x00ff);
-		MemoryManager::SetMemory(Current_Address + 2, (nData & 0xff00) >> 8);
-		Current_Address += info.size;
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+		MemoryManager::SetMemory(CurrentLoadingLocation + 1, nData & 0x00ff);
+		MemoryManager::SetMemory(CurrentLoadingLocation + 2, (nData & 0xff00) >> 8);
+		CurrentLoadingLocation += info.size;
 	}
 	else
 	{
@@ -828,12 +862,16 @@ bool ProgramManager::LDAX(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//LDAX_B|D
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
-		Current_Address += info.size;
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+		CurrentLoadingLocation += info.size;
 	}
 	else
 	{
@@ -861,12 +899,16 @@ bool ProgramManager::STAX(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//STAX_B|D
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
-		Current_Address += info.size;
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+		CurrentLoadingLocation += info.size;
 	}
 	else
 	{
@@ -886,12 +928,16 @@ bool ProgramManager::XCHG(const Instruction& instruction)
 
 	if (!instruction.label.empty())
 	{
-		ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 	}
 	//XCHG
 	OpcodeInfo info = OP_INFO[instruction.mnemonic];
-	MemoryManager::SetMemory(Current_Address, info.opcode);
-	Current_Address += info.size;
+	if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+	{
+		return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+	}
+	MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+	CurrentLoadingLocation += info.size;
 	return true;
 }
 
@@ -915,12 +961,16 @@ bool ProgramManager::ADD(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//ADD_R|M
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
-		Current_Address += info.size;
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+		CurrentLoadingLocation += info.size;
 	}
 	else
 	{
@@ -948,12 +998,16 @@ bool ProgramManager::ADC(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//ADC_R|M
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
-		Current_Address += info.size;
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+		CurrentLoadingLocation += info.size;
 	}
 	else
 	{
@@ -986,13 +1040,17 @@ bool ProgramManager::ADI(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//ADI_DATA
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_DATA"];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
-		MemoryManager::SetMemory(Current_Address + 1, nValue);
-		Current_Address += info.size;
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+		MemoryManager::SetMemory(CurrentLoadingLocation + 1, nValue);
+		CurrentLoadingLocation += info.size;
 	}
 	return true;
 }
@@ -1024,13 +1082,17 @@ bool ProgramManager::ACI(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//ACI_DATA
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_DATA"];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
-		MemoryManager::SetMemory(Current_Address + 1, nValue);
-		Current_Address += info.size;
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+		MemoryManager::SetMemory(CurrentLoadingLocation + 1, nValue);
+		CurrentLoadingLocation += info.size;
 	}
 	return true;
 }
@@ -1056,12 +1118,16 @@ bool ProgramManager::SUB(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//SUB_R|M
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
-		Current_Address += info.size;
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+		CurrentLoadingLocation += info.size;
 	}
 	else
 	{
@@ -1090,12 +1156,16 @@ bool ProgramManager::SBB(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//SBB_R|M
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
-		Current_Address += info.size;
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+		CurrentLoadingLocation += info.size;
 	}
 	else
 	{
@@ -1129,13 +1199,17 @@ bool ProgramManager::SUI(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//SUI_DATA
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_DATA"];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
-		MemoryManager::SetMemory(Current_Address + 1, nValue);
-		Current_Address += info.size;
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+		MemoryManager::SetMemory(CurrentLoadingLocation + 1, nValue);
+		CurrentLoadingLocation += info.size;
 	}
 	return true;
 }
@@ -1168,13 +1242,17 @@ bool ProgramManager::SBI(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//SBI_DATA
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_DATA"];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
-		MemoryManager::SetMemory(Current_Address + 1, nValue);
-		Current_Address += info.size;
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+		MemoryManager::SetMemory(CurrentLoadingLocation + 1, nValue);
+		CurrentLoadingLocation += info.size;
 	}
 
 	return true;
@@ -1192,12 +1270,16 @@ bool ProgramManager::DAA(const Instruction& instruction)
 
 	if (!instruction.label.empty())
 	{
-		ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 	}
 	//DAA
 	OpcodeInfo info = OP_INFO[instruction.mnemonic];
-	MemoryManager::SetMemory(Current_Address, info.opcode);
-	Current_Address += info.size;
+	if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+	{
+		return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+	}
+	MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+	CurrentLoadingLocation += info.size;
 
 	return true;
 }
@@ -1221,12 +1303,16 @@ bool ProgramManager::INR(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//INR_R|M
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
-		Current_Address += info.size;
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+		CurrentLoadingLocation += info.size;
 	}
 	else
 	{
@@ -1255,12 +1341,16 @@ bool ProgramManager::INX(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//INX_H|D|B
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
-		Current_Address += info.size;
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+		CurrentLoadingLocation += info.size;
 	}
 	else
 	{
@@ -1288,12 +1378,16 @@ bool ProgramManager::DCR(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//DCR_R|M
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
-		Current_Address += info.size;
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+		CurrentLoadingLocation += info.size;
 	}
 	else
 	{
@@ -1322,12 +1416,16 @@ bool ProgramManager::DCX(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//DCX_H|D|B
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
-		Current_Address += info.size;
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+		CurrentLoadingLocation += info.size;
 	}
 	else
 	{
@@ -1356,12 +1454,16 @@ bool ProgramManager::DAD(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//DAD_H|D|B
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + Rp];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
-		Current_Address += info.size;
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+		CurrentLoadingLocation += info.size;
 	}
 	else
 	{
@@ -1389,12 +1491,16 @@ bool ProgramManager::ANA(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//ANA_R|M
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
-		Current_Address += info.size;
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+		CurrentLoadingLocation += info.size;
 	}
 	else
 	{
@@ -1427,13 +1533,17 @@ bool ProgramManager::ANI(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//ANI_DATA
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_DATA"];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
-		MemoryManager::SetMemory(Current_Address + 1, nValue);
-		Current_Address += info.size;
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+		MemoryManager::SetMemory(CurrentLoadingLocation + 1, nValue);
+		CurrentLoadingLocation += info.size;
 	}
 
 	return true;
@@ -1459,12 +1569,16 @@ bool ProgramManager::ORA(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//ORA_R|M
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
-		Current_Address += info.size;
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+		CurrentLoadingLocation += info.size;
 	}
 	else
 	{
@@ -1497,13 +1611,17 @@ bool ProgramManager::ORI(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//ORI_DATA
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_DATA"];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
-		MemoryManager::SetMemory(Current_Address + 1, nValue);
-		Current_Address += info.size;
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+		MemoryManager::SetMemory(CurrentLoadingLocation + 1, nValue);
+		CurrentLoadingLocation += info.size;
 	}
 
 	return true;
@@ -1527,12 +1645,16 @@ bool ProgramManager::XRA(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//XRA_R|M
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
-		Current_Address += info.size;
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+		CurrentLoadingLocation += info.size;
 	}
 	else
 	{
@@ -1564,13 +1686,17 @@ bool ProgramManager::XRI(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//XRI_DATA
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_DATA"];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
-		MemoryManager::SetMemory(Current_Address + 1, nValue);
-		Current_Address += info.size;
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+		MemoryManager::SetMemory(CurrentLoadingLocation + 1, nValue);
+		CurrentLoadingLocation += info.size;
 	}
 
 	return true;
@@ -1587,12 +1713,16 @@ bool ProgramManager::CMA(const Instruction& instruction)
 
 	if (!instruction.label.empty())
 	{
-		ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 	}
 	//CMA
 	OpcodeInfo info = OP_INFO[instruction.mnemonic];
-	MemoryManager::SetMemory(Current_Address, info.opcode);
-	Current_Address += info.size;
+	if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+	{
+		return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+	}
+	MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+	CurrentLoadingLocation += info.size;
 	return true;
 }
 
@@ -1607,12 +1737,16 @@ bool ProgramManager::RLC(const Instruction& instruction)
 
 	if (!instruction.label.empty())
 	{
-		ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 	}
 	//RLC
 	OpcodeInfo info = OP_INFO[instruction.mnemonic];
-	MemoryManager::SetMemory(Current_Address, info.opcode);
-	Current_Address += info.size;
+	if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+	{
+		return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+	}
+	MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+	CurrentLoadingLocation += info.size;
 	return true;
 }
 
@@ -1627,12 +1761,16 @@ bool ProgramManager::RAL(const Instruction& instruction)
 
 	if (!instruction.label.empty())
 	{
-		ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 	}
 	//RAL
 	OpcodeInfo info = OP_INFO[instruction.mnemonic];
-	MemoryManager::SetMemory(Current_Address, info.opcode);
-	Current_Address += info.size;
+	if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+	{
+		return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+	}
+	MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+	CurrentLoadingLocation += info.size;
 	return true;
 }
 
@@ -1647,12 +1785,16 @@ bool ProgramManager::RRC(const Instruction& instruction)
 
 	if (!instruction.label.empty())
 	{
-		ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 	}
 	//RRC
 	OpcodeInfo info = OP_INFO[instruction.mnemonic];
-	MemoryManager::SetMemory(Current_Address, info.opcode);
-	Current_Address += info.size;
+	if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+	{
+		return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+	}
+	MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+	CurrentLoadingLocation += info.size;
 	return true;
 }
 
@@ -1667,12 +1809,16 @@ bool ProgramManager::RAR(const Instruction& instruction)
 
 	if (!instruction.label.empty())
 	{
-		ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 	}
 	//RAR
 	OpcodeInfo info = OP_INFO[instruction.mnemonic];
-	MemoryManager::SetMemory(Current_Address, info.opcode);
-	Current_Address += info.size;
+	if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+	{
+		return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+	}
+	MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+	CurrentLoadingLocation += info.size;
 	return true;
 }
 
@@ -1687,12 +1833,16 @@ bool ProgramManager::STC(const Instruction& instruction)
 
 	if (!instruction.label.empty())
 	{
-		ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 	}
 	//STC
 	OpcodeInfo info = OP_INFO[instruction.mnemonic];
-	MemoryManager::SetMemory(Current_Address, info.opcode);
-	Current_Address += info.size;
+	if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+	{
+		return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+	}
+	MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+	CurrentLoadingLocation += info.size;
 	return true;
 }
 
@@ -1707,12 +1857,16 @@ bool ProgramManager::CMC(const Instruction& instruction)
 
 	if (!instruction.label.empty())
 	{
-		ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 	}
 	//CMC
 	OpcodeInfo info = OP_INFO[instruction.mnemonic];
-	MemoryManager::SetMemory(Current_Address, info.opcode);
-	Current_Address += info.size;
+	if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+	{
+		return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+	}
+	MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+	CurrentLoadingLocation += info.size;
 	return true;
 }
 
@@ -1734,12 +1888,16 @@ bool ProgramManager::CMP(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//CMP_R|M
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
-		Current_Address += info.size;
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+		CurrentLoadingLocation += info.size;
 	}
 	else
 	{
@@ -1768,13 +1926,17 @@ bool ProgramManager::CPI(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//CPI_DATA
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_DATA"];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
-		MemoryManager::SetMemory(Current_Address + 1, DATA);
-		Current_Address += info.size;
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+		MemoryManager::SetMemory(CurrentLoadingLocation + 1, DATA);
+		CurrentLoadingLocation += info.size;
 	}
 
 	return true;
@@ -1796,14 +1958,18 @@ bool ProgramManager::JMP(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//JMP
 		OpcodeInfo info = OP_INFO[instruction.mnemonic];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
 		//Label Handling
-		LabelPosition[operands.first].push_back(Current_Address + 1);
-		Current_Address += info.size;
+		LabelPosition[operands.first].push_back(CurrentLoadingLocation + 1);
+		CurrentLoadingLocation += info.size;
 	}
 	return true;
 }
@@ -1824,14 +1990,18 @@ bool ProgramManager::JC(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//JC
 		OpcodeInfo info = OP_INFO[instruction.mnemonic];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
 		//Label Handling
-		LabelPosition[operands.first].push_back(Current_Address + 1);
-		Current_Address += info.size;
+		LabelPosition[operands.first].push_back(CurrentLoadingLocation + 1);
+		CurrentLoadingLocation += info.size;
 	}
 	return true;
 }
@@ -1852,14 +2022,18 @@ bool ProgramManager::JNC(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//JNC
 		OpcodeInfo info = OP_INFO[instruction.mnemonic];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
 		//Label Handling
-		LabelPosition[operands.first].push_back(Current_Address + 1);
-		Current_Address += info.size;
+		LabelPosition[operands.first].push_back(CurrentLoadingLocation + 1);
+		CurrentLoadingLocation += info.size;
 	}
 	return true;
 }
@@ -1880,14 +2054,18 @@ bool ProgramManager::JZ(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//JZ
 		OpcodeInfo info = OP_INFO[instruction.mnemonic];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
 		//Label Handling
-		LabelPosition[operands.first].push_back(Current_Address + 1);
-		Current_Address += info.size;
+		LabelPosition[operands.first].push_back(CurrentLoadingLocation + 1);
+		CurrentLoadingLocation += info.size;
 	}
 	return true;
 }
@@ -1908,14 +2086,18 @@ bool ProgramManager::JNZ(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//JNZ
 		OpcodeInfo info = OP_INFO[instruction.mnemonic];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
 		//Label Handling
-		LabelPosition[operands.first].push_back(Current_Address + 1);
-		Current_Address += info.size;
+		LabelPosition[operands.first].push_back(CurrentLoadingLocation + 1);
+		CurrentLoadingLocation += info.size;
 	}
 	return true;
 }
@@ -1936,14 +2118,18 @@ bool ProgramManager::JPE(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//JPE
 		OpcodeInfo info = OP_INFO[instruction.mnemonic];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
 		//Label Handling
-		LabelPosition[operands.first].push_back(Current_Address + 1);
-		Current_Address += info.size;
+		LabelPosition[operands.first].push_back(CurrentLoadingLocation + 1);
+		CurrentLoadingLocation += info.size;
 	}
 	return true;
 }
@@ -1964,14 +2150,18 @@ bool ProgramManager::JPO(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//JPO
 		OpcodeInfo info = OP_INFO[instruction.mnemonic];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
 		//Label Handling
-		LabelPosition[operands.first].push_back(Current_Address + 1);
-		Current_Address += info.size;
+		LabelPosition[operands.first].push_back(CurrentLoadingLocation + 1);
+		CurrentLoadingLocation += info.size;
 	}
 	return true;
 }
@@ -1992,14 +2182,18 @@ bool ProgramManager::JM(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//JM
 		OpcodeInfo info = OP_INFO[instruction.mnemonic];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
 		//Label Handling
-		LabelPosition[operands.first].push_back(Current_Address + 1);
-		Current_Address += info.size;
+		LabelPosition[operands.first].push_back(CurrentLoadingLocation + 1);
+		CurrentLoadingLocation += info.size;
 	}
 	return true;
 }
@@ -2020,14 +2214,18 @@ bool ProgramManager::JP(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//JP
 		OpcodeInfo info = OP_INFO[instruction.mnemonic];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
 		//Label Handling
-		LabelPosition[operands.first].push_back(Current_Address + 1);
-		Current_Address += info.size;
+		LabelPosition[operands.first].push_back(CurrentLoadingLocation + 1);
+		CurrentLoadingLocation += info.size;
 	}
 	return true;
 }
@@ -2048,14 +2246,18 @@ bool ProgramManager::CALL(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//CALL
 		OpcodeInfo info = OP_INFO[instruction.mnemonic];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
 		//Label Handling
-		LabelPosition[operands.first].push_back(Current_Address + 1);
-		Current_Address += info.size;
+		LabelPosition[operands.first].push_back(CurrentLoadingLocation + 1);
+		CurrentLoadingLocation += info.size;
 	}
 	return true;
 }
@@ -2077,14 +2279,18 @@ bool ProgramManager::CNC(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//CNC
 		OpcodeInfo info = OP_INFO[instruction.mnemonic];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
 		//Label Handling
-		LabelPosition[operands.first].push_back(Current_Address + 1);
-		Current_Address += info.size;
+		LabelPosition[operands.first].push_back(CurrentLoadingLocation + 1);
+		CurrentLoadingLocation += info.size;
 	}
 	return true;
 }
@@ -2105,14 +2311,18 @@ bool ProgramManager::CC(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//CC
 		OpcodeInfo info = OP_INFO[instruction.mnemonic];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
 		//Label Handling
-		LabelPosition[operands.first].push_back(Current_Address + 1);
-		Current_Address += info.size;
+		LabelPosition[operands.first].push_back(CurrentLoadingLocation + 1);
+		CurrentLoadingLocation += info.size;
 	}
 	return true;
 }
@@ -2134,14 +2344,18 @@ bool ProgramManager::CZ(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//CZ
 		OpcodeInfo info = OP_INFO[instruction.mnemonic];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
 		//Label Handling
-		LabelPosition[operands.first].push_back(Current_Address + 1);
-		Current_Address += info.size;
+		LabelPosition[operands.first].push_back(CurrentLoadingLocation + 1);
+		CurrentLoadingLocation += info.size;
 	}
 	return true;
 }
@@ -2163,14 +2377,18 @@ bool ProgramManager::CNZ(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//CNZ
 		OpcodeInfo info = OP_INFO[instruction.mnemonic];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
 		//Label Handling
-		LabelPosition[operands.first].push_back(Current_Address + 1);
-		Current_Address += info.size;
+		LabelPosition[operands.first].push_back(CurrentLoadingLocation + 1);
+		CurrentLoadingLocation += info.size;
 	}
 	return true;
 }
@@ -2192,14 +2410,18 @@ bool ProgramManager::CPE(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//CPE
 		OpcodeInfo info = OP_INFO[instruction.mnemonic];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
 		//Label Handling
-		LabelPosition[operands.first].push_back(Current_Address + 1);
-		Current_Address += info.size;
+		LabelPosition[operands.first].push_back(CurrentLoadingLocation + 1);
+		CurrentLoadingLocation += info.size;
 	}
 	return true;
 }
@@ -2220,14 +2442,18 @@ bool ProgramManager::CPO(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//CPO
 		OpcodeInfo info = OP_INFO[instruction.mnemonic];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
 		//Label Handling
-		LabelPosition[operands.first].push_back(Current_Address + 1);
-		Current_Address += info.size;
+		LabelPosition[operands.first].push_back(CurrentLoadingLocation + 1);
+		CurrentLoadingLocation += info.size;
 	}
 	return true;
 }
@@ -2249,14 +2475,18 @@ bool ProgramManager::CP(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//CP
 		OpcodeInfo info = OP_INFO[instruction.mnemonic];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
 		//Label Handling
-		LabelPosition[operands.first].push_back(Current_Address + 1);
-		Current_Address += info.size;
+		LabelPosition[operands.first].push_back(CurrentLoadingLocation + 1);
+		CurrentLoadingLocation += info.size;
 	}
 	return true;
 }
@@ -2277,14 +2507,18 @@ bool ProgramManager::CM(const Instruction& instruction)
 	{
 		if (!instruction.label.empty())
 		{
-			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
 		//CM
 		OpcodeInfo info = OP_INFO[instruction.mnemonic];
-		MemoryManager::SetMemory(Current_Address, info.opcode);
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
 		//Label Handling
-		LabelPosition[operands.first].push_back(Current_Address + 1);
-		Current_Address += info.size;
+		LabelPosition[operands.first].push_back(CurrentLoadingLocation + 1);
+		CurrentLoadingLocation += info.size;
 	}
 	return true;
 }
@@ -2300,12 +2534,16 @@ bool ProgramManager::RET(const Instruction& instruction)
 
 	if (!instruction.label.empty())
 	{
-		ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 	}
 	//RET
 	OpcodeInfo info = OP_INFO[instruction.mnemonic];
-	MemoryManager::SetMemory(Current_Address, info.opcode);
-	Current_Address += info.size;
+	if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+	{
+		return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+	}
+	MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+	CurrentLoadingLocation += info.size;
 	return true;
 }
 
@@ -2320,12 +2558,16 @@ bool ProgramManager::RNC(const Instruction& instruction)
 
 	if (!instruction.label.empty())
 	{
-		ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 	}
 	//RNC
 	OpcodeInfo info = OP_INFO[instruction.mnemonic];
-	MemoryManager::SetMemory(Current_Address, info.opcode);
-	Current_Address += info.size;
+	if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+	{
+		return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+	}
+	MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+	CurrentLoadingLocation += info.size;
 	return true;
 }
 
@@ -2340,12 +2582,16 @@ bool ProgramManager::RC(const Instruction& instruction)
 
 	if (!instruction.label.empty())
 	{
-		ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 	}
 	//RC
 	OpcodeInfo info = OP_INFO[instruction.mnemonic];
-	MemoryManager::SetMemory(Current_Address, info.opcode);
-	Current_Address += info.size;
+	if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+	{
+		return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+	}
+	MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+	CurrentLoadingLocation += info.size;
 	return true;
 }
 
@@ -2361,12 +2607,16 @@ bool ProgramManager::RZ(const Instruction& instruction)
 
 	if (!instruction.label.empty())
 	{
-		ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 	}
 	//RZ
 	OpcodeInfo info = OP_INFO[instruction.mnemonic];
-	MemoryManager::SetMemory(Current_Address, info.opcode);
-	Current_Address += info.size;
+	if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+	{
+		return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+	}
+	MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+	CurrentLoadingLocation += info.size;
 	return true;
 }
 
@@ -2381,12 +2631,16 @@ bool ProgramManager::RNZ(const Instruction& instruction)
 
 	if (!instruction.label.empty())
 	{
-		ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 	}
 	//RNZ
 	OpcodeInfo info = OP_INFO[instruction.mnemonic];
-	MemoryManager::SetMemory(Current_Address, info.opcode);
-	Current_Address += info.size;
+	if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+	{
+		return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+	}
+	MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+	CurrentLoadingLocation += info.size;
 	return true;
 }
 
@@ -2402,12 +2656,16 @@ bool ProgramManager::RPE(const Instruction& instruction)
 
 	if (!instruction.label.empty())
 	{
-		ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 	}
 	//RPE
 	OpcodeInfo info = OP_INFO[instruction.mnemonic];
-	MemoryManager::SetMemory(Current_Address, info.opcode);
-	Current_Address += info.size;
+	if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+	{
+		return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+	}
+	MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+	CurrentLoadingLocation += info.size;
 	return true;
 }
 
@@ -2422,12 +2680,16 @@ bool ProgramManager::RPO(const Instruction& instruction)
 
 	if (!instruction.label.empty())
 	{
-		ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 	}
 	//RPO
 	OpcodeInfo info = OP_INFO[instruction.mnemonic];
-	MemoryManager::SetMemory(Current_Address, info.opcode);
-	Current_Address += info.size;
+	if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+	{
+		return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+	}
+	MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+	CurrentLoadingLocation += info.size;
 	return true;
 }
 
@@ -2442,12 +2704,16 @@ bool ProgramManager::RM(const Instruction& instruction)
 
 	if (!instruction.label.empty())
 	{
-		ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 	}
 	//RM
 	OpcodeInfo info = OP_INFO[instruction.mnemonic];
-	MemoryManager::SetMemory(Current_Address, info.opcode);
-	Current_Address += info.size;
+	if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+	{
+		return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+	}
+	MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+	CurrentLoadingLocation += info.size;
 	return true;
 }
 
@@ -2462,12 +2728,16 @@ bool ProgramManager::RP(const Instruction& instruction)
 
 	if (!instruction.label.empty())
 	{
-		ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 	}
 	//RP
 	OpcodeInfo info = OP_INFO[instruction.mnemonic];
-	MemoryManager::SetMemory(Current_Address, info.opcode);
-	Current_Address += info.size;
+	if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+	{
+		return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+	}
+	MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+	CurrentLoadingLocation += info.size;
 	return true;
 }
 
@@ -2482,12 +2752,16 @@ bool ProgramManager::HLT(const Instruction& instruction)
 
 	if (!instruction.label.empty())
 	{
-		ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 	}
 	//HLT
 	OpcodeInfo info = OP_INFO[instruction.mnemonic];
-	MemoryManager::SetMemory(Current_Address, info.opcode);
-	Current_Address += info.size;
+	if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+	{
+		return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+	}
+	MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+	CurrentLoadingLocation += info.size;
 	return true;
 }
 
@@ -2502,11 +2776,15 @@ bool ProgramManager::NOP(const Instruction& instruction)
 
 	if (!instruction.label.empty())
 	{
-		ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 	}
 	//NOP
 	OpcodeInfo info = OP_INFO[instruction.mnemonic];
-	MemoryManager::SetMemory(Current_Address, info.opcode);
-	Current_Address += info.size;
+	if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+	{
+		return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+	}
+	MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+	CurrentLoadingLocation += info.size;
 	return true;
 }

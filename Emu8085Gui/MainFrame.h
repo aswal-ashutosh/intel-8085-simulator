@@ -32,6 +32,17 @@ private:
 	//File
 	wxString m_currentFilePath;
 
+	//Program Loading Panel
+	wxPanel* m_ProgramLoadingPanel = nullptr;
+	wxStaticBox* m_ProgramLoadingPanelStaticBox = nullptr;
+	wxStaticBoxSizer* m_ProgramLoadingPanelStaticBoxSizer = nullptr;
+	wxTextCtrl* m_ProgramLoadingPanelTextCtrl = nullptr;
+	wxTextCtrl* m_ProgramLoadingPanelCurrentLocationTextCtrl = nullptr;
+	wxStaticText* m_ProgramLoadingPanelLabel = nullptr;
+	wxStaticText* m_ProgramLoadingPanelCurrentLocationTextLabel = nullptr;
+	wxButton* m_ProgramLoadingPanelSetButton = nullptr;
+
+
 	//Flag Rgister Panel 
 	wxPanel* m_FlagPanel = nullptr;
 	wxStaticBox* m_FlagPanelStaticBox = nullptr;
@@ -91,6 +102,7 @@ private:
 
 	//State
 	bool m_bDebugMode = false;
+	int m_nLoadingLocation = 0;//Current Program Loading Location
 public:
 
 
@@ -104,6 +116,7 @@ public:
 	void OnExit(wxCommandEvent& event);
 	void OnRun(wxCommandEvent& envet);
 	void OnSet(wxCommandEvent& envet);
+	void OnSetLoadingLocation(wxCommandEvent& envet);
 	void OnView(wxCommandEvent& envet);
 	void UpdateFlagRegister();
 	void UpdateRegisters();
@@ -126,7 +139,8 @@ enum ButtonID
 	SET_BUTTON,
 	EXECUTE_BUTTON,
 	DEBUG_BUTTON,
-	STOP_BUTTON
+	STOP_BUTTON,
+	SET_LOADING_LOCATION_BUTTON,
 };
 
 

@@ -19,8 +19,9 @@ namespace ERROR_TYPE
     const std::string EMPTY_FILE = "Empty File Found";
     const std::string NO_SUCH_LABEL = "No Such Label Exist";
     const std::string INVALID_LABEL = "Invalid Label";
-    const std::string RETURN_WITHOUT_CALL = "Control Reached Return Statement When There Exist No Subroutine Call";
+    const std::string RETURN_WITHOUT_CALL = "'Return' Statement Found When There Exist No Subroutine Call";
     const std::string INFINITE_LOOP_OR_RECURSIVE_CALL = "There May Be An Infinite Loop Or A Never Ending Recursion";
+    const std::string CAN_NOT_LOAD_INSTRUCTION = "Not Enough Space To Load Program From Provided Loading Location.";
 } // namespace ERROR_TYPE
 
 namespace PATH
@@ -134,6 +135,7 @@ namespace PANEL
     const std::string MEMORY_INITIALIZER = "MEMORY INITIALIZER";
     const std::string MEMORY_VIEWER = "MEMORY VIEWER";
     const std::string DEBUGGER = "DEBUGGER";
+    const std::string PROGRAM_LOADER = "PROGRAM_LOADER";
 } // namespace PANEL
 
 namespace BUTTON

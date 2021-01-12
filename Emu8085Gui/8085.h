@@ -1518,12 +1518,15 @@ void ProgramManager::Run()
 	}
 }
 
-bool ProgramManager::LoadProgramInMemory(const std::string& filePath)
+bool ProgramManager::LoadProgramInMemory(const std::string& filePath, int loadingLocation)
 {
+	ProgramManager::CurrentLoadingLocation = loadingLocation;
+
 	if (!ProgramManager::Read(filePath))
 	{
 		return false;
 	}
+
 	for (const Instruction& instruction : ProgramManager::Program)
 	{
 		if (ProgramManager::Load[instruction.mnemonic](instruction))

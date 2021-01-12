@@ -24,6 +24,7 @@ EVT_BUTTON(ButtonID::VIEW_BUTTON, MainFrame::OnView)
 EVT_BUTTON(ButtonID::DEBUG_BUTTON, MainFrame::OnDebug)
 EVT_BUTTON(ButtonID::EXECUTE_BUTTON, MainFrame::OnExecute)
 EVT_BUTTON(ButtonID::STOP_BUTTON, MainFrame::OnStopDebug)
+EVT_BUTTON(ButtonID::SET_LOADING_LOCATION_BUTTON, MainFrame::OnSetLoadingLocation)
 END_EVENT_TABLE()
 
 MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30, 30), wxSize(800, 800))
@@ -72,6 +73,20 @@ MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30,
 	m_EditBox->SetUseVerticalScrollBar(true);
 	m_TextBoxStaticBoxSizer->Add(m_EditBox, wxEXPAND);
 	m_TextBoxPanel->SetSizer(m_TextBoxStaticBoxSizer);
+
+	//Program Loading Panel
+	m_ProgramLoadingPanel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(200, 200));
+	m_ProgramLoadingPanelStaticBox = new wxStaticBox(m_ProgramLoadingPanel, wxID_ANY, PANEL::PROGRAM_LOADER);
+	m_ProgramLoadingPanelStaticBoxSizer = new wxStaticBoxSizer(m_ProgramLoadingPanelStaticBox, wxVERTICAL);
+	m_ProgramLoadingPanelLabel = new wxStaticText(m_ProgramLoadingPanelStaticBox, wxID_ANY, "[Load Program From Location(HEX)]", wxPoint(5, 30));
+	m_ProgramLoadingPanelTextCtrl = new wxTextCtrl(m_ProgramLoadingPanelStaticBox, wxID_ANY, "0000", wxPoint(20, 55), wxSize(50, 20));
+	m_ProgramLoadingPanelTextCtrl->SetMaxLength(4);
+	m_ProgramLoadingPanelSetButton = new wxButton(m_ProgramLoadingPanelStaticBox, ButtonID::SET_LOADING_LOCATION_BUTTON, BUTTON::SET, wxPoint(100, 54), wxSize(60, 22));
+	m_ProgramLoadingPanelCurrentLocationTextLabel = new wxStaticText(m_ProgramLoadingPanelStaticBox, wxID_ANY, "[Current Loading Location(HEX)]", wxPoint(10, 120));
+	m_ProgramLoadingPanelCurrentLocationTextCtrl = new wxTextCtrl(m_ProgramLoadingPanelStaticBox, wxID_ANY, "0000", wxPoint(70, 140), wxSize(45, 20), wxTE_READONLY);
+	m_ProgramLoadingPanelCurrentLocationTextCtrl->SetMaxLength(4);
+	m_ProgramLoadingPanel->SetSizer(m_ProgramLoadingPanelStaticBoxSizer);
+
 
 	//FlagPanel
 	m_FlagPanel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(200, 200));
@@ -140,8 +155,9 @@ MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30,
 
 	//Sizers
 	m_LeftPanelSizer = new wxBoxSizer(wxVERTICAL);
-	m_LeftPanelSizer->Add(m_FlagPanel, 1, wxEXPAND);
-	m_LeftPanelSizer->Add(m_RegisterPanel, 1, wxEXPAND);
+	m_LeftPanelSizer->Add(m_ProgramLoadingPanel, 1, wxEXPAND);
+	m_LeftPanelSizer->Add(m_FlagPanel, 3, wxEXPAND);
+	m_LeftPanelSizer->Add(m_RegisterPanel, 3, wxEXPAND);
 	m_RightPanelSizer = new wxBoxSizer(wxVERTICAL);
 	m_RightPanelSizer->Add(m_MemoryInitPanel, 1, wxEXPAND);
 	m_RightPanelSizer->Add(m_MemoryViewPanel, 4, wxEXPAND);
@@ -251,6 +267,37 @@ void MainFrame::OnView(wxCommandEvent& envet)
 	UpdateMemory();
 }
 
+
+void MainFrame::OnSetLoadingLocation(wxCommandEvent& envet)
+{
+	if (m_ProgramLoadingPanelTextCtrl->IsEmpty())
+	{
+		Error::Throw(ERROR_TYPE::EMPTY_FIELD);
+		m_ProgramLoadingPanelTextCtrl->AppendText("0000");
+	}
+	else
+	{
+		std::string address = ToString(m_ProgramLoadingPanelTextCtrl->GetValue());
+		bool OK = Validator::IsValidHex(address);
+		int nAddress = Converter::HexToDec(address);
+		OK &= (nAddress >= 0x0000 && nAddress <= 0xffff);
+		if (OK)
+		{
+			m_nLoadingLocation = nAddress;
+			Converter::ToUpperString(address);
+			Utility::_16Bit(address);
+			m_ProgramLoadingPanelCurrentLocationTextCtrl->Clear();
+			m_ProgramLoadingPanelCurrentLocationTextCtrl->AppendText(address);
+			m_ProgramLoadingPanelTextCtrl->Clear();
+			m_ProgramLoadingPanelTextCtrl->AppendText("0000");
+		}
+		else
+		{
+			Error::Throw(ERROR_TYPE::INVALID_DATA);
+		}
+	}
+}
+
 void MainFrame::UpdateFlagRegister()
 {
 	m_FlagRegCheckList->Check(m_FlagRegCheckList->FindString("AC"), Register::Flag::AC);
@@ -343,7 +390,7 @@ void MainFrame::OnDebug(wxCommandEvent& event)
 void MainFrame::Run8085(const std::string& filePath)
 {
 	Clear();//Clearing Frontend
-	if (ProgramManager::LoadProgramInMemory(filePath))//Read function int LoadProgramInMemory is responsible for clearing the backend
+	if (ProgramManager::LoadProgramInMemory(filePath, m_nLoadingLocation))//Read function in LoadProgramInMemory is responsible for clearing the backend
 	{
 		ProgramManager::Run();
 		if (ProgramManager::HALT)
@@ -353,14 +400,19 @@ void MainFrame::Run8085(const std::string& filePath)
 			UpdateMemory();
 			wxMessageBox(MESSAGE::SUCCESSFUL_EXECUTION, DIALOG::EXECUTION_STOPPED);
 		}
+		else
+		{
+			UpdateMemory();
+		}
 	}
 }
 
 void MainFrame::Debug8085(const std::string& filePath)
 {
 	Clear();//Clearing Front End
-	if (ProgramManager::LoadProgramInMemory(filePath))//Read function int LoadProgramInMemory is responsible for clearing the backend
+	if (ProgramManager::LoadProgramInMemory(filePath, m_nLoadingLocation))//Read function int LoadProgramInMemory is responsible for clearing the backend
 	{
+		UpdateMemory();
 		m_ExecuteButton->Enable();
 		m_DebugButton->Disable();
 		m_StopButton->Enable();
