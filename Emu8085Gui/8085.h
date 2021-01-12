@@ -222,7 +222,7 @@ bool Validator::IsValidLabel(const std::string& expected_label)
 
 	return true;
 }
-//
+
 
 bool Mnemonic::IsValid(const std::string& mnemonic)
 {
@@ -2048,7 +2048,7 @@ bool ProgramManager::Read(const std::string filePath)
 				comma_found = true;
 			}
 			//Special check for label(this token can be a label if previous instruction is any jump/call instrunction)
-			if (!Mnemonic::IsJCallInstruction(instruction.mnemonic))
+			if (!ProgramManager::IsJCallInstruction(instruction.mnemonic))
 			{
 				Converter::ToUpperString(operand);
 			}

@@ -8,13 +8,19 @@
 #include"converter.h"
 #include"instruction.h"
 #include"memory_manager.h"
-//#include "registers.h";
+#include "registers.h"
 
 class OpcodeInfo
 {
 public:
 	const int opcode;
 	const int size;
+	OpcodeInfo():opcode(0), size(0)
+	{
+
+	}
+
+	OpcodeInfo(const int code, const int sz) : opcode(code), size(sz){}
 };
 
 
@@ -33,12 +39,7 @@ public:
 	static std::map<std::string, int> LabelsAddress;
 	static int Current_Address;
 
-	static void LoadInstructionSet();
 
-
-	static bool IsValid(const std::string& mnemonic);
-
-	static bool IsJCallInstruction(const std::string& mnemonic);
 
 	static bool MOV(const Instruction&);
 	static bool MVI(const Instruction&);
@@ -123,6 +124,9 @@ public:
 
 	static bool HALT;
 
+	static void LoadInstructionSet();
+
+
 	static bool Read(const std::string filePath);
 
 	static void Run();
@@ -133,7 +137,7 @@ public:
 
 	static void Clear();
 
-	//static bool CanRunFurther();//It will check whether there exist a instruction at Index = PC
+	static bool CanRunFurther();
 };
 
 
@@ -143,32 +147,10 @@ std::vector<int> ProgramManager::CallStack;
 std::map<std::string, std::vector<int>> ProgramManager::LabelPosition;
 std::map<std::string, int> ProgramManager::LabelsAddress;
 std::map<std::string, bool (*)(const Instruction&)> ProgramManager::Load;
-std::set<std::string> ProgramManager::JCallInstructions;
+
 bool ProgramManager::HALT;
 int ProgramManager::Current_Address = 0;
 
-bool ProgramManager::IsJCallInstruction(const std::string& mnemonic)
-{
-	return JCallInstructions.count(mnemonic);
-}
-
-
-bool ProgramManager::IsExistingLabel(const std::string& expected_jump_point)
-{
-	return Labels.count(expected_jump_point);
-}
-
-//bool ProgramManager::CanRunFurther()
-//{
-//	if (Register::PC < (int)Program.size())
-//	{
-//		return true;
-//	}
-//	else
-//	{
-//		return Error::Throw(ERROR_TYPE::NEVER_REACHED_HLT);
-//	}
-//}
 
 void ProgramManager::Clear()
 {
@@ -176,6 +158,9 @@ void ProgramManager::Clear()
 	ProgramManager::Labels.clear();
 	ProgramManager::CallStack.clear();
 	ProgramManager::HALT = false;
+	ProgramManager::LabelPosition.clear();
+	ProgramManager::LabelsAddress.clear();
+	ProgramManager::Current_Address = 0;
 }
 
 
@@ -400,6 +385,30 @@ std::map<std::string, OpcodeInfo> ProgramManager::OP_INFO =
 	{"XRA_M", {0xAE, 1}},
 	{"XRI_DATA", {0xEE, 2}},
 };
+
+//Loading Jump/Call Instruction
+std::set<std::string> ProgramManager::JCallInstructions =
+{
+MNEMONIC::JMP,
+MNEMONIC::JC	,
+MNEMONIC::JNC	,
+MNEMONIC::JZ	,
+MNEMONIC::JNZ	,
+MNEMONIC::JPE	,
+MNEMONIC::JPO	,
+MNEMONIC::JM	,
+MNEMONIC::JP	,
+MNEMONIC::CALL	,
+MNEMONIC::CNC	,
+MNEMONIC::CC	,
+MNEMONIC::CNZ	,
+MNEMONIC::CZ	,
+MNEMONIC::CPE	,
+MNEMONIC::CPO	,
+MNEMONIC::CP	,
+MNEMONIC::CM 
+};
+
 void ProgramManager::LoadInstructionSet()
 {
 	Load[MNEMONIC::MVI] = MVI;
@@ -471,64 +480,32 @@ void ProgramManager::LoadInstructionSet()
 	Load[MNEMONIC::HLT] = HLT;
 	Load[MNEMONIC::NOP] = NOP;
 
-	//Loading Jump/Call Instruction
-	JCallInstructions.insert(MNEMONIC::JMP);
-	JCallInstructions.insert(MNEMONIC::JC);
-	JCallInstructions.insert(MNEMONIC::JNC);
-	JCallInstructions.insert(MNEMONIC::JZ);
-	JCallInstructions.insert(MNEMONIC::JNZ);
-	JCallInstructions.insert(MNEMONIC::JPE);
-	JCallInstructions.insert(MNEMONIC::JPO);
-	JCallInstructions.insert(MNEMONIC::JM);
-	JCallInstructions.insert(MNEMONIC::JP);
-	JCallInstructions.insert(MNEMONIC::CALL);
-	JCallInstructions.insert(MNEMONIC::CNC);
-	JCallInstructions.insert(MNEMONIC::CC);
-	JCallInstructions.insert(MNEMONIC::CNZ);
-	JCallInstructions.insert(MNEMONIC::CZ);
-	JCallInstructions.insert(MNEMONIC::CPE);
-	JCallInstructions.insert(MNEMONIC::CPO);
-	JCallInstructions.insert(MNEMONIC::CP);
-	JCallInstructions.insert(MNEMONIC::CM);
-
 }
 
-
-//Validator
-bool Validator::IsValidLabel(const std::string& expected_label)
-{
-	std::string expected_mnemonic = expected_label;
-	Converter::ToUpperString(expected_mnemonic); //Because mnemonic are stored in uppercase form.
-	if (ProgramManager::IsValid(expected_mnemonic))//should not match any mnemonic
-	{
-		return false;
-	}
-
-	for (const char& x : expected_label)
-	{
-		if ((x >= 'a' && x <= 'z') || (x >= 'A' && x <= 'Z') || (x >= '0' && x <= '9'))
-		{
-			continue;
-		}
-		else
-		{
-			return false;
-		}
-	}
-
-	return true;
-}
-//
-
-bool ProgramManager::IsValid(const std::string& mnemonic)
-{
-	return Load.count(mnemonic);
-}
 
 bool ProgramManager::IsJCallInstruction(const std::string& mnemonic)
 {
 	return JCallInstructions.count(mnemonic);
 }
+
+
+bool ProgramManager::IsExistingLabel(const std::string& expected_jump_point)
+{
+	return Labels.count(expected_jump_point);
+}
+
+bool ProgramManager::CanRunFurther()
+{
+	if (Register::PC < (int)Program.size())
+	{
+		return true;
+	}
+	else
+	{
+		return Error::Throw(ERROR_TYPE::NEVER_REACHED_HLT);
+	}
+}
+
 
 bool ProgramManager::MOV(const Instruction& instruction)
 {
@@ -552,6 +529,10 @@ bool ProgramManager::MOV(const Instruction& instruction)
 	OK |= Validator::IsValidRegister(destination) && Validator::IsValidRegister(source);
 	if (OK)
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//MOV_R|M_R|M
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + destination + "_" + source];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -596,6 +577,10 @@ bool ProgramManager::MVI(const Instruction& instruction)
 
 	if (OK)
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//MVI_R|M_DATA
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg + "_DATA"];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -627,6 +612,10 @@ bool ProgramManager::LDA(const Instruction& instruction)
 	int nAddress = Converter::HexToDec(address);
 	if (nAddress >= 0 && nAddress <= 0xffff)
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//LDA_ADDRESS
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_ADDRESS"];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -658,6 +647,10 @@ bool ProgramManager::STA(const Instruction& instruction)
 	int nAddress = Converter::HexToDec(address);
 	if (nAddress >= 0 && nAddress <= 0xffff)
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//STA_ADDRESS
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_ADDRESS"];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -690,6 +683,10 @@ bool ProgramManager::LHLD(const Instruction& instruction)
 	int nAddress = Converter::HexToDec(address);
 	if (nAddress >= 0 && nAddress < 0xffff) // <0xffff as we also need a valid address + 1
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//LHLD_ADDRESS
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_ADDRESS"];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -725,6 +722,10 @@ bool ProgramManager::SHLD(const Instruction& instruction)
 
 	if (nAddress >= 0 && nAddress < 0xffff) // <0xffff as we also need a valid address + 1
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//SHLD_ADDRESS
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_ADDRESS"];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -773,6 +774,10 @@ bool ProgramManager::LXI(const Instruction& instruction)
 
 	if (OK)
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//LXI_B|D|H
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -806,6 +811,10 @@ bool ProgramManager::LDAX(const Instruction& instruction)
 
 	if (OK)
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//LDAX_B|D
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -835,6 +844,10 @@ bool ProgramManager::STAX(const Instruction& instruction)
 
 	if (OK)
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//STAX_B|D
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -855,6 +868,12 @@ bool ProgramManager::XCHG(const Instruction& instruction)
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
 	}
+
+	if (!instruction.label.empty())
+	{
+		ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+	}
+	//XCHG
 	OpcodeInfo info = OP_INFO[instruction.mnemonic];
 	MemoryManager::SetMemory(Current_Address, info.opcode);
 	Current_Address += info.size;
@@ -879,6 +898,10 @@ bool ProgramManager::ADD(const Instruction& instruction)
 
 	if (OK)
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//ADD_R|M
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -908,6 +931,10 @@ bool ProgramManager::ADC(const Instruction& instruction)
 
 	if (OK)
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//ADC_R|M
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -942,6 +969,10 @@ bool ProgramManager::ADI(const Instruction& instruction)
 	}
 	else
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//ADI_DATA
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_DATA"];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -976,6 +1007,10 @@ bool ProgramManager::ACI(const Instruction& instruction)
 	}
 	else
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//ACI_DATA
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_DATA"];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -1004,6 +1039,10 @@ bool ProgramManager::SUB(const Instruction& instruction)
 
 	if (OK)
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//SUB_R|M
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -1034,6 +1073,10 @@ bool ProgramManager::SBB(const Instruction& instruction)
 
 	if (OK)
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//SBB_R|M
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -1069,6 +1112,10 @@ bool ProgramManager::SUI(const Instruction& instruction)
 	}
 	else
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//SUI_DATA
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_DATA"];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -1104,6 +1151,10 @@ bool ProgramManager::SBI(const Instruction& instruction)
 	}
 	else
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//SBI_DATA
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_DATA"];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -1122,6 +1173,11 @@ bool ProgramManager::DAA(const Instruction& instruction)
 	if (!Validator::ValidOperandCount(operands, 0))
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
+	}
+
+	if (!instruction.label.empty())
+	{
+		ProgramManager::LabelsAddress[instruction.label] = Current_Address;
 	}
 	//DAA
 	OpcodeInfo info = OP_INFO[instruction.mnemonic];
@@ -1148,6 +1204,10 @@ bool ProgramManager::INR(const Instruction& instruction)
 
 	if (OK)
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//INR_R|M
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -1178,6 +1238,10 @@ bool ProgramManager::INX(const Instruction& instruction)
 
 	if (OK)
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//INX_H|D|B
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -1207,6 +1271,10 @@ bool ProgramManager::DCR(const Instruction& instruction)
 
 	if (OK)
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//DCR_R|M
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -1237,6 +1305,10 @@ bool ProgramManager::DCX(const Instruction& instruction)
 
 	if (OK)
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//DCX_H|D|B
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -1267,6 +1339,10 @@ bool ProgramManager::DAD(const Instruction& instruction)
 
 	if (OK)
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//DAD_H|D|B
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + Rp];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -1296,6 +1372,10 @@ bool ProgramManager::ANA(const Instruction& instruction)
 
 	if (OK)
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//ANA_R|M
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -1330,6 +1410,10 @@ bool ProgramManager::ANI(const Instruction& instruction)
 	}
 	else
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//ANI_DATA
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_DATA"];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -1358,6 +1442,10 @@ bool ProgramManager::ORA(const Instruction& instruction)
 
 	if (OK)
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//ORA_R|M
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -1392,6 +1480,10 @@ bool ProgramManager::ORI(const Instruction& instruction)
 	}
 	else
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//ORI_DATA
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_DATA"];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -1418,6 +1510,10 @@ bool ProgramManager::XRA(const Instruction& instruction)
 	OK |= Validator::IsValidRegister(reg);
 	if (OK)
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//XRA_R|M
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -1451,6 +1547,10 @@ bool ProgramManager::XRI(const Instruction& instruction)
 	}
 	else
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//XRI_DATA
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_DATA"];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -1469,6 +1569,11 @@ bool ProgramManager::CMA(const Instruction& instruction)
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
 	}
+
+	if (!instruction.label.empty())
+	{
+		ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+	}
 	//CMA
 	OpcodeInfo info = OP_INFO[instruction.mnemonic];
 	MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -1483,6 +1588,11 @@ bool ProgramManager::RLC(const Instruction& instruction)
 	if (!Validator::ValidOperandCount(operands, 0))
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
+	}
+
+	if (!instruction.label.empty())
+	{
+		ProgramManager::LabelsAddress[instruction.label] = Current_Address;
 	}
 	//RLC
 	OpcodeInfo info = OP_INFO[instruction.mnemonic];
@@ -1499,6 +1609,11 @@ bool ProgramManager::RAL(const Instruction& instruction)
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
 	}
+
+	if (!instruction.label.empty())
+	{
+		ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+	}
 	//RAL
 	OpcodeInfo info = OP_INFO[instruction.mnemonic];
 	MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -1513,6 +1628,11 @@ bool ProgramManager::RRC(const Instruction& instruction)
 	if (!Validator::ValidOperandCount(operands, 0))
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
+	}
+
+	if (!instruction.label.empty())
+	{
+		ProgramManager::LabelsAddress[instruction.label] = Current_Address;
 	}
 	//RRC
 	OpcodeInfo info = OP_INFO[instruction.mnemonic];
@@ -1529,6 +1649,11 @@ bool ProgramManager::RAR(const Instruction& instruction)
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
 	}
+
+	if (!instruction.label.empty())
+	{
+		ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+	}
 	//RAR
 	OpcodeInfo info = OP_INFO[instruction.mnemonic];
 	MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -1544,6 +1669,11 @@ bool ProgramManager::STC(const Instruction& instruction)
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
 	}
+
+	if (!instruction.label.empty())
+	{
+		ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+	}
 	//STC
 	OpcodeInfo info = OP_INFO[instruction.mnemonic];
 	MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -1558,6 +1688,11 @@ bool ProgramManager::CMC(const Instruction& instruction)
 	if (!Validator::ValidOperandCount(operands, 0))
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
+	}
+
+	if (!instruction.label.empty())
+	{
+		ProgramManager::LabelsAddress[instruction.label] = Current_Address;
 	}
 	//CMC
 	OpcodeInfo info = OP_INFO[instruction.mnemonic];
@@ -1582,6 +1717,10 @@ bool ProgramManager::CMP(const Instruction& instruction)
 	OK |= Validator::IsValidRegister(reg);
 	if (OK)
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//CMP_R|M
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -1612,6 +1751,10 @@ bool ProgramManager::CPI(const Instruction& instruction)
 	}
 	else
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//CPI_DATA
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_DATA"];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -1636,6 +1779,10 @@ bool ProgramManager::JMP(const Instruction& instruction)
 	}
 	else
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//JMP
 		OpcodeInfo info = OP_INFO[instruction.mnemonic];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -1660,6 +1807,10 @@ bool ProgramManager::JC(const Instruction& instruction)
 	}
 	else
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//JC
 		OpcodeInfo info = OP_INFO[instruction.mnemonic];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -1684,6 +1835,10 @@ bool ProgramManager::JNC(const Instruction& instruction)
 	}
 	else
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//JNC
 		OpcodeInfo info = OP_INFO[instruction.mnemonic];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -1708,6 +1863,10 @@ bool ProgramManager::JZ(const Instruction& instruction)
 	}
 	else
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//JZ
 		OpcodeInfo info = OP_INFO[instruction.mnemonic];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -1732,6 +1891,10 @@ bool ProgramManager::JNZ(const Instruction& instruction)
 	}
 	else
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//JNZ
 		OpcodeInfo info = OP_INFO[instruction.mnemonic];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -1756,6 +1919,10 @@ bool ProgramManager::JPE(const Instruction& instruction)
 	}
 	else
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//JPE
 		OpcodeInfo info = OP_INFO[instruction.mnemonic];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -1780,6 +1947,10 @@ bool ProgramManager::JPO(const Instruction& instruction)
 	}
 	else
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//JPO
 		OpcodeInfo info = OP_INFO[instruction.mnemonic];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -1804,6 +1975,10 @@ bool ProgramManager::JM(const Instruction& instruction)
 	}
 	else
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//JM
 		OpcodeInfo info = OP_INFO[instruction.mnemonic];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -1828,6 +2003,10 @@ bool ProgramManager::JP(const Instruction& instruction)
 	}
 	else
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//JP
 		OpcodeInfo info = OP_INFO[instruction.mnemonic];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -1852,6 +2031,10 @@ bool ProgramManager::CALL(const Instruction& instruction)
 	}
 	else
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//CALL
 		OpcodeInfo info = OP_INFO[instruction.mnemonic];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -1877,6 +2060,10 @@ bool ProgramManager::CNC(const Instruction& instruction)
 	}
 	else
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//CNC
 		OpcodeInfo info = OP_INFO[instruction.mnemonic];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -1901,6 +2088,10 @@ bool ProgramManager::CC(const Instruction& instruction)
 	}
 	else
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//CC
 		OpcodeInfo info = OP_INFO[instruction.mnemonic];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -1926,6 +2117,10 @@ bool ProgramManager::CZ(const Instruction& instruction)
 	}
 	else
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//CZ
 		OpcodeInfo info = OP_INFO[instruction.mnemonic];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -1951,6 +2146,10 @@ bool ProgramManager::CNZ(const Instruction& instruction)
 	}
 	else
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//CNZ
 		OpcodeInfo info = OP_INFO[instruction.mnemonic];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -1976,6 +2175,10 @@ bool ProgramManager::CPE(const Instruction& instruction)
 	}
 	else
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//CPE
 		OpcodeInfo info = OP_INFO[instruction.mnemonic];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -2000,6 +2203,10 @@ bool ProgramManager::CPO(const Instruction& instruction)
 	}
 	else
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//CPO
 		OpcodeInfo info = OP_INFO[instruction.mnemonic];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -2025,6 +2232,10 @@ bool ProgramManager::CP(const Instruction& instruction)
 	}
 	else
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//CP
 		OpcodeInfo info = OP_INFO[instruction.mnemonic];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -2049,6 +2260,10 @@ bool ProgramManager::CM(const Instruction& instruction)
 	}
 	else
 	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+		}
 		//CM
 		OpcodeInfo info = OP_INFO[instruction.mnemonic];
 		MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -2067,6 +2282,11 @@ bool ProgramManager::RET(const Instruction& instruction)
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
+
+	if (!instruction.label.empty())
+	{
+		ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+	}
 	//RET
 	OpcodeInfo info = OP_INFO[instruction.mnemonic];
 	MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -2083,6 +2303,10 @@ bool ProgramManager::RNC(const Instruction& instruction)
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 
+	if (!instruction.label.empty())
+	{
+		ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+	}
 	//RNC
 	OpcodeInfo info = OP_INFO[instruction.mnemonic];
 	MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -2099,13 +2323,18 @@ bool ProgramManager::RC(const Instruction& instruction)
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 
+	if (!instruction.label.empty())
+	{
+		ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+	}
 	//RC
 	OpcodeInfo info = OP_INFO[instruction.mnemonic];
 	MemoryManager::SetMemory(Current_Address, info.opcode);
 	Current_Address += info.size;
 	return true;
 }
-//
+
+
 bool ProgramManager::RZ(const Instruction& instruction)
 {
 	const std::pair<std::string, std::string>& operands = instruction.operands;
@@ -2115,6 +2344,10 @@ bool ProgramManager::RZ(const Instruction& instruction)
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 
+	if (!instruction.label.empty())
+	{
+		ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+	}
 	//RZ
 	OpcodeInfo info = OP_INFO[instruction.mnemonic];
 	MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -2131,6 +2364,10 @@ bool ProgramManager::RNZ(const Instruction& instruction)
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 
+	if (!instruction.label.empty())
+	{
+		ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+	}
 	//RNZ
 	OpcodeInfo info = OP_INFO[instruction.mnemonic];
 	MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -2148,6 +2385,10 @@ bool ProgramManager::RPE(const Instruction& instruction)
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 
+	if (!instruction.label.empty())
+	{
+		ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+	}
 	//RPE
 	OpcodeInfo info = OP_INFO[instruction.mnemonic];
 	MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -2162,6 +2403,11 @@ bool ProgramManager::RPO(const Instruction& instruction)
 	if (!Validator::ValidOperandCount(operands, 0))
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+
+	if (!instruction.label.empty())
+	{
+		ProgramManager::LabelsAddress[instruction.label] = Current_Address;
 	}
 	//RPO
 	OpcodeInfo info = OP_INFO[instruction.mnemonic];
@@ -2179,6 +2425,10 @@ bool ProgramManager::RM(const Instruction& instruction)
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 
+	if (!instruction.label.empty())
+	{
+		ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+	}
 	//RM
 	OpcodeInfo info = OP_INFO[instruction.mnemonic];
 	MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -2195,6 +2445,10 @@ bool ProgramManager::RP(const Instruction& instruction)
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
 
+	if (!instruction.label.empty())
+	{
+		ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+	}
 	//RP
 	OpcodeInfo info = OP_INFO[instruction.mnemonic];
 	MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -2210,6 +2464,11 @@ bool ProgramManager::HLT(const Instruction& instruction)
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
+
+	if (!instruction.label.empty())
+	{
+		ProgramManager::LabelsAddress[instruction.label] = Current_Address;
+	}
 	//HLT
 	OpcodeInfo info = OP_INFO[instruction.mnemonic];
 	MemoryManager::SetMemory(Current_Address, info.opcode);
@@ -2224,6 +2483,11 @@ bool ProgramManager::NOP(const Instruction& instruction)
 	if (!Validator::ValidOperandCount(operands, 0))
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+	}
+
+	if (!instruction.label.empty())
+	{
+		ProgramManager::LabelsAddress[instruction.label] = Current_Address;
 	}
 	//NOP
 	OpcodeInfo info = OP_INFO[instruction.mnemonic];

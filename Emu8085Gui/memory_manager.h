@@ -44,9 +44,3 @@ void MemoryManager::SetMemory(const int location, const int data)
 {
 	Memory[location] = data;
 }
-
-//void MemoryManager::SetMemory(const int location, const std::string& data)
-//{
-//	int nData = Converter::HexToDec(data);
-//	Memory[location] = nData;
-//}
