@@ -8,73 +8,19 @@
 #include"memory_manager.h"
 #include"registers.h"
 #include"instruction.h"
-
-
-
-class ProgramManager
-{
-
-public:
-	static std::map<std::string, int> Labels;
-	static std::vector<Instruction> Program;
-	static std::vector<int> CallStack;
-	static bool HLT;
-
-	static bool Read(const std::string filePath);
-
-	static void Run();
-
-	static bool IsExistingLabel(const std::string&);
-
-	static void Clear();
-
-	static bool CanRunFurther();//It will check whether there exist a instruction at Index = PC
-};
-
-
-std::vector<Instruction> ProgramManager::Program;
-std::map<std::string, int> ProgramManager::Labels;
-std::vector<int> ProgramManager::CallStack;
-bool ProgramManager::HLT;
-
-bool ProgramManager::IsExistingLabel(const std::string& expected_jump_point)
-{
-	return Labels.count(expected_jump_point);
-}
-
-bool ProgramManager::CanRunFurther()
-{
-	if (Register::PC < (int)Program.size())
-	{
-		return true;
-	}
-	else
-	{
-		return Error::Throw(ERROR_TYPE::NEVER_REACHED_HLT);
-	}
-}
-
-void ProgramManager::Clear()
-{
-	ProgramManager::Program.clear();
-	ProgramManager::Labels.clear();
-	ProgramManager::CallStack.clear(); 
-	ProgramManager::HLT = false;
-}
+#include"program_manager.h"
 
 class Mnemonic
 {
 public:
 	static std::map<std::string, bool (*)(const std::pair<std::string, std::string>&)> Execute;
 
-	static std::set<std::string> JCallInstructions;
 
 	static void LoadInstructionSet();
 
 
 	static bool IsValid(const std::string& mnemonic);
 
-	static bool IsJCallInstruction(const std::string& mnemonic);
 
 	static bool MOV(const std::pair<std::string, std::string>&);
 	static bool MVI(const std::pair<std::string, std::string>&);
@@ -158,7 +104,6 @@ public:
 };
 
 std::map<std::string, bool (*)(const std::pair<std::string, std::string>&)> Mnemonic::Execute;
-std::set<std::string> Mnemonic::JCallInstructions;
 
 void Mnemonic::LoadInstructionSet()
 {
@@ -232,24 +177,24 @@ void Mnemonic::LoadInstructionSet()
 	Execute[MNEMONIC::NOP] = NOP;
 
 	//Loading Jump/Call Instruction
-	JCallInstructions.insert(MNEMONIC::JMP);
-	JCallInstructions.insert(MNEMONIC::JC);
-	JCallInstructions.insert(MNEMONIC::JNC);
-	JCallInstructions.insert(MNEMONIC::JZ);
-	JCallInstructions.insert(MNEMONIC::JNZ);
-	JCallInstructions.insert(MNEMONIC::JPE);
-	JCallInstructions.insert(MNEMONIC::JPO);
-	JCallInstructions.insert(MNEMONIC::JM);
-	JCallInstructions.insert(MNEMONIC::JP);
-	JCallInstructions.insert(MNEMONIC::CALL);
-	JCallInstructions.insert(MNEMONIC::CNC);
-	JCallInstructions.insert(MNEMONIC::CC);
-	JCallInstructions.insert(MNEMONIC::CNZ);
-	JCallInstructions.insert(MNEMONIC::CZ);
-	JCallInstructions.insert(MNEMONIC::CPE);
-	JCallInstructions.insert(MNEMONIC::CPO);
-	JCallInstructions.insert(MNEMONIC::CP);
-	JCallInstructions.insert(MNEMONIC::CM);
+	ProgramManager::JCallInstructions.insert(MNEMONIC::JMP);
+	ProgramManager::JCallInstructions.insert(MNEMONIC::JC);
+	ProgramManager::JCallInstructions.insert(MNEMONIC::JNC);
+	ProgramManager::JCallInstructions.insert(MNEMONIC::JZ);
+	ProgramManager::JCallInstructions.insert(MNEMONIC::JNZ);
+	ProgramManager::JCallInstructions.insert(MNEMONIC::JPE);
+	ProgramManager::JCallInstructions.insert(MNEMONIC::JPO);
+	ProgramManager::JCallInstructions.insert(MNEMONIC::JM);
+	ProgramManager::JCallInstructions.insert(MNEMONIC::JP);
+	ProgramManager::JCallInstructions.insert(MNEMONIC::CALL);
+	ProgramManager::JCallInstructions.insert(MNEMONIC::CNC);
+	ProgramManager::JCallInstructions.insert(MNEMONIC::CC);
+	ProgramManager::JCallInstructions.insert(MNEMONIC::CNZ);
+	ProgramManager::JCallInstructions.insert(MNEMONIC::CZ);
+	ProgramManager::JCallInstructions.insert(MNEMONIC::CPE);
+	ProgramManager::JCallInstructions.insert(MNEMONIC::CPO);
+	ProgramManager::JCallInstructions.insert(MNEMONIC::CP);
+	ProgramManager::JCallInstructions.insert(MNEMONIC::CM);
 
 }	
 
@@ -282,11 +227,6 @@ bool Validator::IsValidLabel(const std::string& expected_label)
 bool Mnemonic::IsValid(const std::string& mnemonic)
 {
 	return Execute.count(mnemonic);
-}
-
-bool Mnemonic::IsJCallInstruction(const std::string& mnemonic)
-{
-	return JCallInstructions.count(mnemonic);
 }
 
 bool Mnemonic::MOV(const std::pair<std::string, std::string>& operands)
@@ -1996,7 +1936,7 @@ bool Mnemonic::HLT(const std::pair<std::string, std::string>& operands)//return 
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 	}
-	ProgramManager::HLT = true;
+	ProgramManager::HALT = true;
 	return false;
 }
 

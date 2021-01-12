@@ -8,6 +8,7 @@
 #include"converter.h"
 #include"instruction.h"
 #include"memory_manager.h"
+//#include "registers.h";
 
 class OpcodeInfo
 {
@@ -16,13 +17,18 @@ public:
 	const int size;
 };
 
-class OpcodeManager
+
+class ProgramManager
 {
 
 public:
+	static std::map<std::string, int> Labels;
+	static std::vector<Instruction> Program;
+	static std::vector<int> CallStack;
+	static std::set<std::string> JCallInstructions;
+
 	static std::map<std::string, bool (*)(const Instruction&)> Load;
 	static std::map<std::string, OpcodeInfo> OP_INFO;
-	static std::set<std::string> JCallInstructions;
 
 	static int Current_Address;
 
@@ -109,16 +115,69 @@ public:
 	static bool RP(const Instruction&);
 	static bool RM(const Instruction&);
 
-	//Other
 	static bool HLT(const Instruction&);
 	static bool NOP(const Instruction&);
+
+	//OTHER
+
+	static bool HALT;
+
+	static bool Read(const std::string filePath);
+
+	static void Run();
+
+	static bool IsExistingLabel(const std::string&);
+
+	static bool IsJCallInstruction(const std::string& mnemonic);
+
+	static void Clear();
+
+	static bool CanRunFurther();//It will check whether there exist a instruction at Index = PC
 };
 
-static int start = 0;
-std::map<std::string, bool (*)(const Instruction&)> OpcodeManager::Load;
-std::set<std::string> OpcodeManager::JCallInstructions;
 
-std::map<std::string, OpcodeInfo> OpcodeManager::OP_INFO =
+std::vector<Instruction> ProgramManager::Program;
+std::map<std::string, int> ProgramManager::Labels;
+std::vector<int> ProgramManager::CallStack;
+std::set<std::string> ProgramManager::JCallInstructions;
+bool ProgramManager::HALT;
+
+bool ProgramManager::IsJCallInstruction(const std::string& mnemonic)
+{
+	return JCallInstructions.count(mnemonic);
+}
+
+
+bool ProgramManager::IsExistingLabel(const std::string& expected_jump_point)
+{
+	return Labels.count(expected_jump_point);
+}
+
+//bool ProgramManager::CanRunFurther()
+//{
+//	if (Register::PC < (int)Program.size())
+//	{
+//		return true;
+//	}
+//	else
+//	{
+//		return Error::Throw(ERROR_TYPE::NEVER_REACHED_HLT);
+//	}
+//}
+
+void ProgramManager::Clear()
+{
+	ProgramManager::Program.clear();
+	ProgramManager::Labels.clear();
+	ProgramManager::CallStack.clear();
+	ProgramManager::HALT = false;
+}
+
+int ProgramManager::Current_Address = 0;
+std::map<std::string, bool (*)(const Instruction&)> ProgramManager::Load;
+std::set<std::string> ProgramManager::JCallInstructions;
+
+std::map<std::string, OpcodeInfo> ProgramManager::OP_INFO =
 {
 	{"ACI_DATA", {0xCE, 2}},
 	{"ADC_A", {0x8F, 1}},
@@ -164,14 +223,13 @@ std::map<std::string, OpcodeInfo> OpcodeManager::OP_INFO =
 	{"CNZ", {0xC4, 3}},
 	{"CP", {0xF4, 3}},
 	{"CPE", {0xEC, 3}},
-	{"CPI", {0xFE, 2}},
+	{"CPI_DATA", {0xFE, 2}},
 	{"CPO", {0xE4, 3}},
 	{"CZ", {0xCC, 3}},
 	{"DAA", {0x27, 1}},
 	{"DAD_B", {0x09, 1}},
 	{"DAD_D", {0x19, 1}},
 	{"DAD_H", {0x29, 1}},
-	{"DAD_SP", {0x39, 1}},
 	{"DCR_A", {0x3D, 1}},
 	{"DCR_B", {0x05, 1}},
 	{"DCR_C", {0x0D, 1}},
@@ -195,7 +253,6 @@ std::map<std::string, OpcodeInfo> OpcodeManager::OP_INFO =
 	{"INX_B", {0x03, 1}},
 	{"INX_D", {0x13, 1}},
 	{"INX_H", {0x23, 1}},
-	{"INX_SP", {0x33, 1}},
 	{"JC", {0xDA, 3}},
 	{"JM", {0xFA, 3}},
 	{"JMP", {0xC3, 3}},
@@ -297,7 +354,6 @@ std::map<std::string, OpcodeInfo> OpcodeManager::OP_INFO =
 	{"RAR", {0x1F, 1}},
 	{"RC", {0xD8, 1}},
 	{"RET", {0xC9, 1}},
-	{"RIM", {0x20, 1}},
 	{"RLC", {0x07, 1}},
 	{"RM", {0xF8, 1}},
 	{"RNC", {0xD0, 1}},
@@ -341,7 +397,7 @@ std::map<std::string, OpcodeInfo> OpcodeManager::OP_INFO =
 	{"XRA_M", {0xAE, 1}},
 	{"XRI_DATA", {0xEE, 2}},
 };
-void OpcodeManager::LoadInstructionSet()
+void ProgramManager::LoadInstructionSet()
 {
 	Load[MNEMONIC::MVI] = MVI;
 	Load[MNEMONIC::MOV] = MOV;
@@ -440,7 +496,7 @@ bool Validator::IsValidLabel(const std::string& expected_label)
 {
 	std::string expected_mnemonic = expected_label;
 	Converter::ToUpperString(expected_mnemonic); //Because mnemonic are stored in uppercase form.
-	if (OpcodeManager::IsValid(expected_mnemonic))//should not match any mnemonic
+	if (ProgramManager::IsValid(expected_mnemonic))//should not match any mnemonic
 	{
 		return false;
 	}
@@ -461,19 +517,19 @@ bool Validator::IsValidLabel(const std::string& expected_label)
 }
 //
 
-bool OpcodeManager::IsValid(const std::string& mnemonic)
+bool ProgramManager::IsValid(const std::string& mnemonic)
 {
 	return Load.count(mnemonic);
 }
 
-bool OpcodeManager::IsJCallInstruction(const std::string& mnemonic)
+bool ProgramManager::IsJCallInstruction(const std::string& mnemonic)
 {
 	return JCallInstructions.count(mnemonic);
 }
 
-bool OpcodeManager::MOV(const Instruction& instruction)
+bool ProgramManager::MOV(const Instruction& instruction)
 {
-	const std::pair<std::string, std::string> operands = instruction.operands;
+	const std::pair<std::string, std::string>& operands = instruction.operands;
 
 	if (!Validator::ValidOperandCount(operands, 2))
 	{
@@ -506,9 +562,9 @@ bool OpcodeManager::MOV(const Instruction& instruction)
 	return true;
 }
 
-bool OpcodeManager::MVI(const Instruction& instruction)
+bool ProgramManager::MVI(const Instruction& instruction)
 {
-	const std::pair<std::string, std::string> operands = instruction.operands;
+	const std::pair<std::string, std::string>& operands = instruction.operands;
 
 	if (!Validator::ValidOperandCount(operands, 2))
 	{
@@ -551,9 +607,9 @@ bool OpcodeManager::MVI(const Instruction& instruction)
 	return true;
 }
 
-bool OpcodeManager::LDA(const Instruction& instruction)
+bool ProgramManager::LDA(const Instruction& instruction)
 {
-	const std::pair<std::string, std::string> operands = instruction.operands;
+	const std::pair<std::string, std::string>& operands = instruction.operands;
 
 	if (!Validator::ValidOperandCount(operands, 1))
 	{
@@ -582,9 +638,9 @@ bool OpcodeManager::LDA(const Instruction& instruction)
 	return true;
 }
 
-bool OpcodeManager::STA(const Instruction& instruction)
+bool ProgramManager::STA(const Instruction& instruction)
 {
-	const std::pair<std::string, std::string> operands = instruction.operands;
+	const std::pair<std::string, std::string>& operands = instruction.operands;
 
 	if (!Validator::ValidOperandCount(operands, 1))
 	{
@@ -614,9 +670,9 @@ bool OpcodeManager::STA(const Instruction& instruction)
 	return true;
 }
 
-bool OpcodeManager::LHLD(const Instruction& instruction)
+bool ProgramManager::LHLD(const Instruction& instruction)
 {
-	const std::pair<std::string, std::string> operands = instruction.operands;
+	const std::pair<std::string, std::string>& operands = instruction.operands;
 
 	if (!Validator::ValidOperandCount(operands, 1))
 	{
@@ -646,9 +702,9 @@ bool OpcodeManager::LHLD(const Instruction& instruction)
 	return true;
 }
 
-bool OpcodeManager::SHLD(const Instruction& instruction)
+bool ProgramManager::SHLD(const Instruction& instruction)
 {
-	const std::pair<std::string, std::string> operands = instruction.operands;
+	const std::pair<std::string, std::string>& operands = instruction.operands;
 
 	if (!Validator::ValidOperandCount(operands, 1))
 	{
@@ -682,9 +738,9 @@ bool OpcodeManager::SHLD(const Instruction& instruction)
 
 
 
-bool OpcodeManager::LXI(const Instruction& instruction)
+bool ProgramManager::LXI(const Instruction& instruction)
 {
-	const std::pair<std::string, std::string> operands = instruction.operands;
+	const std::pair<std::string, std::string>& operands = instruction.operands;
 
 	if (!Validator::ValidOperandCount(operands, 2))
 	{
@@ -728,9 +784,9 @@ bool OpcodeManager::LXI(const Instruction& instruction)
 	return true;
 }
 
-bool OpcodeManager::LDAX(const Instruction& instruction)
+bool ProgramManager::LDAX(const Instruction& instruction)
 {
-	const std::pair<std::string, std::string> operands = instruction.operands;
+	const std::pair<std::string, std::string>& operands = instruction.operands;
 
 	if (!Validator::ValidOperandCount(operands, 1))
 	{
@@ -759,9 +815,9 @@ bool OpcodeManager::LDAX(const Instruction& instruction)
 	return true;
 }
 
-bool OpcodeManager::STAX(const Instruction& instruction)
+bool ProgramManager::STAX(const Instruction& instruction)
 {
-	const std::pair<std::string, std::string> operands = instruction.operands;
+	const std::pair<std::string, std::string>& operands = instruction.operands;
 	if (!Validator::ValidOperandCount(operands, 1))
 	{
 		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
@@ -788,9 +844,9 @@ bool OpcodeManager::STAX(const Instruction& instruction)
 	return true;
 }
 
-bool OpcodeManager::XCHG(const Instruction& instruction)
+bool ProgramManager::XCHG(const Instruction& instruction)
 {
-	const std::pair<std::string, std::string> operands = instruction.operands;
+	const std::pair<std::string, std::string>& operands = instruction.operands;
 
 	if (!Validator::ValidOperandCount(operands, 0))
 	{
@@ -803,9 +859,9 @@ bool OpcodeManager::XCHG(const Instruction& instruction)
 }
 
 //@Airthmatic Instrunction
-bool OpcodeManager::ADD(const Instruction& instruction)
+bool ProgramManager::ADD(const Instruction& instruction)
 {
-	const std::pair<std::string, std::string> operands = instruction.operands;
+	const std::pair<std::string, std::string>& operands = instruction.operands;
 
 	if (!Validator::ValidOperandCount(operands, 1))
 	{
@@ -832,9 +888,9 @@ bool OpcodeManager::ADD(const Instruction& instruction)
 	return true;
 }
 
-bool OpcodeManager::ADC(const Instruction& instruction)
+bool ProgramManager::ADC(const Instruction& instruction)
 {
-	const std::pair<std::string, std::string> operands = instruction.operands;
+	const std::pair<std::string, std::string>& operands = instruction.operands;
 
 	if (!Validator::ValidOperandCount(operands, 1))
 	{
@@ -861,9 +917,9 @@ bool OpcodeManager::ADC(const Instruction& instruction)
 	return true;
 }
 
-bool OpcodeManager::ADI(const Instruction& instruction)
+bool ProgramManager::ADI(const Instruction& instruction)
 {
-	const std::pair<std::string, std::string> operands = instruction.operands;
+	const std::pair<std::string, std::string>& operands = instruction.operands;
 
 	if (!Validator::ValidOperandCount(operands, 1))
 	{
@@ -893,748 +949,687 @@ bool OpcodeManager::ADI(const Instruction& instruction)
 }
 
 
-//bool OpcodeManager::ACI(const std::pair<std::string, std::string>& operands)
+bool ProgramManager::ACI(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
+	}
+
+	const std::string data = operands.first;
+
+	if (!Validator::IsValidHex(data))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_HEX, instruction.line_number);
+	}
+
+	int nValue = Converter::HexToDec(data);
+
+	if (nValue < 0x00 || nValue > 0xff)
+	{
+		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, instruction.line_number);
+	}
+	else
+	{
+		//ACI_DATA
+		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_DATA"];
+		MemoryManager::SetMemory(Current_Address, info.opcode);
+		MemoryManager::SetMemory(Current_Address + 1, nValue);
+		Current_Address += info.size;
+	}
+	return true;
+}
+
+
+bool ProgramManager::SUB(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
+	}
+
+	const std::string reg = operands.first;
+
+	bool OK = false;
+
+	OK |= reg == REGISTER::M;
+	OK |= Validator::IsValidRegister(reg);
+
+	if (OK)
+	{
+		//SUB_R|M
+		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
+		MemoryManager::SetMemory(Current_Address, info.opcode);
+		Current_Address += info.size;
+	}
+	else
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, instruction.line_number);
+	}
+	return true;
+}
+
+
+bool ProgramManager::SBB(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
+	}
+
+	const std::string reg = operands.first;
+
+	bool OK = false;
+	OK |= reg == REGISTER::M;
+	OK |= Validator::IsValidRegister(reg);
+
+	if (OK)
+	{
+		//SBB_R|M
+		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
+		MemoryManager::SetMemory(Current_Address, info.opcode);
+		Current_Address += info.size;
+	}
+	else
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, instruction.line_number);
+	}
+	return false;
+}
+
+
+bool ProgramManager::SUI(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
+	}
+
+	if (!Validator::IsValidHex(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_HEX, instruction.line_number);
+	}
+
+	int nValue = Converter::HexToDec(operands.first);
+
+	if (nValue < 0x00 || nValue > 0xff)
+	{
+		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, instruction.line_number);
+	}
+	else
+	{
+		//SUI_DATA
+		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_DATA"];
+		MemoryManager::SetMemory(Current_Address, info.opcode);
+		MemoryManager::SetMemory(Current_Address + 1, nValue);
+		Current_Address += info.size;
+	}
+	return true;
+}
+
+
+
+
+bool ProgramManager::SBI(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
+	}
+
+	if (!Validator::IsValidHex(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_HEX, instruction.line_number);
+	}
+
+	int nValue = Converter::HexToDec(operands.first);
+	int subtrahend = nValue;
+
+	if (nValue < 0x00 || nValue > 0xff)
+	{
+		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, instruction.line_number);
+	}
+	else
+	{
+		//SBI_DATA
+		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_DATA"];
+		MemoryManager::SetMemory(Current_Address, info.opcode);
+		MemoryManager::SetMemory(Current_Address + 1, nValue);
+		Current_Address += info.size;
+	}
+
+	return true;
+}
+
+
+bool ProgramManager::DAA(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 0))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
+	}
+	//DAA
+	OpcodeInfo info = OP_INFO[instruction.mnemonic];
+	MemoryManager::SetMemory(Current_Address, info.opcode);
+	Current_Address += info.size;
+
+	return true;
+}
+
+bool ProgramManager::INR(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
+	}
+
+	const std::string reg = operands.first;
+
+	bool OK = false;
+	OK |= reg == REGISTER::M;
+	OK |= Validator::IsValidRegister(reg);
+
+	if (OK)
+	{
+		//INR_R|M
+		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
+		MemoryManager::SetMemory(Current_Address, info.opcode);
+		Current_Address += info.size;
+	}
+	else
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, instruction.line_number);
+	}
+	return true;
+}
+
+bool ProgramManager::INX(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
+	}
+
+	const std::string reg = operands.first;
+
+	bool OK = false;
+	OK |= reg == REGISTER::H;
+	OK |= reg == REGISTER::D;
+	OK |= reg == REGISTER::B;
+
+	if (OK)
+	{
+		//INX_H|D|B
+		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
+		MemoryManager::SetMemory(Current_Address, info.opcode);
+		Current_Address += info.size;
+	}
+	else
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, instruction.line_number);
+	}
+	return true;
+}
+
+bool ProgramManager::DCR(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
+	}
+
+	const std::string reg = operands.first;
+
+	bool OK = false;
+	OK |= reg == REGISTER::M;
+	OK |= Validator::IsValidRegister(reg);
+
+	if (OK)
+	{
+		//DCR_R|M
+		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
+		MemoryManager::SetMemory(Current_Address, info.opcode);
+		Current_Address += info.size;
+	}
+	else
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, instruction.line_number);
+	}
+	return true;
+}
+
+bool ProgramManager::DCX(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
+	}
+
+	const std::string reg = operands.first;
+
+	bool OK = false;
+	OK |= reg == REGISTER::H;
+	OK |= reg == REGISTER::D;
+	OK |= reg == REGISTER::B;
+
+	if (OK)
+	{
+		//DCX_H|D|B
+		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
+		MemoryManager::SetMemory(Current_Address, info.opcode);
+		Current_Address += info.size;
+	}
+	else
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, instruction.line_number);
+	}
+	return true;
+}
+
+bool ProgramManager::DAD(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
+	}
+
+	const std::string Rp = operands.first;
+
+	bool OK = false;
+	OK |= Rp == REGISTER::H;
+	OK |= Rp == REGISTER::D;
+	OK |= Rp == REGISTER::B;
+
+	if (OK)
+	{
+		//DAD_H|D|B
+		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + Rp];
+		MemoryManager::SetMemory(Current_Address, info.opcode);
+		Current_Address += info.size;
+	}
+	else
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, instruction.line_number);
+	}
+	return true;
+}
+
+bool ProgramManager::ANA(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
+	}
+
+	const std::string reg = operands.first;
+
+	bool OK = false;
+	OK |= reg == REGISTER::M;
+	OK |= Validator::IsValidRegister(reg);
+
+	if (OK)
+	{
+		//ANA_R|M
+		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
+		MemoryManager::SetMemory(Current_Address, info.opcode);
+		Current_Address += info.size;
+	}
+	else
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, instruction.line_number);
+	}
+	return true;
+}
+
+bool ProgramManager::ANI(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
+	}
+
+	if (!Validator::IsValidHex(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_HEX, instruction.line_number);
+	}
+
+	int nValue = Converter::HexToDec(operands.first);
+
+	if (nValue < 0x00 || nValue > 0xff)
+	{
+		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, instruction.line_number);
+	}
+	else
+	{
+		//ANI_DATA
+		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_DATA"];
+		MemoryManager::SetMemory(Current_Address, info.opcode);
+		MemoryManager::SetMemory(Current_Address + 1, nValue);
+		Current_Address += info.size;
+	}
+
+	return true;
+
+}
+
+bool ProgramManager::ORA(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
+	}
+
+	const std::string reg = operands.first;
+
+	bool OK = false;
+	OK |= reg == REGISTER::M;
+	OK |= Validator::IsValidRegister(reg);
+
+	if (OK)
+	{
+		//ORA_R|M
+		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
+		MemoryManager::SetMemory(Current_Address, info.opcode);
+		Current_Address += info.size;
+	}
+	else
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, instruction.line_number);
+	}
+	return true;
+}
+
+bool ProgramManager::ORI(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
+	}
+
+	if (!Validator::IsValidHex(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_HEX, instruction.line_number);
+	}
+
+	int nValue = Converter::HexToDec(operands.first);
+
+	if (nValue < 0x00 || nValue > 0xff)
+	{
+		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, instruction.line_number);
+	}
+	else
+	{
+		//ORI_DATA
+		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_DATA"];
+		MemoryManager::SetMemory(Current_Address, info.opcode);
+		MemoryManager::SetMemory(Current_Address + 1, nValue);
+		Current_Address += info.size;
+	}
+
+	return true;
+}
+
+bool ProgramManager::XRA(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
+	}
+
+	const std::string reg = operands.first;
+
+	bool OK = false;
+	OK |= reg == REGISTER::M;
+	OK |= Validator::IsValidRegister(reg);
+	if (OK)
+	{
+		//XRA_R|M
+		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
+		MemoryManager::SetMemory(Current_Address, info.opcode);
+		Current_Address += info.size;
+	}
+	else
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, instruction.line_number);
+	}
+	return true;
+}
+
+bool ProgramManager::XRI(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
+	}
+
+	if (!Validator::IsValidHex(operands.first))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_HEX, instruction.line_number);
+	}
+
+	int nValue = Converter::HexToDec(operands.first);
+	if (nValue < 0x00 || nValue > 0xff)
+	{
+		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, instruction.line_number);
+	}
+	else
+	{
+		//XRI_DATA
+		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_DATA"];
+		MemoryManager::SetMemory(Current_Address, info.opcode);
+		MemoryManager::SetMemory(Current_Address + 1, nValue);
+		Current_Address += info.size;
+	}
+
+	return true;
+}
+
+bool ProgramManager::CMA(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 0))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
+	}
+	//CMA
+	OpcodeInfo info = OP_INFO[instruction.mnemonic];
+	MemoryManager::SetMemory(Current_Address, info.opcode);
+	Current_Address += info.size;
+	return true;
+}
+
+bool ProgramManager::RLC(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 0))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
+	}
+	//RLC
+	OpcodeInfo info = OP_INFO[instruction.mnemonic];
+	MemoryManager::SetMemory(Current_Address, info.opcode);
+	Current_Address += info.size;
+	return true;
+}
+
+bool ProgramManager::RAL(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 0))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
+	}
+	//RAL
+	OpcodeInfo info = OP_INFO[instruction.mnemonic];
+	MemoryManager::SetMemory(Current_Address, info.opcode);
+	Current_Address += info.size;
+	return true;
+}
+
+bool ProgramManager::RRC(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 0))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
+	}
+	//RRC
+	OpcodeInfo info = OP_INFO[instruction.mnemonic];
+	MemoryManager::SetMemory(Current_Address, info.opcode);
+	Current_Address += info.size;
+	return true;
+}
+
+bool ProgramManager::RAR(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 0))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
+	}
+	//RAR
+	OpcodeInfo info = OP_INFO[instruction.mnemonic];
+	MemoryManager::SetMemory(Current_Address, info.opcode);
+	Current_Address += info.size;
+	return true;
+}
+
+bool ProgramManager::STC(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 0))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
+	}
+	//STC
+	OpcodeInfo info = OP_INFO[instruction.mnemonic];
+	MemoryManager::SetMemory(Current_Address, info.opcode);
+	Current_Address += info.size;
+	return true;
+}
+
+bool ProgramManager::CMC(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 0))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
+	}
+	//CMC
+	OpcodeInfo info = OP_INFO[instruction.mnemonic];
+	MemoryManager::SetMemory(Current_Address, info.opcode);
+	Current_Address += info.size;
+	return true;
+}
+
+bool ProgramManager::CMP(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
+	}
+
+	const std::string reg = operands.first;
+
+	bool OK = false;
+	OK |= reg == REGISTER::M;
+	OK |= Validator::IsValidRegister(reg);
+	if (OK)
+	{
+		//CMP_R|M
+		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
+		MemoryManager::SetMemory(Current_Address, info.opcode);
+		Current_Address += info.size;
+	}
+	else
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, instruction.line_number);
+	}
+
+	return true;
+}
+
+bool ProgramManager::CPI(const Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
+	}
+
+	int R = Converter::HexToDec(operands.first);
+
+	if (R < 0x00 || R > 0xFF)
+	{
+		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, instruction.line_number);
+	}
+	else
+	{
+		//CPI_DATA
+		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_DATA"];
+		MemoryManager::SetMemory(Current_Address, info.opcode);
+		MemoryManager::SetMemory(Current_Address + 1, R);
+		Current_Address += info.size;
+	}
+
+	return true;
+}
+
+//bool ProgramManager::JMP(const Instruction& instruction)
 //{
+//	const std::pair<std::string, std::string>& operands = instruction.operands;
+//
 //	if (!Validator::ValidOperandCount(operands, 1))
 //	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//
-//	std::string data = operands.first;
-//
-//	if (!Validator::IsValidHex(data))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_HEX, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	int nValue = Converter::HexToDec(data);
-//	int LSN_A = Register::Main[REGISTER::A] & 0x0f;
-//	int LSN_R = nValue & 0x0f;
-//
-//	if (nValue < 0x00 || nValue > 0xff)
-//	{
-//		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else
-//	{
-//		Register::Main[REGISTER::A] += nValue + Register::Flag::CY;
-//	}
-//	Register::UpdateFlags(LSN_A + LSN_R);
-//	++Register::PC;
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//
-////For subtraction check carry separately which will work as follows: Register::Flag::CY = subtrahend > minuend (carry will not be included)
-//bool OpcodeManager::SUB(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 1))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//
-//	const std::string reg = operands.first;
-//
-//	int LSN_A = Register::Main[REGISTER::A] & 0x0f, LSN_R = 0, minuend = Register::Main[REGISTER::A], subtrahend = 0;
-//
-//	if (reg == REGISTER::M)
-//	{
-//		subtrahend = MemoryManager::Memory[Register::HL()];
-//
-//		int _2sc = Utility::_8bit_2sc(MemoryManager::Memory[Register::HL()]);
-//		LSN_R = _2sc & 0x0f;
-//		Register::Main[REGISTER::A] += _2sc;
-//	}
-//	else if (Validator::IsValidRegister(reg))
-//	{
-//		subtrahend = Register::Main[reg];
-//
-//		int _2sc = Utility::_8bit_2sc(Register::Main[reg]);
-//		LSN_R = _2sc & 0x0f;
-//		Register::Main[REGISTER::A] += _2sc;
-//	}
-//	else
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, ProgramManager::Program[Register::PC].line_number);
-//	}
-//
-//	//@Setting carry flag explicitly
-//	Register::Flag::CY = subtrahend > minuend;
-//	Register::UpdateFlags(LSN_A + LSN_R, true);
-//	++Register::PC;
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//
-//bool OpcodeManager::SBB(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 1))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//
-//	const std::string reg = operands.first;
-//
-//	int LSN_A = Register::Main[REGISTER::A] & 0x0f, LSN_R = 0, minuend = Register::Main[REGISTER::A], subtrahend = 0;
-//	//int _4Bit_C = Register::Flag::CY ? 0xF : 0x0; // Not sure if last nibble of Carry is also responsible for AC
-//	if (reg == REGISTER::M)
-//	{
-//		subtrahend = MemoryManager::Memory[Register::HL()];
-//
-//		int _2sc = Utility::_8bit_2sc(MemoryManager::Memory[Register::HL()]);
-//		LSN_R = _2sc & 0x0f;
-//		Register::Main[REGISTER::A] += _2sc + Utility::_8bit_2sc(Register::Flag::CY);
-//
-//	}
-//	else if (Validator::IsValidRegister(reg))
-//	{
-//		subtrahend = Register::Main[reg];
-//
-//		int _2sc = Utility::_8bit_2sc(Register::Main[reg]);
-//		LSN_R = _2sc & 0x0f;
-//		Register::Main[REGISTER::A] += _2sc + Utility::_8bit_2sc(Register::Flag::CY);
-//	}
-//	else
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	Register::Flag::CY = subtrahend > minuend;
-//	Register::UpdateFlags(LSN_A + LSN_R, true); //Add _4Bit_C if last nibble of Carry is also responsible for AC
-//	++Register::PC;
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//bool OpcodeManager::SUI(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 1))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//
-//	if (!Validator::IsValidHex(operands.first))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_HEX, ProgramManager::Program[Register::PC].line_number);
-//	}
-//
-//	int nValue = Converter::HexToDec(operands.first), LSN_A = 0, LSN_R = 0, minuend = Register::Main[REGISTER::A];
-//	int subtrahend = nValue;
-//
-//	if (nValue < 0x00 || nValue > 0xff)
-//	{
-//		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else
-//	{
-//		int _2sc = Utility::_8bit_2sc(nValue);
-//		LSN_A = Register::Main[REGISTER::A] & 0x0f;
-//		LSN_R = _2sc & 0x0f;
-//		Register::Main[REGISTER::A] += _2sc;
-//	}
-//	Register::Flag::CY = subtrahend > minuend;
-//	Register::UpdateFlags(LSN_A + LSN_R, true);
-//	++Register::PC;
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//
-//bool OpcodeManager::SBI(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 1))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//
-//	if (!Validator::IsValidHex(operands.first))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_HEX, ProgramManager::Program[Register::PC].line_number);
-//	}
-//
-//	int nValue = Converter::HexToDec(operands.first), LSN_A = 0, LSN_R = 0, minuend = Register::Main[REGISTER::A];
-//	int subtrahend = nValue;
-//
-//	if (nValue < 0x00 || nValue > 0xff)
-//	{
-//		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else
-//	{
-//		int _2sc = Utility::_8bit_2sc(nValue);
-//		LSN_A = Register::Main[REGISTER::A] & 0x0f;
-//		LSN_R = _2sc & 0x0f;
-//		//_4Bit_C = Register::Flag::CY ? 0xF : 0x0;// Not sure if last nibble of Carry is also responsible for AC
-//		Register::Main[REGISTER::A] += _2sc + Utility::_8bit_2sc(Register::Flag::CY);//Add _4Bit_C if last nibble of Carry is also responsible for AC
-//	}
-//	Register::Flag::CY = subtrahend > minuend;
-//	Register::UpdateFlags(LSN_A + LSN_R, true);
-//	++Register::PC;
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//
-//bool OpcodeManager::DAA(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 0))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//
-//	int LSN = Register::Main[REGISTER::A] & 0x0f;
-//	int MSN = (Register::Main[REGISTER::A] & 0xf0) >> 4;
-//
-//	if ((LSN > 9 || Register::Flag::AC) && (MSN > 9 || Register::Flag::CY))
-//	{
-//		Register::Main[REGISTER::A] += 0x66;
-//		Register::Flag::CY = true;
-//		Register::Flag::AC = true;
-//	}
-//	else if (LSN > 9 || Register::Flag::AC)
-//	{
-//		Register::Main[REGISTER::A] += 0x06;
-//		Register::Flag::AC = true;
-//	}
-//	else if (MSN > 9 || Register::Flag::CY)
-//	{
-//		Register::Main[REGISTER::A] += 0x60;
-//		Register::Flag::CY = true;
-//	}
-//
-//	Utility::_8Bit_Normalization(Register::Main[REGISTER::A]);
-//
-//	Register::Flag::SF = Register::Main[REGISTER::A] & (1 << 7); //@Sign Flag
-//
-//	Register::Flag::ZF = Register::Main[REGISTER::A] == 0; //@Zero Flag
-//
-//	Register::Flag::PF = !(Utility::_set_bits_count(Register::Main[REGISTER::A]) & 1); //@Pairty Flag
-//
-//	++Register::PC;
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//bool OpcodeManager::INR(const std::pair<std::string, std::string>& operands)//CY is not affected
-//{
-//	if (!Validator::ValidOperandCount(operands, 1))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//
-//	const std::string reg = operands.first;
-//
-//	if (reg == REGISTER::M)
-//	{
-//		int nValue = MemoryManager::Memory[Register::HL()];
-//		Register::Flag::AC = (Converter::DecToHex(nValue)).back() == 'F';//@Auxiliary carry
-//		++MemoryManager::Memory[Register::HL()];
-//		Utility::_8Bit_Normalization(MemoryManager::Memory[Register::HL()]);
-//		Register::Flag::PF = !(Utility::_set_bits_count(MemoryManager::Memory[Register::HL()]) & 1);//@Parity Flag
-//		Register::Flag::SF = MemoryManager::Memory[Register::HL()] & (1 << 7);//Sign Flag
-//		Register::Flag::ZF = MemoryManager::Memory[Register::HL()] == 0;//Zero Flag
-//	}
-//	else if (Validator::IsValidRegister(reg))
-//	{
-//		int nValue = Register::Main[reg];
-//		Register::Flag::AC = (Converter::DecToHex(nValue)).back() == 'F';//@Auxiliary carry
-//		++Register::Main[reg];
-//		Utility::_8Bit_Normalization(Register::Main[reg]);
-//		Register::Flag::PF = !(Utility::_set_bits_count(Register::Main[reg]) & 1);//@Parity Flag
-//		Register::Flag::SF = Register::Main[reg] & (1 << 7);//Sign Flag
-//		Register::Flag::ZF = Register::Main[reg] == 0;//Zero Flag
-//	}
-//	else
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	++Register::PC;
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//bool OpcodeManager::INX(const std::pair<std::string, std::string>& operands)//No flags are affected during the execution
-//{
-//	if (!Validator::ValidOperandCount(operands, 1))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//
-//	const std::string reg = operands.first;
-//
-//	if (reg == REGISTER::H)
-//	{
-//		int DATA = Register::HL();
-//		++DATA;
-//		Utility::_16Bit_Normalization(DATA);
-//		std::string xDATA = Converter::DecToHex(DATA, 16);
-//		Register::Main[REGISTER::H] = Converter::HexToDec(xDATA.substr(0, 2));
-//		Register::Main[REGISTER::L] = Converter::HexToDec(xDATA.substr(2, 2));
-//	}
-//	else if (reg == REGISTER::D)
-//	{
-//		int DATA = Register::DE();
-//		++DATA;
-//		Utility::_16Bit_Normalization(DATA);
-//		std::string xDATA = Converter::DecToHex(DATA, 16);
-//		Register::Main[REGISTER::D] = Converter::HexToDec(xDATA.substr(0, 2));
-//		Register::Main[REGISTER::E] = Converter::HexToDec(xDATA.substr(2, 2));
-//	}
-//	else if (reg == REGISTER::B)
-//	{
-//		int DATA = Register::BC();
-//		++DATA;
-//		Utility::_16Bit_Normalization(DATA);
-//		std::string xDATA = Converter::DecToHex(DATA, 16);
-//		Register::Main[REGISTER::B] = Converter::HexToDec(xDATA.substr(0, 2));
-//		Register::Main[REGISTER::C] = Converter::HexToDec(xDATA.substr(2, 2));
-//	}
-//	else
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	++Register::PC;
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//bool OpcodeManager::DCR(const std::pair<std::string, std::string>& operands)//CY is not affected
-//{
-//	if (!Validator::ValidOperandCount(operands, 1))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//
-//	const std::string reg = operands.first;
-//
-//	if (reg == REGISTER::M)
-//	{
-//		int nValue = MemoryManager::Memory[Register::HL()];
-//		//Register::Flag::AC = (Converter::DecToHex(nValue)).back() == 'F';//@Not sure about auxiliary flag
-//		--MemoryManager::Memory[Register::HL()];
-//		Utility::_8Bit_Normalization(MemoryManager::Memory[Register::HL()]);
-//		Register::Flag::PF = !(Utility::_set_bits_count(MemoryManager::Memory[Register::HL()]) & 1);//@Parity Flag
-//		Register::Flag::SF = MemoryManager::Memory[Register::HL()] & (1 << 7);//Sign Flag
-//		Register::Flag::ZF = MemoryManager::Memory[Register::HL()] == 0;//Zero Flag
-//	}
-//	else if (Validator::IsValidRegister(reg))
-//	{
-//		int nValue = Register::Main[reg];
-//		//Register::Flag::AC = (Converter::DecToHex(nValue)).back() == 'F';//@Not sure about auxiliary flag
-//		--Register::Main[reg];
-//		Utility::_8Bit_Normalization(Register::Main[reg]);
-//		Register::Flag::PF = !(Utility::_set_bits_count(Register::Main[reg]) & 1);//@Parity Flag
-//		Register::Flag::SF = Register::Main[reg] & (1 << 7);//Sign Flag
-//		Register::Flag::ZF = Register::Main[reg] == 0;//Zero Flag
-//	}
-//	else
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	++Register::PC;
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//bool OpcodeManager::DCX(const std::pair<std::string, std::string>& operands)//No flags are affected during the execution
-//{
-//	if (!Validator::ValidOperandCount(operands, 1))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//
-//	const std::string reg = operands.first;
-//
-//	if (reg == REGISTER::H)
-//	{
-//		int DATA = Register::HL();
-//		--DATA;
-//		Utility::_16Bit_Normalization(DATA);
-//		std::string xDATA = Converter::DecToHex(DATA, 16);
-//		Register::Main[REGISTER::H] = Converter::HexToDec(xDATA.substr(0, 2));
-//		Register::Main[REGISTER::L] = Converter::HexToDec(xDATA.substr(2, 2));
-//	}
-//	else if (reg == REGISTER::D)
-//	{
-//		int DATA = Register::DE();
-//		--DATA;
-//		Utility::_16Bit_Normalization(DATA);
-//		std::string xDATA = Converter::DecToHex(DATA, 16);
-//		Register::Main[REGISTER::D] = Converter::HexToDec(xDATA.substr(0, 2));
-//		Register::Main[REGISTER::E] = Converter::HexToDec(xDATA.substr(2, 2));
-//	}
-//	else if (reg == REGISTER::B)
-//	{
-//		int DATA = Register::BC();
-//		--DATA;
-//		Utility::_16Bit_Normalization(DATA);
-//		std::string xDATA = Converter::DecToHex(DATA, 16);
-//		Register::Main[REGISTER::B] = Converter::HexToDec(xDATA.substr(0, 2));
-//		Register::Main[REGISTER::C] = Converter::HexToDec(xDATA.substr(2, 2));
-//	}
-//	else
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	++Register::PC;
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//bool OpcodeManager::DAD(const std::pair<std::string, std::string>& operands)//only affect CY
-//{
-//	if (!Validator::ValidOperandCount(operands, 1))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//
-//	const std::string Rp = operands.first;
-//	int HL_DATA = Register::HL(), Rp_DATA = 0;
-//	if (Rp == REGISTER::H)
-//	{
-//		Rp_DATA = Register::HL();
-//	}
-//	else if (Rp == REGISTER::D)
-//	{
-//		Rp_DATA = Register::DE();
-//	}
-//	else if (Rp == REGISTER::B)
-//	{
-//		Rp_DATA = Register::BC();
-//	}
-//	else
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, ProgramManager::Program[Register::PC].line_number);
-//	}
-//
-//	HL_DATA += Rp_DATA;
-//	Register::Flag::CY = HL_DATA & (1 << 16);//@Checking for Carry
-//	Utility::_16Bit_Normalization(HL_DATA);
-//	std::string xDATA = Converter::DecToHex(HL_DATA, 16);
-//	Register::Main[REGISTER::H] = Converter::HexToDec(xDATA.substr(0, 2));
-//	Register::Main[REGISTER::L] = Converter::HexToDec(xDATA.substr(2, 2));
-//	++Register::PC;
-//	return ProgramManager::CanRunFurther();
-//}
-//
-////@Logical Instructions
-//bool OpcodeManager::ANA(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 1))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//
-//	const std::string reg = operands.first;
-//
-//	if (reg == REGISTER::M)
-//	{
-//		Register::Main[REGISTER::A] &= MemoryManager::Memory[Register::HL()];
-//	}
-//	else if (Validator::IsValidRegister(reg))//TODO: Throw error if reg is A
-//	{
-//		Register::Main[REGISTER::A] &= Register::Main[reg];
-//	}
-//	else
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	Register::UpdateFlags(16);//16: As after executing AND instruction AC flag become set
-//	++Register::PC;
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//bool OpcodeManager::ANI(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 1))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//
-//	if (!Validator::IsValidHex(operands.first))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_HEX, ProgramManager::Program[Register::PC].line_number);
-//	}
-//
-//	int nValue = Converter::HexToDec(operands.first);
-//	if (nValue < 0x00 || nValue > 0xff)
-//	{
-//		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else
-//	{
-//		Register::Main[REGISTER::A] &= nValue;
-//	}
-//	Register::UpdateFlags(16);//16: As after executing AND instruction AC flag become set
-//	++Register::PC;
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//bool OpcodeManager::ORA(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 1))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//
-//	const std::string reg = operands.first;
-//	if (reg == REGISTER::M)
-//	{
-//		Register::Main[REGISTER::A] |= MemoryManager::Memory[Register::HL()];
-//	}
-//	else if (Validator::IsValidRegister(reg))//TODO: Throw error if reg is A
-//	{
-//		Register::Main[REGISTER::A] |= Register::Main[reg];
-//	}
-//	else
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	Register::UpdateFlags(1);//1: As there can not be any auxiliary carry during bitwise operation
-//	++Register::PC;
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//bool OpcodeManager::ORI(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 1))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//
-//	if (!Validator::IsValidHex(operands.first))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_HEX, ProgramManager::Program[Register::PC].line_number);
-//	}
-//
-//	int nValue = Converter::HexToDec(operands.first);
-//
-//	if (nValue < 0x00 || nValue > 0xff)
-//	{
-//		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else
-//	{
-//		Register::Main[REGISTER::A] |= nValue;
-//	}
-//	Register::UpdateFlags(1);
-//	++Register::PC;
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//bool OpcodeManager::XRA(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 1))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//
-//	const std::string reg = operands.first;
-//	if (reg == REGISTER::M)
-//	{
-//		Register::Main[REGISTER::A] ^= MemoryManager::Memory[Register::HL()];
-//	}
-//	else if (Validator::IsValidRegister(reg))//TODO: Throw error if reg is A
-//	{
-//		Register::Main[REGISTER::A] ^= Register::Main[reg];
-//	}
-//	else
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	Register::UpdateFlags(1);
-//	++Register::PC;
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//bool OpcodeManager::XRI(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 1))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//
-//	if (!Validator::IsValidHex(operands.first))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_HEX, ProgramManager::Program[Register::PC].line_number);
-//	}
-//
-//	int nValue = Converter::HexToDec(operands.first);
-//	if (nValue < 0x00 || nValue > 0xff)
-//	{
-//		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	else
-//	{
-//		Register::Main[REGISTER::A] ^= nValue;
-//	}
-//	Register::UpdateFlags(1);
-//	++Register::PC;
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//bool OpcodeManager::CMA(const std::pair<std::string, std::string>& operands)//Flags are not affected by this instruction
-//{
-//	if (!Validator::ValidOperandCount(operands, 0))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//
-//	for (int i = 0; i < 8; ++i)
-//	{
-//		Register::Main[REGISTER::A] ^= (1 << i);
-//	}
-//	++Register::PC;
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//bool OpcodeManager::RLC(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 0))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	Register::Flag::CY = Register::Main[REGISTER::A] & (1 << 7);
-//	Register::Main[REGISTER::A] <<= 1; //Left Shift by 1 bit
-//	Register::Main[REGISTER::A] |= Register::Flag::CY ? 1 : 0;
-//	Utility::_8Bit_Normalization(Register::Main[REGISTER::A]);
-//	++Register::PC;
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//bool OpcodeManager::RAL(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 0))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	bool MSB = Register::Main[REGISTER::A] & (1 << 7);
-//	Register::Main[REGISTER::A] <<= 1;//Left Shift by 1 bit
-//	Register::Main[REGISTER::A] |= Register::Flag::CY ? 1 : 0;
-//	Register::Flag::CY = MSB;
-//	Utility::_8Bit_Normalization(Register::Main[REGISTER::A]);
-//	++Register::PC;
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//bool OpcodeManager::RRC(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 0))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	Register::Flag::CY = Register::Main[REGISTER::A] & 1;
-//	Register::Main[REGISTER::A] >>= 1; //Right Shift by 1 bit
-//	Register::Main[REGISTER::A] |= Register::Flag::CY ? (1 << 7) : 0;
-//	++Register::PC;
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//bool OpcodeManager::RAR(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 0))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	bool LSB = Register::Main[REGISTER::A] & 1;
-//	Register::Main[REGISTER::A] >>= 1;//Right Shift by 1 bit
-//	Register::Main[REGISTER::A] |= Register::Flag::CY ? (1 << 7) : 0;
-//	Register::Flag::CY = LSB;
-//	++Register::PC;
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//bool OpcodeManager::STC(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 0))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	Register::Flag::CY = 1;
-//	++Register::PC;
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//bool OpcodeManager::CMC(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 0))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	Register::Flag::CY = !Register::Flag::CY;
-//	++Register::PC;
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//bool OpcodeManager::CMP(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 1))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//	const std::string reg = operands.first;
-//	int A = Register::Main[REGISTER::A], R = 0;
-//	if (reg == REGISTER::M)
-//	{
-//		R = MemoryManager::Memory[Register::HL()];
-//	}
-//	else if (Validator::IsValidRegister(reg))
-//	{
-//		R = Register::Main[reg];
-//	}
-//	else
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_REGISTER, ProgramManager::Program[Register::PC].line_number);
-//	}
-//
-//	int _2sc = Utility::_8bit_2sc(R);
-//	int temp = A + _2sc;
-//	Utility::_8Bit_Normalization(temp);
-//	Register::Flag::PF = !(Utility::_set_bits_count(temp) & 1);
-//
-//	int LSN_A = A & 0x0f;
-//	int LSN_R = _2sc & 0x0f;
-//
-//	Register::Flag::AC = LSN_A + LSN_R > 0xf;
-//
-//	Register::Flag::CY = A < R;
-//	Register::Flag::SF = A < R;
-//	Register::Flag::ZF = A == R;
-//
-//	++Register::PC;
-//	return ProgramManager::CanRunFurther();
-//}
-//
-//bool OpcodeManager::CPI(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 1))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
-//	}
-//
-//	int A = Register::Main[REGISTER::A], R = Converter::HexToDec(operands.first);
-//
-//	if (R > 0xFF)
-//	{
-//		return Error::Throw(ERROR_TYPE::EXPECTED_8BIT_DATA, ProgramManager::Program[Register::PC].line_number);
-//	}
-//
-//	int _2sc = Utility::_8bit_2sc(R);
-//	int temp = A + _2sc;
-//	Utility::_8Bit_Normalization(temp);
-//	Register::Flag::PF = !(Utility::_set_bits_count(temp) & 1);
-//
-//	int LSN_A = A & 0x0f;
-//	int LSN_R = _2sc & 0x0f;
-//	Register::Flag::AC = LSN_A + LSN_R > 0xf;
-//
-//	Register::Flag::CY = A < R;
-//	Register::Flag::SF = A < R;
-//	Register::Flag::ZF = A == R;
-//	++Register::PC;
-//	return ProgramManager::CanRunFurther();
-//}
-//
-////@Branching Instructions
-//bool OpcodeManager::JMP(const std::pair<std::string, std::string>& operands)
-//{
-//	if (!Validator::ValidOperandCount(operands, 1))
-//	{
-//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
+//		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
 //	}
 //	else if (!ProgramManager::IsExistingLabel(operands.first))
 //	{
-//		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, ProgramManager::Program[Register::PC].line_number);
+//		return Error::Throw(ERROR_TYPE::NO_SUCH_LABEL, instruction.line_number);
 //	}
 //	else
 //	{
@@ -1643,7 +1638,7 @@ bool OpcodeManager::ADI(const Instruction& instruction)
 //	return ProgramManager::CanRunFurther();
 //}
 //
-//bool OpcodeManager::JC(const std::pair<std::string, std::string>& operands)
+//bool ProgramManager::JC(const std::pair<std::string, std::string>& operands)
 //{
 //	if (!Validator::ValidOperandCount(operands, 1))
 //	{
@@ -1660,7 +1655,7 @@ bool OpcodeManager::ADI(const Instruction& instruction)
 //	return ProgramManager::CanRunFurther();
 //}
 //
-//bool OpcodeManager::JNC(const std::pair<std::string, std::string>& operands)
+//bool ProgramManager::JNC(const std::pair<std::string, std::string>& operands)
 //{
 //	if (!Validator::ValidOperandCount(operands, 1))
 //	{
@@ -1677,7 +1672,7 @@ bool OpcodeManager::ADI(const Instruction& instruction)
 //	return ProgramManager::CanRunFurther();
 //}
 //
-//bool OpcodeManager::JZ(const std::pair<std::string, std::string>& operands)
+//bool ProgramManager::JZ(const std::pair<std::string, std::string>& operands)
 //{
 //	if (!Validator::ValidOperandCount(operands, 1))
 //	{
@@ -1694,7 +1689,7 @@ bool OpcodeManager::ADI(const Instruction& instruction)
 //	return ProgramManager::CanRunFurther();
 //}
 //
-//bool OpcodeManager::JNZ(const std::pair<std::string, std::string>& operands)
+//bool ProgramManager::JNZ(const std::pair<std::string, std::string>& operands)
 //{
 //	if (!Validator::ValidOperandCount(operands, 1))
 //	{
@@ -1711,7 +1706,7 @@ bool OpcodeManager::ADI(const Instruction& instruction)
 //	return ProgramManager::CanRunFurther();
 //}
 //
-//bool OpcodeManager::JPE(const std::pair<std::string, std::string>& operands)
+//bool ProgramManager::JPE(const std::pair<std::string, std::string>& operands)
 //{
 //	if (!Validator::ValidOperandCount(operands, 1))
 //	{
@@ -1728,7 +1723,7 @@ bool OpcodeManager::ADI(const Instruction& instruction)
 //	return ProgramManager::CanRunFurther();
 //}
 //
-//bool OpcodeManager::JPO(const std::pair<std::string, std::string>& operands)
+//bool ProgramManager::JPO(const std::pair<std::string, std::string>& operands)
 //{
 //	if (!Validator::ValidOperandCount(operands, 1))
 //	{
@@ -1745,7 +1740,7 @@ bool OpcodeManager::ADI(const Instruction& instruction)
 //	return ProgramManager::CanRunFurther();
 //}
 //
-//bool OpcodeManager::JM(const std::pair<std::string, std::string>& operands)
+//bool ProgramManager::JM(const std::pair<std::string, std::string>& operands)
 //{
 //	if (!Validator::ValidOperandCount(operands, 1))
 //	{
@@ -1762,7 +1757,7 @@ bool OpcodeManager::ADI(const Instruction& instruction)
 //	return ProgramManager::CanRunFurther();
 //}
 //
-//bool OpcodeManager::JP(const std::pair<std::string, std::string>& operands)
+//bool ProgramManager::JP(const std::pair<std::string, std::string>& operands)
 //{
 //
 //	if (!Validator::ValidOperandCount(operands, 1))
@@ -1780,7 +1775,7 @@ bool OpcodeManager::ADI(const Instruction& instruction)
 //	return ProgramManager::CanRunFurther();
 //}
 //
-//bool OpcodeManager::CALL(const std::pair<std::string, std::string>& operands)
+//bool ProgramManager::CALL(const std::pair<std::string, std::string>& operands)
 //{
 //	if (!Validator::ValidOperandCount(operands, 1))
 //	{
@@ -1799,7 +1794,7 @@ bool OpcodeManager::ADI(const Instruction& instruction)
 //}
 //
 //
-//bool OpcodeManager::CNC(const std::pair<std::string, std::string>& operands)
+//bool ProgramManager::CNC(const std::pair<std::string, std::string>& operands)
 //{
 //	if (!Validator::ValidOperandCount(operands, 1))
 //	{
@@ -1824,7 +1819,7 @@ bool OpcodeManager::ADI(const Instruction& instruction)
 //	return ProgramManager::CanRunFurther();
 //}
 //
-//bool OpcodeManager::CC(const std::pair<std::string, std::string>& operands)
+//bool ProgramManager::CC(const std::pair<std::string, std::string>& operands)
 //{
 //	if (!Validator::ValidOperandCount(operands, 1))
 //	{
@@ -1850,7 +1845,7 @@ bool OpcodeManager::ADI(const Instruction& instruction)
 //}
 //
 //
-//bool OpcodeManager::CZ(const std::pair<std::string, std::string>& operands)
+//bool ProgramManager::CZ(const std::pair<std::string, std::string>& operands)
 //{
 //	if (!Validator::ValidOperandCount(operands, 1))
 //	{
@@ -1876,7 +1871,7 @@ bool OpcodeManager::ADI(const Instruction& instruction)
 //}
 //
 //
-//bool OpcodeManager::CNZ(const std::pair<std::string, std::string>& operands)
+//bool ProgramManager::CNZ(const std::pair<std::string, std::string>& operands)
 //{
 //	if (!Validator::ValidOperandCount(operands, 1))
 //	{
@@ -1902,7 +1897,7 @@ bool OpcodeManager::ADI(const Instruction& instruction)
 //}
 //
 //
-//bool OpcodeManager::CPE(const std::pair<std::string, std::string>& operands)
+//bool ProgramManager::CPE(const std::pair<std::string, std::string>& operands)
 //{
 //	if (!Validator::ValidOperandCount(operands, 1))
 //	{
@@ -1927,7 +1922,7 @@ bool OpcodeManager::ADI(const Instruction& instruction)
 //	return ProgramManager::CanRunFurther();
 //}
 //
-//bool OpcodeManager::CPO(const std::pair<std::string, std::string>& operands)
+//bool ProgramManager::CPO(const std::pair<std::string, std::string>& operands)
 //{
 //	if (!Validator::ValidOperandCount(operands, 1))
 //	{
@@ -1953,7 +1948,7 @@ bool OpcodeManager::ADI(const Instruction& instruction)
 //}
 //
 //
-//bool OpcodeManager::CP(const std::pair<std::string, std::string>& operands)
+//bool ProgramManager::CP(const std::pair<std::string, std::string>& operands)
 //{
 //	if (!Validator::ValidOperandCount(operands, 1))
 //	{
@@ -1978,7 +1973,7 @@ bool OpcodeManager::ADI(const Instruction& instruction)
 //	return ProgramManager::CanRunFurther();
 //}
 //
-//bool OpcodeManager::CM(const std::pair<std::string, std::string>& operands)
+//bool ProgramManager::CM(const std::pair<std::string, std::string>& operands)
 //{
 //	if (!Validator::ValidOperandCount(operands, 1))
 //	{
@@ -2003,7 +1998,7 @@ bool OpcodeManager::ADI(const Instruction& instruction)
 //	return ProgramManager::CanRunFurther();
 //}
 //
-//bool OpcodeManager::RET(const std::pair<std::string, std::string>& operands)
+//bool ProgramManager::RET(const std::pair<std::string, std::string>& operands)
 //{
 //	if (!Validator::ValidOperandCount(operands, 0))
 //	{
@@ -2019,7 +2014,7 @@ bool OpcodeManager::ADI(const Instruction& instruction)
 //	return ProgramManager::CanRunFurther();
 //}
 //
-//bool OpcodeManager::RNC(const std::pair<std::string, std::string>& operands)
+//bool ProgramManager::RNC(const std::pair<std::string, std::string>& operands)
 //{
 //	if (!Validator::ValidOperandCount(operands, 0))
 //	{
@@ -2042,7 +2037,7 @@ bool OpcodeManager::ADI(const Instruction& instruction)
 //	return ProgramManager::CanRunFurther();
 //}
 //
-//bool OpcodeManager::RC(const std::pair<std::string, std::string>& operands)
+//bool ProgramManager::RC(const std::pair<std::string, std::string>& operands)
 //{
 //	if (!Validator::ValidOperandCount(operands, 0))
 //	{
@@ -2065,7 +2060,7 @@ bool OpcodeManager::ADI(const Instruction& instruction)
 //	return ProgramManager::CanRunFurther();
 //}
 //
-//bool OpcodeManager::RZ(const std::pair<std::string, std::string>& operands)
+//bool ProgramManager::RZ(const std::pair<std::string, std::string>& operands)
 //{
 //	if (!Validator::ValidOperandCount(operands, 0))
 //	{
@@ -2088,7 +2083,7 @@ bool OpcodeManager::ADI(const Instruction& instruction)
 //	return ProgramManager::CanRunFurther();
 //}
 //
-//bool OpcodeManager::RNZ(const std::pair<std::string, std::string>& operands)
+//bool ProgramManager::RNZ(const std::pair<std::string, std::string>& operands)
 //{
 //	if (!Validator::ValidOperandCount(operands, 0))
 //	{
@@ -2112,7 +2107,7 @@ bool OpcodeManager::ADI(const Instruction& instruction)
 //}
 //
 //
-//bool OpcodeManager::RPE(const std::pair<std::string, std::string>& operands)
+//bool ProgramManager::RPE(const std::pair<std::string, std::string>& operands)
 //{
 //	if (!Validator::ValidOperandCount(operands, 0))
 //	{
@@ -2135,7 +2130,7 @@ bool OpcodeManager::ADI(const Instruction& instruction)
 //	return ProgramManager::CanRunFurther();
 //}
 //
-//bool OpcodeManager::RPO(const std::pair<std::string, std::string>& operands)
+//bool ProgramManager::RPO(const std::pair<std::string, std::string>& operands)
 //{
 //	if (!Validator::ValidOperandCount(operands, 0))
 //	{
@@ -2158,7 +2153,7 @@ bool OpcodeManager::ADI(const Instruction& instruction)
 //	return ProgramManager::CanRunFurther();
 //}
 //
-//bool OpcodeManager::RM(const std::pair<std::string, std::string>& operands)
+//bool ProgramManager::RM(const std::pair<std::string, std::string>& operands)
 //{
 //	if (!Validator::ValidOperandCount(operands, 0))
 //	{
@@ -2181,7 +2176,7 @@ bool OpcodeManager::ADI(const Instruction& instruction)
 //	return ProgramManager::CanRunFurther();
 //}
 //
-//bool OpcodeManager::RP(const std::pair<std::string, std::string>& operands)
+//bool ProgramManager::RP(const std::pair<std::string, std::string>& operands)
 //{
 //	if (!Validator::ValidOperandCount(operands, 0))
 //	{
@@ -2204,17 +2199,17 @@ bool OpcodeManager::ADI(const Instruction& instruction)
 //	return ProgramManager::CanRunFurther();
 //}
 //
-//bool OpcodeManager::HLT(const std::pair<std::string, std::string>& operands)//return false even on successful execcution But will change Program::HLT = true
+//bool ProgramManager::HLT(const std::pair<std::string, std::string>& operands)//return false even on successful execcution But will change Program::HLT = true
 //{
 //	if (!Validator::ValidOperandCount(operands, 0))
 //	{
 //		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, ProgramManager::Program[Register::PC].line_number);
 //	}
-//	ProgramManager::HLT = true;
+//	ProgramManager::HALT = true;
 //	return false;
 //}
 //
-//bool OpcodeManager::NOP(const std::pair<std::string, std::string>& operands)
+//bool ProgramManager::NOP(const std::pair<std::string, std::string>& operands)
 //{
 //	if (!Validator::ValidOperandCount(operands, 0))
 //	{

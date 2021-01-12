@@ -345,7 +345,7 @@ void MainFrame::Run8085(const std::string& filePath)
 	if (ProgramManager::Read(filePath))//Read function is responsible for clearing the backend
 	{
 		ProgramManager::Run();
-		if (ProgramManager::HLT)
+		if (ProgramManager::HALT)
 		{
 			UpdateFlagRegister();
 			UpdateRegisters();
@@ -387,7 +387,7 @@ void MainFrame::OnExecute(wxCommandEvent& event)
 		m_EditBox->MarkerAdd(ProgramManager::Program[Register::PC].line_number - 1, 0);
 		m_EditBox->MarkerSetBackground(0, *wxRED);
 	}
-	else if (ProgramManager::HLT)//HLT get executed
+	else if (ProgramManager::HALT)//HLT get executed
 	{
 		wxMessageBox(MESSAGE::SUCCESSFUL_EXECUTION, DIALOG::EXECUTION_STOPPED);
 		OnStopDebug(event);
