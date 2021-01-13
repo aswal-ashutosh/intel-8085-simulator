@@ -19,7 +19,7 @@ EVT_MENU(wxID_EXIT, MainFrame::OnExit)
 EVT_MENU(wxID_EXECUTE, MainFrame::OnRun)
 EVT_MENU(wxID_ABOUT, MainFrame::OnAbout)
 EVT_MENU(wxID_HELP, MainFrame::OnHelp)
-EVT_MENU(wxID_FLOPPY, MainFrame::OnLoadProgram)
+EVT_MENU(ID_LOAD, MainFrame::OnLoadProgram)
 EVT_BUTTON(ButtonID::SET_BUTTON, MainFrame::OnSet)
 EVT_BUTTON(ButtonID::VIEW_BUTTON, MainFrame::OnView)
 EVT_BUTTON(ButtonID::DEBUG_BUTTON, MainFrame::OnDebug)
@@ -56,8 +56,8 @@ MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30,
 	//ToolBar
 	m_ToolBar = this->CreateToolBar();
 	m_ToolBar->AddTool(wxID_OPEN, _("Open"), wxArtProvider::GetBitmap("wxART_FILE_OPEN", wxART_OTHER, wxSize(16, 16)), _("Open"));
-	m_ToolBar->AddTool(wxID_SAVE, _("Save"), wxArtProvider::GetBitmap("wxART_FILE_SAVE", wxART_OTHER, wxSize(16, 16)), _("Save"));
-	m_ToolBar->AddTool(wxID_FLOPPY, _("Load"), wxArtProvider::GetBitmap("wxART_FLOPPY", wxART_OTHER, wxSize(16, 16)), _("Load Program"));
+	m_ToolBar->AddTool(wxID_SAVE, _("Save"), wxArtProvider::GetBitmap("wxART_FLOPPY", wxART_OTHER, wxSize(16, 16)), _("Save"));
+	m_ToolBar->AddTool(ID_LOAD, _("Load"), wxArtProvider::GetBitmap("wxART_FILE_SAVE", wxART_OTHER, wxSize(16, 16)), _("Load Program"));
 	m_ToolBar->AddTool(wxID_EXECUTE, _("Execute"), wxArtProvider::GetBitmap("wxART_GO_FORWARD", wxART_OTHER, wxSize(16, 16)), _("Load + Run"));
 	m_ToolBar->Realize();
 
@@ -280,9 +280,21 @@ void MainFrame::OnSetLoadingLocation(wxCommandEvent& envet)
 	else
 	{
 		std::string address = ToString(m_ProgramLoadingPanelTextCtrl->GetValue());
-		bool OK = Validator::IsValidHex(address);
-		int nAddress = Converter::HexToDec(address);
-		OK &= (nAddress >= 0x0000 && nAddress <= 0xffff);
+		int nAddress = 0;
+		bool OK = true;
+		if (!Validator::IsValidHex(address))
+		{
+			OK = false;
+		}
+		else
+		{
+			nAddress = Converter::HexToDec(address);
+			if (nAddress < 0x0000 && nAddress > 0xffff)
+			{
+				OK = false;
+			}
+		}
+
 		if (OK)
 		{
 			m_nLoadingLocation = nAddress;

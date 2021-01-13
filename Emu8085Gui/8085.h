@@ -1375,7 +1375,7 @@ bool ProgramManager::Read(const std::string filePath)
 		//Tokenization
 		for (const char& x : currentLine)
 		{
-			if (x == ' ')
+			if (x == ' ' || x == '\t')
 			{
 				if (!token.empty())
 				{
