@@ -38,7 +38,7 @@ public:
 	static std::map<std::string, std::vector<int>> LabelPosition;
 	static std::map<std::string, int> LabelsAddress;
 	static int CurrentLoadingLocation;
-
+	static bool HALT;
 
 
 	static bool MOV(const Instruction&);
@@ -121,14 +121,9 @@ public:
 
 	//OTHER
 
-	static bool HALT;
-
 	static void LoadProgramLoadingInstruction();
 
-
 	static bool Read(const std::string filePath);
-
-	static bool Read2(const std::string filePath);
 
 	static void Run();
 

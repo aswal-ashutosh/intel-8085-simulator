@@ -1359,167 +1359,6 @@ bool ProgramManager::Read(const std::string filePath)
 	{
 		std::string currentLine;
 		std::getline(file, currentLine);
-		//Checking for commented line and empty line
-		if (currentLine.empty() || currentLine.front() == '@')
-		{
-			++line_number;
-			continue;
-		}
-
-		std::stringstream ss(currentLine);
-		std::string word;
-		std::vector<std::string> tokens;
-		while (ss >> word)
-		{
-			tokens.push_back(word);
-		}
-
-		int token_count = tokens.size();
-
-		if (token_count > 5)
-		{
-			//We can not have more than 5 tokens in a line
-			return Error::Throw(ERROR_TYPE::SYNTAX, line_number);
-		}
-
-		Instruction instruction;
-		instruction.line_number = line_number;
-		int token_idx = 0;
-
-		//First token can either be a loop point or a mnemonic
-		if (tokens[token_idx].back() == ':') //If it is a label
-		{
-			if (Validator::IsValidLabel(tokens[token_idx].substr(0, tokens[token_idx].size() - 1)))
-			{
-				instruction.label = tokens[token_idx].substr(0, tokens[token_idx].size() - 1);
-				ProgramManager::Labels[instruction.label] = Program.size();
-				++token_idx;
-			}
-			else
-			{
-				//error as string containg ':' as suffix must be label only
-				return Error::Throw(ERROR_TYPE::INVALID_LABEL, line_number);
-			}
-		}
-
-		//Checking for mnemonic
-		if (token_idx < token_count)
-		{
-			Converter::ToUpperString(tokens[token_idx]);
-			if (Mnemonic::IsValid(tokens[token_idx]))
-			{
-				instruction.mnemonic = tokens[token_idx++];
-			}
-			else
-			{
-				return Error::Throw(ERROR_TYPE::INVALID_MNEMONIC, line_number);
-			}
-		}
-		else
-		{
-			//This token should have to be a mnemonic
-			return Error::Throw(ERROR_TYPE::SYNTAX, line_number);
-		}
-
-		//Searching for first operand(comma may be attached to it. eg: A,)
-		bool comma_found = false;
-		if (token_idx < token_count)
-		{
-			std::string operand = tokens[token_idx];
-			if (operand.back() == ',') // if comma is attaced to first operand
-			{
-				operand.erase(operand.end() - 1);//removing comma
-				comma_found = true;
-			}
-			//Special check for label(this token can be a label if previous instruction is any jump/call instrunction)
-			if (!ProgramManager::IsJCallInstruction(instruction.mnemonic))
-			{
-				Converter::ToUpperString(operand);
-			}
-
-			instruction.operands.first = operand;
-			++token_idx;
-		}
-
-
-
-		if (token_idx < token_count)
-		{
-			if (comma_found)//It should be a second operand
-			{
-				Converter::ToUpperString(tokens[token_idx]);
-				instruction.operands.second = tokens[token_idx];
-			}
-			else
-			{
-				//Either the comma is separate from the operands (eg: A , B) or may be attaced to second operand(A ,B)
-				std::string s = tokens[token_idx];
-				if (s == ",")//Separated comma
-				{
-					//next token will be the second operand
-					++token_idx;
-					if (token_idx < token_count)
-					{
-						Converter::ToUpperString(tokens[token_idx]);
-						instruction.operands.second = tokens[token_idx];
-					}
-					else
-					{
-						//No operand after a comma
-						return Error::Throw(ERROR_TYPE::SYNTAX, line_number);
-					}
-
-				}
-				else
-				{
-					//It must be a attached comma
-					if (s.front() == ',')
-					{
-						s.erase(s.begin());
-						Converter::ToUpperString(s);
-						instruction.operands.second = s;
-					}
-					else
-					{
-						//There is no comma to serparate the operands	
-						return Error::Throw(ERROR_TYPE::SYNTAX, line_number);
-					}
-				}
-			}
-		}
-		else if (comma_found)
-		{
-			//No operand after comma
-			return Error::Throw(ERROR_TYPE::SYNTAX, line_number);
-		}
-
-		Program.push_back(instruction);
-		++line_number;
-	}
-	if (Program.empty())
-	{
-		return Error::Throw(ERROR_TYPE::EMPTY_FILE);
-	}
-	else
-	{
-		return true;
-	}
-}
-
-
-bool ProgramManager::Read2(const std::string filePath)
-{
-	//Resetting
-	ProgramManager::Clear();
-	Register::Clear();
-
-	std::fstream file;
-	file.open(filePath, std::ios::in);
-	int line_number = 1;
-	while (!file.eof())
-	{
-		std::string currentLine;
-		std::getline(file, currentLine);
 
 		//Checking for commented line and empty line
 		if (currentLine.empty() || currentLine.front() == '@')
@@ -1570,8 +1409,14 @@ bool ProgramManager::Read2(const std::string filePath)
 			token.clear();
 		}
 
+		if (vTokens.empty())//All white spaces => Ignore this line
+		{
+			++line_number;
+			continue;
+		}
+
 		int nTokenIndex = 0, nTotalTokens = vTokens.size();
-		if (nTotalTokens > 5)
+		if (nTotalTokens > 5)//we can have at max 5 token in a line
 		{
 			return Error::Throw(ERROR_TYPE::SYNTAX);
 		}
@@ -1614,7 +1459,6 @@ bool ProgramManager::Read2(const std::string filePath)
 		}
 
 		//First operand
-		bool comma_found = false;
 		if (nTokenIndex < nTotalTokens)
 		{
 			std::string& s = vTokens[nTokenIndex];
@@ -1696,7 +1540,7 @@ void ProgramManager::Run()
 bool ProgramManager::LoadProgramInMemory(const std::string& filePath, int loadingLocation)
 {
 	
-	if (!ProgramManager::Read2(filePath))
+	if (!ProgramManager::Read(filePath))
 	{
 		return false;
 	}
