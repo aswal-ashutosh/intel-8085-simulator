@@ -1394,6 +1394,10 @@ bool ProgramManager::Read(const std::string filePath)
 			}
 			else if (x == ':')
 			{
+				if (token.empty())
+				{
+					return Error::Throw(ERROR_TYPE::SYNTAX);
+				}
 				token.push_back(x);
 				vTokens.push_back(token);
 				token.clear();
