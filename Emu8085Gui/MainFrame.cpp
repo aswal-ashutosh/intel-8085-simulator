@@ -19,6 +19,7 @@ EVT_MENU(wxID_EXIT, MainFrame::OnExit)
 EVT_MENU(wxID_EXECUTE, MainFrame::OnRun)
 EVT_MENU(wxID_ABOUT, MainFrame::OnAbout)
 EVT_MENU(wxID_HELP, MainFrame::OnHelp)
+EVT_MENU(wxID_FLOPPY, MainFrame::OnLoadProgram)
 EVT_BUTTON(ButtonID::SET_BUTTON, MainFrame::OnSet)
 EVT_BUTTON(ButtonID::VIEW_BUTTON, MainFrame::OnView)
 EVT_BUTTON(ButtonID::DEBUG_BUTTON, MainFrame::OnDebug)
@@ -56,7 +57,8 @@ MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30,
 	m_ToolBar = this->CreateToolBar();
 	m_ToolBar->AddTool(wxID_OPEN, _("Open"), wxArtProvider::GetBitmap("wxART_FILE_OPEN", wxART_OTHER, wxSize(16, 16)), _("Open"));
 	m_ToolBar->AddTool(wxID_SAVE, _("Save"), wxArtProvider::GetBitmap("wxART_FILE_SAVE", wxART_OTHER, wxSize(16, 16)), _("Save"));
-	m_ToolBar->AddTool(wxID_EXECUTE, _("Execute"), wxArtProvider::GetBitmap("wxART_GO_FORWARD", wxART_OTHER, wxSize(16, 16)), _("Run"));
+	m_ToolBar->AddTool(wxID_FLOPPY, _("Load"), wxArtProvider::GetBitmap("wxART_FLOPPY", wxART_OTHER, wxSize(16, 16)), _("Load Program"));
+	m_ToolBar->AddTool(wxID_EXECUTE, _("Execute"), wxArtProvider::GetBitmap("wxART_GO_FORWARD", wxART_OTHER, wxSize(16, 16)), _("Load + Run"));
 	m_ToolBar->Realize();
 
 
@@ -131,8 +133,8 @@ MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30,
 	m_FromMemoryAddressTextCtrl = new wxTextCtrl(m_MemoryViewPanelStaticBox, wxID_ANY, "0000", wxPoint(73, 30), wxSize(38, 20));
 	m_FromMemoryAddressTextCtrl->SetMaxLength(4);
 	m_CountLabel = new wxStaticText(m_MemoryViewPanelStaticBox, wxID_ANY, "Count(DEC) :", wxPoint(148, 30));
-	m_CountTextCtrl = new wxTextCtrl(m_MemoryViewPanelStaticBox, wxID_ANY, "00", wxPoint(220, 30), wxSize(20, 20));
-	m_CountTextCtrl->SetMaxLength(2);
+	m_CountTextCtrl = new wxTextCtrl(m_MemoryViewPanelStaticBox, wxID_ANY, "000", wxPoint(220, 30), wxSize(30, 20));
+	m_CountTextCtrl->SetMaxLength(3);
 	m_ViewButton = new wxButton(m_MemoryViewPanelStaticBox, ButtonID::VIEW_BUTTON, BUTTON::VIEW, wxPoint(115, 60));
 	m_MemoryViewList = new wxListView(m_MemoryViewPanelStaticBox, wxID_ANY, wxPoint(5, 90), wxSize(190, 315));
 	m_MemoryViewList->AppendColumn("Address");
@@ -324,7 +326,7 @@ void MainFrame::UpdateMemory()
 		m_FromMemoryAddressTextCtrl->Clear();
 		m_CountTextCtrl->Clear();
 		m_FromMemoryAddressTextCtrl->AppendText("0000");
-		m_CountTextCtrl->AppendText("00");
+		m_CountTextCtrl->AppendText("000");
 	}
 
 	const std::string sFrom = ToString(m_FromMemoryAddressTextCtrl->GetValue());
@@ -398,7 +400,7 @@ void MainFrame::Run8085(const std::string& filePath)
 			UpdateFlagRegister();
 			UpdateRegisters();
 			UpdateMemory();
-			wxMessageBox(MESSAGE::SUCCESSFUL_EXECUTION, DIALOG::EXECUTION_STOPPED);
+			wxMessageBox(MESSAGE::SUCCESSFUL_EXECUTION, DIALOG::SUCCESS);
 		}
 		else
 		{
@@ -442,7 +444,7 @@ void MainFrame::OnExecute(wxCommandEvent& event)
 	}
 	else if (ProgramManager::HALT)//HLT get executed
 	{
-		wxMessageBox(MESSAGE::SUCCESSFUL_EXECUTION, DIALOG::EXECUTION_STOPPED);
+		wxMessageBox(MESSAGE::SUCCESSFUL_EXECUTION, DIALOG::SUCCESS);
 		OnStopDebug(event);
 	}
 	else//Error
@@ -498,3 +500,37 @@ void MainFrame::OnHelp(wxCommandEvent& event)
 	dialogSizer->Fit(&helpDialog);
 	helpDialog.ShowModal();
 }
+
+void MainFrame::OnLoadProgram(wxCommandEvent& event)
+{
+	if (m_currentFilePath.empty())
+	{
+		OnSaveAs(event);
+		if (!m_currentFilePath.empty())
+		{
+			LoadProgram(ToString(m_currentFilePath));
+		}
+	}
+	else
+	{
+		m_EditBox->SaveFile(m_currentFilePath);
+		LoadProgram(ToString(m_currentFilePath));
+	}
+}
+
+void MainFrame::LoadProgram(const std::string& filePath)
+{
+	Clear();//Clearing Front End
+	if (ProgramManager::LoadProgramInMemory(filePath, m_nLoadingLocation))//Read function in LoadProgramInMemory is responsible for clearing the backend
+	{
+		UpdateFlagRegister();
+		UpdateRegisters();
+		UpdateMemory();
+		wxMessageBox(MESSAGE::SUCCESSFUL_PROGRAM_LOADING, DIALOG::SUCCESS);
+	}
+	else
+	{
+		UpdateMemory();
+	}
+}
+

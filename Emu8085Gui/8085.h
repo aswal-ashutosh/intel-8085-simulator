@@ -179,8 +179,10 @@ void Mnemonic::LoadInstructionSet()
 }
 
 //Validator
-bool Validator::IsValidLabel(const std::string& expected_label)
+bool Validator::IsValidLabel(std::string expected_label)
 {
+	expected_label.erase(expected_label.end() - 1); // Erasing ':'
+
 	std::string expected_mnemonic = expected_label;
 	Converter::ToUpperString(expected_mnemonic); //Because mnemonic are stored in uppercase form.
 	if (Mnemonic::IsValid(expected_mnemonic))//should not match any mnemonic
@@ -1505,6 +1507,179 @@ bool ProgramManager::Read(const std::string filePath)
 }
 
 
+bool ProgramManager::Read2(const std::string filePath)
+{
+	//Resetting
+	ProgramManager::Clear();
+	Register::Clear();
+
+	std::fstream file;
+	file.open(filePath, std::ios::in);
+	int line_number = 1;
+	while (!file.eof())
+	{
+		std::string currentLine;
+		std::getline(file, currentLine);
+
+		//Checking for commented line and empty line
+		if (currentLine.empty() || currentLine.front() == '@')
+		{
+			++line_number;
+			continue;
+		}
+
+		std::string token;
+		std::vector<std::string> vTokens;
+		Instruction instruction;
+		instruction.line_number = line_number;
+
+		//Tokenization
+		for (const char& x : currentLine)
+		{
+			if (x == ' ')
+			{
+				if (!token.empty())
+				{
+					vTokens.push_back(token);
+					token.clear();
+				}
+			}
+			else if (x == ',')
+			{
+				if (!token.empty())
+				{
+					vTokens.push_back(token);
+					token.clear();
+				}
+				vTokens.push_back(",");
+			}
+			else if (x == ':')
+			{
+				token.push_back(x);
+				vTokens.push_back(token);
+				token.clear();
+			}
+			else
+			{
+				token.push_back(x);
+			}
+		}
+		if (!token.empty())
+		{
+			vTokens.push_back(token);
+			token.clear();
+		}
+
+		int nTokenIndex = 0, nTotalTokens = vTokens.size();
+		if (nTotalTokens > 5)
+		{
+			return Error::Throw(ERROR_TYPE::SYNTAX);
+		}
+		//First Token may be a Label
+		if (vTokens[nTokenIndex].back() == ':')
+		{
+			std::string& s = vTokens[nTokenIndex];
+			if (Validator::IsValidLabel(s))
+			{
+				instruction.label = s.substr(0, s.size() - 1);
+				ProgramManager::Labels[instruction.label] = Program.size();
+				++nTokenIndex;
+			}
+			else
+			{
+				//error as string containg ':' as suffix must be label only
+				return Error::Throw(ERROR_TYPE::INVALID_LABEL, line_number);
+			}
+		}
+
+		//Checking for mnemonic
+		if (nTokenIndex < nTotalTokens)
+		{
+			std::string& s = vTokens[nTokenIndex];
+			Converter::ToUpperString(s);
+			if (Mnemonic::IsValid(s))
+			{
+				instruction.mnemonic = s;
+				++nTokenIndex;
+			}
+			else
+			{
+				return Error::Throw(ERROR_TYPE::INVALID_MNEMONIC, line_number);
+			}
+		}
+		else
+		{
+			//This token should have to be a mnemonic
+			return Error::Throw(ERROR_TYPE::SYNTAX, line_number);
+		}
+
+		//First operand
+		bool comma_found = false;
+		if (nTokenIndex < nTotalTokens)
+		{
+			std::string& s = vTokens[nTokenIndex];
+			/*First operand can be a label.
+			So we don't have to change it into upper case form as labels are case sensitive.*/
+			if (!ProgramManager::IsJCallInstruction(instruction.mnemonic))
+			{
+				Converter::ToUpperString(s);
+			}
+
+			instruction.operands.first = s;
+			++nTokenIndex;
+		}
+
+		/*If there are two operands then there should be a ',' in between.*/
+		bool bComma = false;
+		if (nTokenIndex < nTotalTokens)
+		{
+			std::string& s = vTokens[nTokenIndex];
+			if (s == ",")
+			{
+				bComma = true;
+				++nTokenIndex;
+			}
+			else
+			{
+				return Error::Throw(ERROR_TYPE::SYNTAX);
+			}
+		}
+
+		//Second Operand
+		if (nTokenIndex < nTotalTokens)
+		{
+			std::string &s  = vTokens[nTokenIndex];
+			Converter::ToUpperString(s);
+			instruction.operands.second = s;
+			++nTokenIndex;
+		}
+		else if(bComma)
+		{
+			//There must be an opeands after comma
+			return Error::Throw(ERROR_TYPE::SYNTAX);
+		}
+
+		if (nTokenIndex < nTotalTokens) //If there are still token left (after second operands), it must be a syntax error
+		{
+			return Error::Throw(ERROR_TYPE::SYNTAX);
+		}
+		Program.push_back(instruction);
+		++line_number;
+	}
+
+	if (Program.empty())
+	{
+		return Error::Throw(ERROR_TYPE::EMPTY_FILE);
+	}
+	else
+	{
+		return true;
+	}
+}
+
+
+
+
 void ProgramManager::Run()
 {
 	TimeManager::Reset();
@@ -1520,12 +1695,13 @@ void ProgramManager::Run()
 
 bool ProgramManager::LoadProgramInMemory(const std::string& filePath, int loadingLocation)
 {
-	ProgramManager::CurrentLoadingLocation = loadingLocation;
-
-	if (!ProgramManager::Read(filePath))
+	
+	if (!ProgramManager::Read2(filePath))
 	{
 		return false;
 	}
+
+	ProgramManager::CurrentLoadingLocation = loadingLocation;
 
 	for (const Instruction& instruction : ProgramManager::Program)
 	{

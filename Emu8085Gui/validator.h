@@ -13,7 +13,7 @@ public:
 
 	static bool IsValidRegister(const std::string&);
 
-	static bool IsValidLabel(const std::string&);
+	static bool IsValidLabel(std::string);
 };
 
 

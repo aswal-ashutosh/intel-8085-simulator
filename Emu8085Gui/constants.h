@@ -118,6 +118,7 @@ namespace REGISTER
 namespace MESSAGE
 {
     const std::string SUCCESSFUL_EXECUTION = "Program Executed Successfully.";
+    const std::string SUCCESSFUL_PROGRAM_LOADING = "Program Loaded Succesfully.";
 }
 
 namespace DIALOG
@@ -125,7 +126,7 @@ namespace DIALOG
     const std::string ABOUT = "ABOUT";
     const std::string HELP = "HELP";
     const std::string EXECUTION_STOPPED = "EXECUTION STOPPED";
-    const std::string ERROR_OCCURRED = "ERROR";
+    const std::string SUCCESS = "SUCCESS";
 } // namespace DIALOG
 
 namespace PANEL
@@ -135,7 +136,7 @@ namespace PANEL
     const std::string MEMORY_INITIALIZER = "MEMORY INITIALIZER";
     const std::string MEMORY_VIEWER = "MEMORY VIEWER";
     const std::string DEBUGGER = "DEBUGGER";
-    const std::string PROGRAM_LOADER = "PROGRAM_LOADER";
+    const std::string PROGRAM_LOADER = "PROGRAM LOADER";
 } // namespace PANEL
 
 namespace BUTTON

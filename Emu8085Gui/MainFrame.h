@@ -117,6 +117,8 @@ public:
 	void OnRun(wxCommandEvent& envet);
 	void OnSet(wxCommandEvent& envet);
 	void OnSetLoadingLocation(wxCommandEvent& envet);
+	void OnLoadProgram(wxCommandEvent& event);
+	void LoadProgram(const std::string&);
 	void OnView(wxCommandEvent& envet);
 	void UpdateFlagRegister();
 	void UpdateRegisters();

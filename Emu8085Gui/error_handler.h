@@ -20,6 +20,6 @@ bool Error::Throw(const std::string& e, const int line_number = -1)
 		error = "Error: " + e;
 	}
 
-	wxMessageBox(error, DIALOG::ERROR_OCCURRED);
+	wxMessageBox(error, DIALOG::EXECUTION_STOPPED);
 	return false;
 }

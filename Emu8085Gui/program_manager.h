@@ -58,25 +58,24 @@ public:
 	static bool ADI(const Instruction&);
 	static bool ACI(const Instruction&);
 	static bool SUB(const Instruction&);
-	static bool SBB(const Instruction&);//Not sure about flags
+	static bool SBB(const Instruction&);
 	static bool SUI(const Instruction&);
 	static bool SBI(const Instruction&);
-	static bool INR(const Instruction&);//CY is not affected
-	static bool INX(const Instruction&);//No flags are affected during the execution
-	static bool DCR(const Instruction&);//CY is not affected
-	static bool DCX(const Instruction&);//No flags are affected during the execution
-	static bool DAD(const Instruction&);//only affect CY
+	static bool INR(const Instruction&);
+	static bool INX(const Instruction&);
+	static bool DCR(const Instruction&);
+	static bool DCX(const Instruction&);
+	static bool DAD(const Instruction&);
 	static bool DAA(const Instruction&);
 
 	//@Logical Instructions
-
 	static bool ANA(const Instruction&);
 	static bool ANI(const Instruction&);
 	static bool ORA(const Instruction&);
 	static bool ORI(const Instruction&);
 	static bool XRA(const Instruction&);
 	static bool XRI(const Instruction&);
-	static bool CMA(const Instruction&);//Flags are not affected by this instruction
+	static bool CMA(const Instruction&);
 	static bool RLC(const Instruction&);
 	static bool RAL(const Instruction&);
 	static bool RRC(const Instruction&);
@@ -128,6 +127,8 @@ public:
 
 
 	static bool Read(const std::string filePath);
+
+	static bool Read2(const std::string filePath);
 
 	static void Run();
 
