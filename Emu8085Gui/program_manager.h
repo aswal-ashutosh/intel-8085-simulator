@@ -269,6 +269,7 @@ std::map<std::string, OpcodeInfo> ProgramManager::OP_INFO =
 	{"LXI_B", {0x01, 3}},
 	{"LXI_D", {0x11, 3}},
 	{"LXI_H", {0x21, 3}},
+	{"LXI_SP", {0x31, 3}},
 	{"MOV_A_A", {0x7F, 1}},
 	{"MOV_A_B", {0x78, 1}},
 	{"MOV_A_C", {0x79, 1}},
@@ -822,6 +823,7 @@ bool ProgramManager::LXI(Instruction& instruction)
 	OK |= reg == REGISTER::B;
 	OK |= reg == REGISTER::H;
 	OK |= reg == REGISTER::D;
+	OK |= reg == REGISTER::SP;
 
 	if (OK)
 	{
@@ -829,7 +831,7 @@ bool ProgramManager::LXI(Instruction& instruction)
 		{
 			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
-		//LXI_B|D|H
+		//LXI_B|D|H|SP
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
 		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
 		{

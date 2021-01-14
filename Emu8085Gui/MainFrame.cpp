@@ -110,9 +110,18 @@ MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30,
 		m_MainRegister[m_MainRegisterArray[i]] = new wxTextCtrl(m_RegisterPanelStaticBox, wxID_ANY, "00", wxPoint(30, 20 + i * 25), wxSize(25, 20), wxTE_READONLY);
 		m_MainRegister[m_MainRegisterArray[i]]->SetMaxLength(2);
 	}
-	m_PC_StaticText = new wxStaticText(m_RegisterPanelStaticBox, wxID_ANY, REGISTER::PC + " :", wxPoint(80, 22), wxSize(30, 20));
-	m_PC_TextCtrl = new wxTextCtrl(m_RegisterPanelStaticBox, wxID_ANY, "0000", wxPoint(105, 20), wxSize(50, 20), wxTE_READONLY);
+	//Program counter
+	m_PC_StaticText = new wxStaticText(m_RegisterPanelStaticBox, wxID_ANY, REGISTER::PC + " :", wxPoint(90, 22), wxSize(30, 20));
+	m_PC_TextCtrl = new wxTextCtrl(m_RegisterPanelStaticBox, wxID_ANY, "0000", wxPoint(115, 20), wxSize(50, 20), wxTE_READONLY);
 	m_PC_TextCtrl->SetMaxLength(4);
+	//Stack Pointer
+	m_SP_StaticText = new wxStaticText(m_RegisterPanelStaticBox, wxID_ANY, REGISTER::SP + " :", wxPoint(90, 47), wxSize(30, 20));
+	m_SP_TextCtrl = new wxTextCtrl(m_RegisterPanelStaticBox, wxID_ANY, "FFFF", wxPoint(115, 45), wxSize(50, 20), wxTE_READONLY);
+	m_SP_TextCtrl->SetMaxLength(4);
+	//Program Status Word
+	m_PSW_StaticText = new wxStaticText(m_RegisterPanelStaticBox, wxID_ANY, REGISTER::PSW + " :", wxPoint(80, 72), wxSize(30, 20));
+	m_PSW_TextCtrl = new wxTextCtrl(m_RegisterPanelStaticBox, wxID_ANY, "0000", wxPoint(115, 70), wxSize(50, 20), wxTE_READONLY);
+	m_PSW_TextCtrl->SetMaxLength(4);
 	m_RegisterPanel->SetSizer(m_RegisterPanelStaticBoxSizer);
 
 	//Memory Init Panel
@@ -336,6 +345,14 @@ void MainFrame::UpdateRegisters()
 	//Update Program counter
 	m_PC_TextCtrl->Clear();
 	m_PC_TextCtrl->AppendText(Converter::DecToHex(Register::PC, 16));
+
+	//Update Stack Pointer
+	m_SP_TextCtrl->Clear();
+	m_SP_TextCtrl->AppendText(Converter::DecToHex(Register::SP, 16));
+
+	//Update Program Status Word
+	m_PSW_TextCtrl->Clear();
+	m_PSW_TextCtrl->AppendText(Converter::DecToHex(Register::PSW(), 16));
 }
 
 
@@ -393,6 +410,14 @@ void MainFrame::Clear()
 	//Clearing Program Counter
 	m_PC_TextCtrl->Clear();
 	m_PC_TextCtrl->AppendText("0000");
+
+	//Clearing Stack Pointer
+	m_SP_TextCtrl->Clear();
+	m_SP_TextCtrl->AppendText("FFFF");
+
+	//Clearing Program Status Word
+	m_PSW_TextCtrl->Clear();
+	m_PSW_TextCtrl->AppendText("0000");
 
 }
 

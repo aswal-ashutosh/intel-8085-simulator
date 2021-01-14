@@ -332,11 +332,15 @@ bool Mnemonic::LXI(const std::pair<std::string, std::string>& operands)
 		Register::Main[REGISTER::H] = (nData & 0xff00) >> 8;
 		Register::Main[REGISTER::L] = nData & 0x00ff;
 	}
-	else
+	else if(reg == REGISTER::D)
 	{
-		//reg == D
+		
 		Register::Main[REGISTER::D] = (nData & 0xff00) >> 8;
 		Register::Main[REGISTER::E] = nData & 0x00ff;
+	}
+	else//reg == REGISTER::SP
+	{
+		Register::SP = nData;
 	}
 
 	++Register::iPC;

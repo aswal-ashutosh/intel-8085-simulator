@@ -59,6 +59,10 @@ private:
 	std::map<std::string, wxStaticText*> m_MainRegisterLabel;
 	wxTextCtrl* m_PC_TextCtrl;
 	wxStaticText* m_PC_StaticText;
+	wxTextCtrl* m_SP_TextCtrl;
+	wxStaticText* m_SP_StaticText;
+	wxTextCtrl* m_PSW_TextCtrl;
+	wxStaticText* m_PSW_StaticText;
 
 
 
@@ -103,7 +107,7 @@ private:
 
 	//Other
 	const std::string m_MainRegisterArray[7] = { REGISTER::A, REGISTER::B, REGISTER::C, REGISTER::D, REGISTER::E, REGISTER::H, REGISTER::L };
-	const char* m_FlagRegisterArray[5] = { "Z", "S", "P", "AC", "CY" };
+	const char* m_FlagRegisterArray[5] = { "S", "Z", "AC", "P", "CY" };
 
 	//State
 	bool m_bDebugMode = false;

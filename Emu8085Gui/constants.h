@@ -113,6 +113,8 @@ namespace REGISTER
     const std::string L = "L";
     const std::string M = "M"; // Not a register but don't want to make a separate namespace for a single variable
     const std::string PC = "PC";
+    const std::string SP = "SP";
+    const std::string PSW = "PSW";
 } // namespace REGISTER
 
 namespace MESSAGE
