@@ -116,6 +116,9 @@ public:
 	static bool RP(Instruction&);
 	static bool RM(Instruction&);
 
+	//Stack Instructions
+	static bool PUSH(Instruction&);
+
 	static bool HLT(Instruction&);
 	static bool NOP(Instruction&);
 
@@ -397,7 +400,12 @@ std::map<std::string, OpcodeInfo> ProgramManager::OP_INFO =
 	{"XRA_L", {0xAD, 1}},
 	{"XRA_M", {0xAE, 1}},
 	{"XRI_DATA", {0xEE, 2}},
+	{"PUSH_B", { 0xC5, 1 }},
+	{"PUSH_D", {0xD5, 1} },
+	{"PUSH_H", {0xE5, 1} },
+	{"PUSH_PSW", {0xF5, 1} },
 };
+
 
 //Loading Jump/Call Instruction
 std::set<std::string> ProgramManager::JCallInstructions =
@@ -492,7 +500,7 @@ void ProgramManager::LoadProgramLoadingInstruction()
 	Load[MNEMONIC::RM] = RM;
 	Load[MNEMONIC::HLT] = HLT;
 	Load[MNEMONIC::NOP] = NOP;
-
+	Load[MNEMONIC::PUSH] = PUSH;
 }
 
 
@@ -2868,6 +2876,53 @@ bool ProgramManager::RP(Instruction& instruction)
 	CurrentLoadingLocation += info.size;
 	return true;
 }
+
+bool ProgramManager::PUSH(Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 1))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
+	}
+
+	const std::string reg = operands.first;
+
+	bool OK = false;
+
+	OK |= reg == REGISTER::B;
+	OK |= reg == REGISTER::H;
+	OK |= reg == REGISTER::D;
+	OK |= reg == REGISTER::PSW;
+
+	if (OK)
+	{
+		if (!instruction.label.empty())
+		{
+			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
+		}
+		//PUSH_B|D|H|PSW
+		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
+		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+		{
+			return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+		}
+		MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+		instruction.loading_address = CurrentLoadingLocation;
+		CurrentLoadingLocation += info.size;
+	}
+	else
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_REGISTER_PAIR, instruction.line_number);
+	}
+	return true;
+}
+
+
+
+
+
+
 
 bool ProgramManager::HLT(Instruction& instruction)
 {

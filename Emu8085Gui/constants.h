@@ -38,7 +38,6 @@ namespace MNEMONIC
     const std::string STA = "STA";
     const std::string LHLD = "LHLD";
     const std::string SHLD = "SHLD";
-    const std::string HLT = "HLT";
     const std::string LXI = "LXI";
     const std::string LDAX = "LDAX";
     const std::string STAX = "STAX";
@@ -100,6 +99,8 @@ namespace MNEMONIC
     const std::string RP = "RP";
     const std::string RM = "RM";
     const std::string NOP = "NOP";
+    const std::string HLT = "HLT";
+    const std::string PUSH = "PUSH";
 } // namespace MNEMONIC
 
 namespace REGISTER

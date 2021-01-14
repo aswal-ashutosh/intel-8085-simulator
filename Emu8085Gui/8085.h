@@ -98,6 +98,9 @@ public:
 	static bool RP(const std::pair<std::string, std::string>&);
 	static bool RM(const std::pair<std::string, std::string>&);
 
+	//Stack Instructions
+	static bool PUSH(const std::pair<std::string, std::string>&);
+
 	//Other
 	static bool HLT(const std::pair<std::string, std::string>&);
 	static bool NOP(const std::pair<std::string, std::string>&);
@@ -173,6 +176,7 @@ void Mnemonic::LoadInstructionSet()
 	Execute[MNEMONIC::RPE] = RPE;
 	Execute[MNEMONIC::RP] = RP;
 	Execute[MNEMONIC::RM] = RM;
+	Execute[MNEMONIC::PUSH] = PUSH;
 	Execute[MNEMONIC::HLT] = HLT;
 	Execute[MNEMONIC::NOP] = NOP;
 
@@ -1323,6 +1327,55 @@ bool Mnemonic::RP(const std::pair<std::string, std::string>& operands)
 		Register::iPC = ProgramManager::CallStack.back();
 		ProgramManager::CallStack.pop_back();
 	}
+	return ProgramManager::CanRunFurther();
+}
+
+
+
+bool Mnemonic::PUSH(const std::pair<std::string, std::string>& operands)
+{
+	const std::string reg = operands.first;
+
+	if (reg == REGISTER::H)
+	{
+		--Register::SP;
+		Utility::_16Bit_Normalization(Register::SP);// may be SP become -1 (32Bit)
+		MemoryManager::SetMemory(Register::SP, Register::Main[REGISTER::H]);
+		--Register::SP;
+		Utility::_16Bit_Normalization(Register::SP);// may be SP become -1 (32Bit)
+		MemoryManager::SetMemory(Register::SP, Register::Main[REGISTER::L]);
+	}
+	else if (reg == REGISTER::B)
+	{
+		--Register::SP;
+		Utility::_16Bit_Normalization(Register::SP);// may be SP become -1 (32Bit)
+		MemoryManager::SetMemory(Register::SP, Register::Main[REGISTER::B]);
+		--Register::SP;
+		Utility::_16Bit_Normalization(Register::SP);// may be SP become -1 (32Bit)
+		MemoryManager::SetMemory(Register::SP, Register::Main[REGISTER::C]);
+	}
+	else if (reg == REGISTER::D)
+	{
+		--Register::SP;
+		Utility::_16Bit_Normalization(Register::SP);// may be SP become -1 (32Bit)
+		MemoryManager::SetMemory(Register::SP, Register::Main[REGISTER::D]);
+		--Register::SP;
+		Utility::_16Bit_Normalization(Register::SP);// may be SP become -1 (32Bit)
+		MemoryManager::SetMemory(Register::SP, Register::Main[REGISTER::E]);
+	}
+	else // reg == REGISTER::PSW
+	{
+		int PSW = Register::PSW();
+		--Register::SP;
+		Utility::_16Bit_Normalization(Register::SP);// may be SP become -1 (32Bit)
+		MemoryManager::SetMemory(Register::SP, (PSW & 0xff00) >> 8);
+		--Register::SP;
+		Utility::_16Bit_Normalization(Register::SP);// may be SP become -1 (32Bit)
+		MemoryManager::SetMemory(Register::SP, (PSW & 0x00ff));
+	}
+
+	++Register::iPC;
+
 	return ProgramManager::CanRunFurther();
 }
 
