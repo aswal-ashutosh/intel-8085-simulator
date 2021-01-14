@@ -100,6 +100,7 @@ public:
 
 	//Stack Instructions
 	static bool PUSH(const std::pair<std::string, std::string>&);
+	static bool POP(const std::pair<std::string, std::string>&);
 
 	//Other
 	static bool HLT(const std::pair<std::string, std::string>&);
@@ -177,6 +178,7 @@ void Mnemonic::LoadInstructionSet()
 	Execute[MNEMONIC::RP] = RP;
 	Execute[MNEMONIC::RM] = RM;
 	Execute[MNEMONIC::PUSH] = PUSH;
+	Execute[MNEMONIC::POP] = POP;
 	Execute[MNEMONIC::HLT] = HLT;
 	Execute[MNEMONIC::NOP] = NOP;
 
@@ -608,6 +610,8 @@ bool Mnemonic::DAA(const std::pair<std::string, std::string>& operands)
 
 	Register::Flag::PF = !(Utility::_set_bits_count(Register::Main[REGISTER::A]) & 1); //@Pairty Flag
 
+	Register::SyncFLAG();
+
 	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
@@ -638,6 +642,7 @@ bool Mnemonic::INR(const std::pair<std::string, std::string>& operands)//CY is n
 		Register::Flag::SF = Register::Main[reg] & (1 << 7);//Sign Flag
 		Register::Flag::ZF = Register::Main[reg] == 0;//Zero Flag
 	}
+	Register::SyncFLAG();
 	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
@@ -704,7 +709,7 @@ bool Mnemonic::DCR(const std::pair<std::string, std::string>& operands)//CY is n
 		Register::Flag::SF = Register::Main[reg] & (1 << 7);//Sign Flag
 		Register::Flag::ZF = Register::Main[reg] == 0;//Zero Flag
 	}
-
+	Register::SyncFLAG();
 	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
@@ -765,9 +770,9 @@ bool Mnemonic::DAD(const std::pair<std::string, std::string>& operands)//only af
 	HL_DATA += Rp_DATA;
 	Register::Flag::CY = HL_DATA & (1 << 16);//@Checking for Carry
 	Utility::_16Bit_Normalization(HL_DATA);
-	std::string xDATA = Converter::DecToHex(HL_DATA, 16);
-	Register::Main[REGISTER::H] = Converter::HexToDec(xDATA.substr(0, 2));
-	Register::Main[REGISTER::L] = Converter::HexToDec(xDATA.substr(2, 2));
+	Register::Main[REGISTER::H] = (HL_DATA & 0xff00) >> 8;
+	Register::Main[REGISTER::L] = (HL_DATA & 0x00ff);
+	Register::SyncFLAG();
 	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
@@ -877,6 +882,7 @@ bool Mnemonic::RLC(const std::pair<std::string, std::string>& operands)
 	Register::Main[REGISTER::A] <<= 1; //Left Shift by 1 bit
 	Register::Main[REGISTER::A] |= Register::Flag::CY ? 1 : 0;
 	Utility::_8Bit_Normalization(Register::Main[REGISTER::A]);
+	Register::SyncFLAG();
 	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
@@ -888,6 +894,7 @@ bool Mnemonic::RAL(const std::pair<std::string, std::string>& operands)
 	Register::Main[REGISTER::A] |= Register::Flag::CY ? 1 : 0;
 	Register::Flag::CY = MSB;
 	Utility::_8Bit_Normalization(Register::Main[REGISTER::A]);
+	Register::SyncFLAG();
 	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
@@ -897,6 +904,7 @@ bool Mnemonic::RRC(const std::pair<std::string, std::string>& operands)
 	Register::Flag::CY = Register::Main[REGISTER::A] & 1;
 	Register::Main[REGISTER::A] >>= 1; //Right Shift by 1 bit
 	Register::Main[REGISTER::A] |= Register::Flag::CY ? (1 << 7) : 0;
+	Register::SyncFLAG();
 	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
@@ -908,6 +916,7 @@ bool Mnemonic::RAR(const std::pair<std::string, std::string>& operands)
 	Register::Main[REGISTER::A] >>= 1;//Right Shift by 1 bit
 	Register::Main[REGISTER::A] |= Register::Flag::CY ? (1 << 7) : 0;
 	Register::Flag::CY = LSB;
+	Register::SyncFLAG();
 	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
@@ -915,6 +924,7 @@ bool Mnemonic::RAR(const std::pair<std::string, std::string>& operands)
 bool Mnemonic::STC(const std::pair<std::string, std::string>& operands)
 {
 	Register::Flag::CY = 1;
+	Register::SyncFLAG();
 	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
@@ -922,6 +932,7 @@ bool Mnemonic::STC(const std::pair<std::string, std::string>& operands)
 bool Mnemonic::CMC(const std::pair<std::string, std::string>& operands)
 {
 	Register::Flag::CY = !Register::Flag::CY;
+	Register::SyncFLAG();
 	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
@@ -954,6 +965,7 @@ bool Mnemonic::CMP(const std::pair<std::string, std::string>& operands)
 	Register::Flag::SF = A < R;
 	Register::Flag::ZF = A == R;
 
+	Register::SyncFLAG();
 	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
@@ -975,6 +987,7 @@ bool Mnemonic::CPI(const std::pair<std::string, std::string>& operands)
 	Register::Flag::CY = A < DATA;
 	Register::Flag::SF = A < DATA;
 	Register::Flag::ZF = A == DATA;
+	Register::SyncFLAG();
 	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
@@ -1372,6 +1385,56 @@ bool Mnemonic::PUSH(const std::pair<std::string, std::string>& operands)
 		--Register::SP;
 		Utility::_16Bit_Normalization(Register::SP);// may be SP become -1 (32Bit)
 		MemoryManager::SetMemory(Register::SP, (PSW & 0x00ff));
+	}
+
+	++Register::iPC;
+
+	return ProgramManager::CanRunFurther();
+}
+
+
+
+bool Mnemonic::POP(const std::pair<std::string, std::string>& operands)
+{
+	const std::string reg = operands.first;
+
+	if (reg == REGISTER::H)
+	{
+		Register::Main[REGISTER::L] = MemoryManager::Memory[Register::SP];
+		++Register::SP;
+		Utility::_16Bit_Normalization(Register::SP);// SP will overflow ffff => 0000
+		Register::Main[REGISTER::H] = MemoryManager::Memory[Register::SP];
+		++Register::SP;
+		Utility::_16Bit_Normalization(Register::SP);// SP will overflow ffff => 0000
+	}
+	else if (reg == REGISTER::B)
+	{
+		Register::Main[REGISTER::C] = MemoryManager::Memory[Register::SP];
+		++Register::SP;
+		Utility::_16Bit_Normalization(Register::SP);// SP will overflow ffff => 0000
+		Register::Main[REGISTER::B] = MemoryManager::Memory[Register::SP];
+		++Register::SP;
+		Utility::_16Bit_Normalization(Register::SP);// SP will overflow ffff => 0000
+	}
+	else if (reg == REGISTER::D)
+	{
+		Register::Main[REGISTER::E] = MemoryManager::Memory[Register::SP];
+		++Register::SP;
+		Utility::_16Bit_Normalization(Register::SP);// SP will overflow ffff => 0000
+		Register::Main[REGISTER::D] = MemoryManager::Memory[Register::SP];
+		++Register::SP;
+		Utility::_16Bit_Normalization(Register::SP);// SP will overflow ffff => 0000
+	}
+	else // reg == REGISTER::PSW
+	{
+		int PSW = Register::PSW();
+		Register::Flag::FLAG = MemoryManager::Memory[Register::SP];
+		Register::ReverseSyncFLAG();
+		++Register::SP;
+		Utility::_16Bit_Normalization(Register::SP);// SP will overflow ffff => 0000
+		Register::Main[REGISTER::A] = MemoryManager::Memory[Register::SP];
+		++Register::SP;
+		Utility::_16Bit_Normalization(Register::SP);// SP will overflow ffff => 0000
 	}
 
 	++Register::iPC;

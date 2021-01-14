@@ -101,6 +101,7 @@ namespace MNEMONIC
     const std::string NOP = "NOP";
     const std::string HLT = "HLT";
     const std::string PUSH = "PUSH";
+    const std::string POP = "POP";
 } // namespace MNEMONIC
 
 namespace REGISTER
