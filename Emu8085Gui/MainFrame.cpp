@@ -110,6 +110,9 @@ MainFrame::MainFrame() :wxFrame(nullptr, wxID_ANY, "8085 Simulator", wxPoint(30,
 		m_MainRegister[m_MainRegisterArray[i]] = new wxTextCtrl(m_RegisterPanelStaticBox, wxID_ANY, "00", wxPoint(30, 20 + i * 25), wxSize(25, 20), wxTE_READONLY);
 		m_MainRegister[m_MainRegisterArray[i]]->SetMaxLength(2);
 	}
+	m_PC_StaticText = new wxStaticText(m_RegisterPanelStaticBox, wxID_ANY, REGISTER::PC + " :", wxPoint(80, 22), wxSize(30, 20));
+	m_PC_TextCtrl = new wxTextCtrl(m_RegisterPanelStaticBox, wxID_ANY, "0000", wxPoint(105, 20), wxSize(50, 20), wxTE_READONLY);
+	m_PC_TextCtrl->SetMaxLength(4);
 	m_RegisterPanel->SetSizer(m_RegisterPanelStaticBoxSizer);
 
 	//Memory Init Panel
@@ -323,11 +326,16 @@ void MainFrame::UpdateFlagRegister()
 
 void MainFrame::UpdateRegisters()
 {
+	//Update main Register
 	for (const std::string& reg : m_MainRegisterArray)
 	{
 		m_MainRegister[reg]->Clear();
 		m_MainRegister[reg]->AppendText(ToWxString(Converter::DecToHex(Register::Main[reg])));
 	}
+
+	//Update Program counter
+	m_PC_TextCtrl->Clear();
+	m_PC_TextCtrl->AppendText(Converter::DecToHex(Register::PC, 16));
 }
 
 
@@ -382,6 +390,10 @@ void MainFrame::Clear()
 	m_FlagRegCheckList->Check(m_FlagRegCheckList->FindString("S"), false);
 	m_FlagRegCheckList->Check(m_FlagRegCheckList->FindString("P"), false);
 
+	//Clearing Program Counter
+	m_PC_TextCtrl->Clear();
+	m_PC_TextCtrl->AppendText("0000");
+
 }
 
 void MainFrame::OnDebug(wxCommandEvent& event)
@@ -427,21 +439,22 @@ void MainFrame::Debug8085(const std::string& filePath)
 	if (ProgramManager::LoadProgramInMemory(filePath, m_nLoadingLocation))//Read function int LoadProgramInMemory is responsible for clearing the backend
 	{
 		UpdateMemory();
+		UpdateRegisters();//Updating all register but we just need to update PC at this time
 		m_ExecuteButton->Enable();
 		m_DebugButton->Disable();
 		m_StopButton->Enable();
 		m_CurrentLineTextCtrl->Clear();
-		m_CurrentLineTextCtrl->AppendText(ToWxString(std::to_string(ProgramManager::Program[Register::PC].line_number)));
+		m_CurrentLineTextCtrl->AppendText(ToWxString(std::to_string(ProgramManager::Program[Register::iPC].line_number)));
 		m_EditBox->SetEditable(false);//Disabling Editor
 		m_ToolBar->Disable();//Disabling the toolbar
-		m_EditBox->MarkerAdd(ProgramManager::Program[Register::PC].line_number - 1, 0);
+		m_EditBox->MarkerAdd(ProgramManager::Program[Register::iPC].line_number - 1, 0);
 		m_EditBox->MarkerSetBackground(0, *wxRED);
 	}
 }
 
 void MainFrame::OnExecute(wxCommandEvent& event)
 {
-	const Instruction& instruction = ProgramManager::Program[Register::PC];
+	const Instruction& instruction = ProgramManager::Program[Register::iPC];
 
 	if (Mnemonic::Execute[instruction.mnemonic](instruction.operands))//Successful execution of a instruction
 	{
@@ -449,13 +462,14 @@ void MainFrame::OnExecute(wxCommandEvent& event)
 		UpdateRegisters();
 		UpdateMemory();
 		m_CurrentLineTextCtrl->Clear();
-		m_CurrentLineTextCtrl->AppendText(ToWxString(std::to_string(ProgramManager::Program[Register::PC].line_number)));
+		m_CurrentLineTextCtrl->AppendText(ToWxString(std::to_string(ProgramManager::Program[Register::iPC].line_number)));
 		m_EditBox->MarkerDeleteAll(0);
-		m_EditBox->MarkerAdd(ProgramManager::Program[Register::PC].line_number - 1, 0);
+		m_EditBox->MarkerAdd(ProgramManager::Program[Register::iPC].line_number - 1, 0);
 		m_EditBox->MarkerSetBackground(0, *wxRED);
 	}
 	else if (ProgramManager::HALT)//HLT get executed
 	{
+		UpdateRegisters();
 		wxMessageBox(MESSAGE::SUCCESSFUL_EXECUTION, DIALOG::SUCCESS);
 		OnStopDebug(event);
 	}

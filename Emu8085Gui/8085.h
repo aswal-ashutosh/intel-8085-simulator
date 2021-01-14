@@ -230,7 +230,7 @@ bool Mnemonic::MOV(const std::pair<std::string, std::string>& operands)
 		Register::Main[destination] = Register::Main[source];
 	}
 
-	++Register::PC;
+	++Register::iPC;
 
 	return ProgramManager::CanRunFurther();
 }
@@ -251,7 +251,7 @@ bool Mnemonic::MVI(const std::pair<std::string, std::string>& operands)
 		//reg will be Register
 		Register::Main[reg] = nValue;
 	}
-	++Register::PC;
+	++Register::iPC;
 
 	return ProgramManager::CanRunFurther();
 }
@@ -264,7 +264,7 @@ bool Mnemonic::LDA(const std::pair<std::string, std::string>& operands)
 
 	Register::Main[REGISTER::A] = MemoryManager::Memory[nAddress];
 
-	++Register::PC;
+	++Register::iPC;
 
 	return ProgramManager::CanRunFurther();
 }
@@ -278,7 +278,7 @@ bool Mnemonic::STA(const std::pair<std::string, std::string>& operands)
 
 	MemoryManager::Memory[nAddress] = Register::Main[REGISTER::A];
 
-	++Register::PC;
+	++Register::iPC;
 
 	return ProgramManager::CanRunFurther();
 }
@@ -292,7 +292,7 @@ bool Mnemonic::LHLD(const std::pair<std::string, std::string>& operands)
 	Register::Main[REGISTER::L] = MemoryManager::Memory[nAddress];
 	Register::Main[REGISTER::H] = MemoryManager::Memory[nAddress + 1];
 
-	++Register::PC;
+	++Register::iPC;
 
 	return ProgramManager::CanRunFurther();
 }
@@ -307,7 +307,7 @@ bool Mnemonic::SHLD(const std::pair<std::string, std::string>& operands)
 	MemoryManager::Memory[nAddress] = Register::Main[REGISTER::L];
 	MemoryManager::Memory[nAddress + 1] = Register::Main[REGISTER::H];
 
-	++Register::PC;
+	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
 
@@ -339,7 +339,7 @@ bool Mnemonic::LXI(const std::pair<std::string, std::string>& operands)
 		Register::Main[REGISTER::E] = nData & 0x00ff;
 	}
 
-	++Register::PC;
+	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
 
@@ -358,7 +358,7 @@ bool Mnemonic::LDAX(const std::pair<std::string, std::string>& operands)
 		Register::Main[REGISTER::A] = MemoryManager::Memory[Register::DE()];
 	}
 
-	++Register::PC;
+	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
 
@@ -375,7 +375,7 @@ bool Mnemonic::STAX(const std::pair<std::string, std::string>& operands)
 		//reg == D
 		MemoryManager::Memory[Register::DE()] = Register::Main[REGISTER::A];
 	}
-	++Register::PC;
+	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
 
@@ -383,7 +383,7 @@ bool Mnemonic::XCHG(const std::pair<std::string, std::string>& operands)
 {
 	std::swap(Register::Main[REGISTER::H], Register::Main[REGISTER::D]);
 	std::swap(Register::Main[REGISTER::L], Register::Main[REGISTER::E]);
-	++Register::PC;
+	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
 
@@ -408,7 +408,7 @@ bool Mnemonic::ADD(const std::pair<std::string, std::string>& operands)
 	}
 
 	Register::UpdateFlags(LSN_A + LSN_R);
-	++Register::PC;
+	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
 
@@ -432,7 +432,7 @@ bool Mnemonic::ADC(const std::pair<std::string, std::string>& operands)
 	}
 
 	Register::UpdateFlags(LSN_A + LSN_R);
-	++Register::PC;
+	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
 
@@ -447,7 +447,7 @@ bool Mnemonic::ADI(const std::pair<std::string, std::string>& operands)
 	Register::Main[REGISTER::A] += nValue;
 
 	Register::UpdateFlags(LSN_A + LSN_R);
-	++Register::PC;
+	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
 
@@ -463,7 +463,7 @@ bool Mnemonic::ACI(const std::pair<std::string, std::string>& operands)
 	Register::Main[REGISTER::A] += nValue + Register::Flag::CY;
 
 	Register::UpdateFlags(LSN_A + LSN_R);
-	++Register::PC;
+	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
 
@@ -495,7 +495,7 @@ bool Mnemonic::SUB(const std::pair<std::string, std::string>& operands)
 	//@Setting carry flag explicitly
 	Register::Flag::CY = subtrahend > minuend;
 	Register::UpdateFlags(LSN_A + LSN_R, true);
-	++Register::PC;
+	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
 
@@ -527,7 +527,7 @@ bool Mnemonic::SBB(const std::pair<std::string, std::string>& operands)
 
 	Register::Flag::CY = subtrahend > minuend;
 	Register::UpdateFlags(LSN_A + LSN_R, true); //Add _4Bit_C if last nibble of Carry is also responsible for AC
-	++Register::PC;
+	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
 
@@ -545,7 +545,7 @@ bool Mnemonic::SUI(const std::pair<std::string, std::string>& operands)
 
 	Register::Flag::CY = subtrahend > minuend;
 	Register::UpdateFlags(LSN_A + LSN_R, true);
-	++Register::PC;
+	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
 
@@ -564,7 +564,7 @@ bool Mnemonic::SBI(const std::pair<std::string, std::string>& operands)
 
 	Register::Flag::CY = subtrahend > minuend;
 	Register::UpdateFlags(LSN_A + LSN_R, true);
-	++Register::PC;
+	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
 
@@ -600,7 +600,7 @@ bool Mnemonic::DAA(const std::pair<std::string, std::string>& operands)
 
 	Register::Flag::PF = !(Utility::_set_bits_count(Register::Main[REGISTER::A]) & 1); //@Pairty Flag
 
-	++Register::PC;
+	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
 
@@ -630,7 +630,7 @@ bool Mnemonic::INR(const std::pair<std::string, std::string>& operands)//CY is n
 		Register::Flag::SF = Register::Main[reg] & (1 << 7);//Sign Flag
 		Register::Flag::ZF = Register::Main[reg] == 0;//Zero Flag
 	}
-	++Register::PC;
+	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
 
@@ -666,7 +666,7 @@ bool Mnemonic::INX(const std::pair<std::string, std::string>& operands)//No flag
 		Register::Main[REGISTER::C] = DATA & 0x00ff;
 	}
 
-	++Register::PC;
+	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
 
@@ -697,7 +697,7 @@ bool Mnemonic::DCR(const std::pair<std::string, std::string>& operands)//CY is n
 		Register::Flag::ZF = Register::Main[reg] == 0;//Zero Flag
 	}
 
-	++Register::PC;
+	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
 
@@ -732,7 +732,7 @@ bool Mnemonic::DCX(const std::pair<std::string, std::string>& operands)//No flag
 		Register::Main[REGISTER::C] = DATA & 0x00ff;
 	}
 
-	++Register::PC;
+	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
 
@@ -760,7 +760,7 @@ bool Mnemonic::DAD(const std::pair<std::string, std::string>& operands)//only af
 	std::string xDATA = Converter::DecToHex(HL_DATA, 16);
 	Register::Main[REGISTER::H] = Converter::HexToDec(xDATA.substr(0, 2));
 	Register::Main[REGISTER::L] = Converter::HexToDec(xDATA.substr(2, 2));
-	++Register::PC;
+	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
 
@@ -781,7 +781,7 @@ bool Mnemonic::ANA(const std::pair<std::string, std::string>& operands)
 	}
 
 	Register::UpdateFlags(16);//16: As after executing AND instruction AC flag become set
-	++Register::PC;
+	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
 
@@ -792,7 +792,7 @@ bool Mnemonic::ANI(const std::pair<std::string, std::string>& operands)
 	Register::Main[REGISTER::A] &= nValue;
 
 	Register::UpdateFlags(16);//16: As after executing AND instruction AC flag become set
-	++Register::PC;
+	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
 
@@ -810,7 +810,7 @@ bool Mnemonic::ORA(const std::pair<std::string, std::string>& operands)
 	}
 
 	Register::UpdateFlags(1);//1: As there can not be any auxiliary carry during bitwise operation
-	++Register::PC;
+	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
 
@@ -821,7 +821,7 @@ bool Mnemonic::ORI(const std::pair<std::string, std::string>& operands)
 	Register::Main[REGISTER::A] |= nValue;
 
 	Register::UpdateFlags(1);
-	++Register::PC;
+	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
 
@@ -840,7 +840,7 @@ bool Mnemonic::XRA(const std::pair<std::string, std::string>& operands)
 	}
 
 	Register::UpdateFlags(1);
-	++Register::PC;
+	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
 
@@ -849,7 +849,7 @@ bool Mnemonic::XRI(const std::pair<std::string, std::string>& operands)
 	int nValue = Converter::HexToDec(operands.first);
 	Register::Main[REGISTER::A] ^= nValue;
 	Register::UpdateFlags(1);
-	++Register::PC;
+	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
 
@@ -859,7 +859,7 @@ bool Mnemonic::CMA(const std::pair<std::string, std::string>& operands)//Flags a
 	{
 		Register::Main[REGISTER::A] ^= (1 << i);
 	}
-	++Register::PC;
+	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
 
@@ -869,7 +869,7 @@ bool Mnemonic::RLC(const std::pair<std::string, std::string>& operands)
 	Register::Main[REGISTER::A] <<= 1; //Left Shift by 1 bit
 	Register::Main[REGISTER::A] |= Register::Flag::CY ? 1 : 0;
 	Utility::_8Bit_Normalization(Register::Main[REGISTER::A]);
-	++Register::PC;
+	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
 
@@ -880,7 +880,7 @@ bool Mnemonic::RAL(const std::pair<std::string, std::string>& operands)
 	Register::Main[REGISTER::A] |= Register::Flag::CY ? 1 : 0;
 	Register::Flag::CY = MSB;
 	Utility::_8Bit_Normalization(Register::Main[REGISTER::A]);
-	++Register::PC;
+	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
 
@@ -889,7 +889,7 @@ bool Mnemonic::RRC(const std::pair<std::string, std::string>& operands)
 	Register::Flag::CY = Register::Main[REGISTER::A] & 1;
 	Register::Main[REGISTER::A] >>= 1; //Right Shift by 1 bit
 	Register::Main[REGISTER::A] |= Register::Flag::CY ? (1 << 7) : 0;
-	++Register::PC;
+	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
 
@@ -900,21 +900,21 @@ bool Mnemonic::RAR(const std::pair<std::string, std::string>& operands)
 	Register::Main[REGISTER::A] >>= 1;//Right Shift by 1 bit
 	Register::Main[REGISTER::A] |= Register::Flag::CY ? (1 << 7) : 0;
 	Register::Flag::CY = LSB;
-	++Register::PC;
+	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
 
 bool Mnemonic::STC(const std::pair<std::string, std::string>& operands)
 {
 	Register::Flag::CY = 1;
-	++Register::PC;
+	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
 
 bool Mnemonic::CMC(const std::pair<std::string, std::string>& operands)
 {
 	Register::Flag::CY = !Register::Flag::CY;
-	++Register::PC;
+	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
 
@@ -946,7 +946,7 @@ bool Mnemonic::CMP(const std::pair<std::string, std::string>& operands)
 	Register::Flag::SF = A < R;
 	Register::Flag::ZF = A == R;
 
-	++Register::PC;
+	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
 
@@ -967,69 +967,69 @@ bool Mnemonic::CPI(const std::pair<std::string, std::string>& operands)
 	Register::Flag::CY = A < DATA;
 	Register::Flag::SF = A < DATA;
 	Register::Flag::ZF = A == DATA;
-	++Register::PC;
+	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
 
 //@Branching Instructions
 bool Mnemonic::JMP(const std::pair<std::string, std::string>& operands)
 {
-	Register::PC = ProgramManager::Labels[operands.first];
+	Register::iPC = ProgramManager::iLabels[operands.first];
 	return ProgramManager::CanRunFurther();
 }
 
 bool Mnemonic::JC(const std::pair<std::string, std::string>& operands)
 {
-	Register::PC = Register::Flag::CY ? ProgramManager::Labels[operands.first] : Register::PC + 1;
+	Register::iPC = Register::Flag::CY ? ProgramManager::iLabels[operands.first] : Register::iPC + 1;
 	return ProgramManager::CanRunFurther();
 }
 
 bool Mnemonic::JNC(const std::pair<std::string, std::string>& operands)
 {
-	Register::PC = Register::Flag::CY ? Register::PC + 1 : ProgramManager::Labels[operands.first];
+	Register::iPC = Register::Flag::CY ? Register::iPC + 1 : ProgramManager::iLabels[operands.first];
 	return ProgramManager::CanRunFurther();
 }
 
 bool Mnemonic::JZ(const std::pair<std::string, std::string>& operands)
 {
-	Register::PC = Register::Flag::ZF ? ProgramManager::Labels[operands.first] : Register::PC + 1;
+	Register::iPC = Register::Flag::ZF ? ProgramManager::iLabels[operands.first] : Register::iPC + 1;
 	return ProgramManager::CanRunFurther();
 }
 
 bool Mnemonic::JNZ(const std::pair<std::string, std::string>& operands)
 {
-	Register::PC = Register::Flag::ZF ? Register::PC + 1 : ProgramManager::Labels[operands.first];
+	Register::iPC = Register::Flag::ZF ? Register::iPC + 1 : ProgramManager::iLabels[operands.first];
 	return ProgramManager::CanRunFurther();
 }
 
 bool Mnemonic::JPE(const std::pair<std::string, std::string>& operands)
 {
-	Register::PC = Register::Flag::PF ? ProgramManager::Labels[operands.first] : Register::PC + 1;
+	Register::iPC = Register::Flag::PF ? ProgramManager::iLabels[operands.first] : Register::iPC + 1;
 	return ProgramManager::CanRunFurther();
 }
 
 bool Mnemonic::JPO(const std::pair<std::string, std::string>& operands)
 {
-	Register::PC = Register::Flag::PF ? Register::PC + 1 : ProgramManager::Labels[operands.first];
+	Register::iPC = Register::Flag::PF ? Register::iPC + 1 : ProgramManager::iLabels[operands.first];
 	return ProgramManager::CanRunFurther();
 }
 
 bool Mnemonic::JM(const std::pair<std::string, std::string>& operands)
 {
-	Register::PC = Register::Flag::SF ? ProgramManager::Labels[operands.first] : Register::PC + 1;
+	Register::iPC = Register::Flag::SF ? ProgramManager::iLabels[operands.first] : Register::iPC + 1;
 	return ProgramManager::CanRunFurther();
 }
 
 bool Mnemonic::JP(const std::pair<std::string, std::string>& operands)
 {
-	Register::PC = Register::Flag::SF ? Register::PC + 1 : ProgramManager::Labels[operands.first];
+	Register::iPC = Register::Flag::SF ? Register::iPC + 1 : ProgramManager::iLabels[operands.first];
 	return ProgramManager::CanRunFurther();
 }
 
 bool Mnemonic::CALL(const std::pair<std::string, std::string>& operands)
 {
-	ProgramManager::CallStack.push_back(Register::PC + 1);
-	Register::PC = ProgramManager::Labels[operands.first];
+	ProgramManager::CallStack.push_back(Register::iPC + 1);
+	Register::iPC = ProgramManager::iLabels[operands.first];
 	return ProgramManager::CanRunFurther();
 }
 
@@ -1038,12 +1038,12 @@ bool Mnemonic::CNC(const std::pair<std::string, std::string>& operands)
 {
 	if (Register::Flag::CY)
 	{
-		++Register::PC;
+		++Register::iPC;
 	}
 	else
 	{
-		ProgramManager::CallStack.push_back(Register::PC + 1);
-		Register::PC = ProgramManager::Labels[operands.first];
+		ProgramManager::CallStack.push_back(Register::iPC + 1);
+		Register::iPC = ProgramManager::iLabels[operands.first];
 	}
 	return ProgramManager::CanRunFurther();
 }
@@ -1052,12 +1052,12 @@ bool Mnemonic::CC(const std::pair<std::string, std::string>& operands)
 {
 	if (Register::Flag::CY)
 	{
-		ProgramManager::CallStack.push_back(Register::PC + 1);
-		Register::PC = ProgramManager::Labels[operands.first];
+		ProgramManager::CallStack.push_back(Register::iPC + 1);
+		Register::iPC = ProgramManager::iLabels[operands.first];
 	}
 	else
 	{
-		++Register::PC;
+		++Register::iPC;
 	}
 	return ProgramManager::CanRunFurther();
 }
@@ -1069,12 +1069,12 @@ bool Mnemonic::CZ(const std::pair<std::string, std::string>& operands)
 
 	if (Register::Flag::ZF)
 	{
-		ProgramManager::CallStack.push_back(Register::PC + 1);
-		Register::PC = ProgramManager::Labels[operands.first];
+		ProgramManager::CallStack.push_back(Register::iPC + 1);
+		Register::iPC = ProgramManager::iLabels[operands.first];
 	}
 	else
 	{
-		++Register::PC;
+		++Register::iPC;
 	}
 	return ProgramManager::CanRunFurther();
 }
@@ -1085,12 +1085,12 @@ bool Mnemonic::CNZ(const std::pair<std::string, std::string>& operands)
 
 	if (Register::Flag::CY)
 	{
-		++Register::PC;
+		++Register::iPC;
 	}
 	else
 	{
-		ProgramManager::CallStack.push_back(Register::PC + 1);
-		Register::PC = ProgramManager::Labels[operands.first];
+		ProgramManager::CallStack.push_back(Register::iPC + 1);
+		Register::iPC = ProgramManager::iLabels[operands.first];
 	}
 	return ProgramManager::CanRunFurther();
 }
@@ -1101,12 +1101,12 @@ bool Mnemonic::CPE(const std::pair<std::string, std::string>& operands)
 
 	if (Register::Flag::PF)
 	{
-		ProgramManager::CallStack.push_back(Register::PC + 1);
-		Register::PC = ProgramManager::Labels[operands.first];
+		ProgramManager::CallStack.push_back(Register::iPC + 1);
+		Register::iPC = ProgramManager::iLabels[operands.first];
 	}
 	else
 	{
-		++Register::PC;
+		++Register::iPC;
 	}
 
 	return ProgramManager::CanRunFurther();
@@ -1117,12 +1117,12 @@ bool Mnemonic::CPO(const std::pair<std::string, std::string>& operands)
 
 	if (Register::Flag::PF)
 	{
-		++Register::PC;
+		++Register::iPC;
 	}
 	else
 	{
-		ProgramManager::CallStack.push_back(Register::PC + 1);
-		Register::PC = ProgramManager::Labels[operands.first];
+		ProgramManager::CallStack.push_back(Register::iPC + 1);
+		Register::iPC = ProgramManager::iLabels[operands.first];
 	}
 	return ProgramManager::CanRunFurther();
 }
@@ -1133,12 +1133,12 @@ bool Mnemonic::CP(const std::pair<std::string, std::string>& operands)
 
 	if (Register::Flag::SF)
 	{
-		++Register::PC;
+		++Register::iPC;
 	}
 	else
 	{
-		ProgramManager::CallStack.push_back(Register::PC + 1);
-		Register::PC = ProgramManager::Labels[operands.first];
+		ProgramManager::CallStack.push_back(Register::iPC + 1);
+		Register::iPC = ProgramManager::iLabels[operands.first];
 	}
 	return ProgramManager::CanRunFurther();
 }
@@ -1147,12 +1147,12 @@ bool Mnemonic::CM(const std::pair<std::string, std::string>& operands)
 {
 	if (Register::Flag::SF)
 	{
-		ProgramManager::CallStack.push_back(Register::PC + 1);
-		Register::PC = ProgramManager::Labels[operands.first];
+		ProgramManager::CallStack.push_back(Register::iPC + 1);
+		Register::iPC = ProgramManager::iLabels[operands.first];
 	}
 	else
 	{
-		++Register::PC;
+		++Register::iPC;
 	}
 	return ProgramManager::CanRunFurther();
 }
@@ -1164,7 +1164,7 @@ bool Mnemonic::RET(const std::pair<std::string, std::string>& operands)
 		return Error::Throw(ERROR_TYPE::RETURN_WITHOUT_CALL);
 	}
 
-	Register::PC = ProgramManager::CallStack.back();
+	Register::iPC = ProgramManager::CallStack.back();
 	ProgramManager::CallStack.pop_back();
 	return ProgramManager::CanRunFurther();
 }
@@ -1178,11 +1178,11 @@ bool Mnemonic::RNC(const std::pair<std::string, std::string>& operands)
 
 	if (Register::Flag::CY)
 	{
-		++Register::PC;
+		++Register::iPC;
 	}
 	else
 	{
-		Register::PC = ProgramManager::CallStack.back();
+		Register::iPC = ProgramManager::CallStack.back();
 		ProgramManager::CallStack.pop_back();
 	}
 	return ProgramManager::CanRunFurther();
@@ -1197,12 +1197,12 @@ bool Mnemonic::RC(const std::pair<std::string, std::string>& operands)
 
 	if (Register::Flag::CY)
 	{
-		Register::PC = ProgramManager::CallStack.back();
+		Register::iPC = ProgramManager::CallStack.back();
 		ProgramManager::CallStack.pop_back();
 	}
 	else
 	{
-		++Register::PC;
+		++Register::iPC;
 	}
 	return ProgramManager::CanRunFurther();
 }
@@ -1216,12 +1216,12 @@ bool Mnemonic::RZ(const std::pair<std::string, std::string>& operands)
 
 	if (Register::Flag::ZF)
 	{
-		Register::PC = ProgramManager::CallStack.back();
+		Register::iPC = ProgramManager::CallStack.back();
 		ProgramManager::CallStack.pop_back();
 	}
 	else
 	{
-		++Register::PC;
+		++Register::iPC;
 	}
 	return ProgramManager::CanRunFurther();
 }
@@ -1235,11 +1235,11 @@ bool Mnemonic::RNZ(const std::pair<std::string, std::string>& operands)
 
 	if (Register::Flag::ZF)
 	{
-		++Register::PC;
+		++Register::iPC;
 	}
 	else
 	{
-		Register::PC = ProgramManager::CallStack.back();
+		Register::iPC = ProgramManager::CallStack.back();
 		ProgramManager::CallStack.pop_back();
 	}
 	return ProgramManager::CanRunFurther();
@@ -1255,12 +1255,12 @@ bool Mnemonic::RPE(const std::pair<std::string, std::string>& operands)
 
 	if (Register::Flag::PF)
 	{
-		Register::PC = ProgramManager::CallStack.back();
+		Register::iPC = ProgramManager::CallStack.back();
 		ProgramManager::CallStack.pop_back();
 	}
 	else
 	{
-		++Register::PC;
+		++Register::iPC;
 	}
 	return ProgramManager::CanRunFurther();
 }
@@ -1274,11 +1274,11 @@ bool Mnemonic::RPO(const std::pair<std::string, std::string>& operands)
 
 	if (Register::Flag::PF)
 	{
-		++Register::PC;
+		++Register::iPC;
 	}
 	else
 	{
-		Register::PC = ProgramManager::CallStack.back();
+		Register::iPC = ProgramManager::CallStack.back();
 		ProgramManager::CallStack.pop_back();
 	}
 	return ProgramManager::CanRunFurther();
@@ -1293,12 +1293,12 @@ bool Mnemonic::RM(const std::pair<std::string, std::string>& operands)
 
 	if (Register::Flag::SF)
 	{
-		Register::PC = ProgramManager::CallStack.back();
+		Register::iPC = ProgramManager::CallStack.back();
 		ProgramManager::CallStack.pop_back();
 	}
 	else
 	{
-		++Register::PC;
+		++Register::iPC;
 	}
 	return ProgramManager::CanRunFurther();
 }
@@ -1312,11 +1312,11 @@ bool Mnemonic::RP(const std::pair<std::string, std::string>& operands)
 
 	if (Register::Flag::SF)
 	{
-		++Register::PC;
+		++Register::iPC;
 	}
 	else
 	{
-		Register::PC = ProgramManager::CallStack.back();
+		Register::iPC = ProgramManager::CallStack.back();
 		ProgramManager::CallStack.pop_back();
 	}
 	return ProgramManager::CanRunFurther();
@@ -1325,12 +1325,14 @@ bool Mnemonic::RP(const std::pair<std::string, std::string>& operands)
 bool Mnemonic::HLT(const std::pair<std::string, std::string>& operands)//return false even on successful execcution But will change Program::HLT = true
 {
 	ProgramManager::HALT = true;
+	Register::PC = ProgramManager::Program[Register::iPC].loading_address + 0x0001;
+	Utility::_16Bit_Normalization(Register::PC);
 	return false;
 }
 
 bool Mnemonic::NOP(const std::pair<std::string, std::string>& operands)
 {
-	++Register::PC;
+	++Register::iPC;
 	return ProgramManager::CanRunFurther();
 }
 
@@ -1339,7 +1341,7 @@ void DebugLex()
 {
 	std::ofstream file;
 	file.open("debug_lex.txt");
-	for (Instruction& s : ProgramManager::Program)
+	for (const Instruction& s : ProgramManager::Program)
 	{
 		file << s.label << ' ' << s.mnemonic << ' ' << s.operands.first << ' ' << s.operands.second << '\n';
 	}
@@ -1431,7 +1433,7 @@ bool ProgramManager::Read(const std::string filePath)
 			if (Validator::IsValidLabel(s))
 			{
 				instruction.label = s.substr(0, s.size() - 1);
-				ProgramManager::Labels[instruction.label] = Program.size();
+				ProgramManager::iLabels[instruction.label] = Program.size();
 				++nTokenIndex;
 			}
 			else
@@ -1531,7 +1533,7 @@ bool ProgramManager::Read(const std::string filePath)
 void ProgramManager::Run()
 {
 	TimeManager::Reset();
-	while (Mnemonic::Execute[Program[Register::PC].mnemonic](Program[Register::PC].operands))
+	while (Mnemonic::Execute[Program[Register::iPC].mnemonic](Program[Register::iPC].operands))
 	{
 		if (TimeManager::TLE())
 		{
@@ -1549,9 +1551,9 @@ bool ProgramManager::LoadProgramInMemory(const std::string& filePath, int loadin
 		return false;
 	}
 
-	ProgramManager::CurrentLoadingLocation = loadingLocation;
+	ProgramManager::CurrentLoadingLocation = loadingLocation;//Address from where loading will takeplace
 
-	for (const Instruction& instruction : ProgramManager::Program)
+	for (Instruction& instruction : ProgramManager::Program)
 	{
 		if (ProgramManager::Load[instruction.mnemonic](instruction))
 		{
@@ -1565,5 +1567,6 @@ bool ProgramManager::LoadProgramInMemory(const std::string& filePath, int loadin
 
 	//Loading label Address
 	ProgramManager::LoadLabelAddress();
+	Register::PC = loadingLocation; //If every thing is loaded perfectly update program counter to the address of first instruction 
 	return true;
 }

@@ -8,7 +8,7 @@ class Register
 {
 public:
 	static std::map<std::string, int> Main;
-	static int PC;
+	static int iPC, PC;
 
 	class Flag
 	{
@@ -28,6 +28,7 @@ public:
 	static void Clear();
 };
 
+int Register::iPC = 0;
 int Register::PC = 0;
 std::map<std::string, int> Register::Main = { {REGISTER::A, 0}, {REGISTER::B, 0}, {REGISTER::C ,0}, {REGISTER::D ,0}, {REGISTER::E ,0}, {REGISTER::H ,0}, {REGISTER::L ,0} };
 bool Register::Flag::AC;
@@ -73,6 +74,7 @@ void Register::UpdateFlags(int aux, bool preserve_carry = false)
 
 void Register::Clear()
 {
+	Register::iPC = 0;
 	Register::PC = 0;
 
 	Register::Flag::AC = false;

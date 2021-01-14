@@ -50,10 +50,17 @@ private:
 	wxCheckListBox* m_FlagRegCheckList = nullptr;
 
 
-	//Register Panel
+
+	//Main Register Panel
 	wxPanel* m_RegisterPanel = nullptr;
 	wxStaticBox* m_RegisterPanelStaticBox = nullptr;
 	wxStaticBoxSizer* m_RegisterPanelStaticBoxSizer = nullptr;
+	std::map<std::string, wxTextCtrl*> m_MainRegister;
+	std::map<std::string, wxStaticText*> m_MainRegisterLabel;
+	wxTextCtrl* m_PC_TextCtrl;
+	wxStaticText* m_PC_StaticText;
+
+
 
 	//Memroy Initializer Panel
 	wxPanel* m_MemoryInitPanel = nullptr;
@@ -95,8 +102,6 @@ private:
 	wxBoxSizer* m_RightPanelSizer = nullptr;
 
 	//Other
-	std::map<std::string, wxTextCtrl*> m_MainRegister;
-	std::map<std::string, wxStaticText*> m_MainRegisterLabel;
 	const std::string m_MainRegisterArray[7] = { REGISTER::A, REGISTER::B, REGISTER::C, REGISTER::D, REGISTER::E, REGISTER::H, REGISTER::L };
 	const char* m_FlagRegisterArray[5] = { "Z", "S", "P", "AC", "CY" };
 
