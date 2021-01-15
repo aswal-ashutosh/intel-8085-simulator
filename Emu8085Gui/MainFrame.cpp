@@ -444,16 +444,12 @@ void MainFrame::Run8085(const std::string& filePath)
 	if (ProgramManager::LoadProgramInMemory(filePath, m_nLoadingLocation))//Read function in LoadProgramInMemory is responsible for clearing the backend
 	{
 		ProgramManager::Run();
+		UpdateFlagRegister();
+		UpdateRegisters();
+		UpdateMemory();
 		if (ProgramManager::HALT)
 		{
-			UpdateFlagRegister();
-			UpdateRegisters();
-			UpdateMemory();
 			wxMessageBox(MESSAGE::SUCCESSFUL_EXECUTION, DIALOG::SUCCESS);
-		}
-		else
-		{
-			UpdateMemory();
 		}
 	}
 }
@@ -494,12 +490,17 @@ void MainFrame::OnExecute(wxCommandEvent& event)
 	}
 	else if (ProgramManager::HALT)//HLT get executed
 	{
+		UpdateFlagRegister();
 		UpdateRegisters();
+		UpdateMemory();
 		wxMessageBox(MESSAGE::SUCCESSFUL_EXECUTION, DIALOG::SUCCESS);
 		OnStopDebug(event);
 	}
 	else//Error
 	{
+		UpdateFlagRegister();
+		UpdateRegisters();
+		UpdateMemory();
 		OnStopDebug(event);
 	}
 }
