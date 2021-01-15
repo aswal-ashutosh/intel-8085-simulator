@@ -102,6 +102,11 @@ public:
 	static bool PUSH(const std::pair<std::string, std::string>&);
 	static bool POP(const std::pair<std::string, std::string>&);
 
+	//OTHER INSTRUCTIONS
+	static bool PCHL(const std::pair<std::string, std::string>&);
+	static bool SPHL(const std::pair<std::string, std::string>&);
+	static bool XTHL(const std::pair<std::string, std::string>&);
+
 	//Other
 	static bool HLT(const std::pair<std::string, std::string>&);
 	static bool NOP(const std::pair<std::string, std::string>&);
@@ -181,6 +186,9 @@ void Mnemonic::LoadInstructionSet()
 	Execute[MNEMONIC::POP] = POP;
 	Execute[MNEMONIC::HLT] = HLT;
 	Execute[MNEMONIC::NOP] = NOP;
+	Execute[MNEMONIC::SPHL] = SPHL;
+	Execute[MNEMONIC::PCHL] = PCHL;
+	Execute[MNEMONIC::XTHL] = XTHL;
 
 }
 
@@ -188,10 +196,9 @@ void Mnemonic::LoadInstructionSet()
 bool Validator::IsValidLabel(std::string expected_label)
 {
 	expected_label.erase(expected_label.end() - 1); // Erasing ':'
-
-	std::string expected_mnemonic = expected_label;
-	Converter::ToUpperString(expected_mnemonic); //Because mnemonic are stored in uppercase form.
-	if (Mnemonic::IsValid(expected_mnemonic))//should not match any mnemonic
+	std::string expected_keyword = expected_label;
+	Converter::ToUpperString(expected_keyword); //Because keywords are stored in uppercase form.
+	if (KEYWORDS::KEYS.count(expected_keyword))//should not match any keyword
 	{
 		return false;
 	}
@@ -338,9 +345,9 @@ bool Mnemonic::LXI(const std::pair<std::string, std::string>& operands)
 		Register::Main[REGISTER::H] = (nData & 0xff00) >> 8;
 		Register::Main[REGISTER::L] = nData & 0x00ff;
 	}
-	else if(reg == REGISTER::D)
+	else if (reg == REGISTER::D)
 	{
-		
+
 		Register::Main[REGISTER::D] = (nData & 0xff00) >> 8;
 		Register::Main[REGISTER::E] = nData & 0x00ff;
 	}
@@ -669,14 +676,18 @@ bool Mnemonic::INX(const std::pair<std::string, std::string>& operands)//No flag
 		Register::Main[REGISTER::D] = (DATA & 0xff00) >> 8;
 		Register::Main[REGISTER::E] = DATA & 0x00ff;
 	}
-	else
+	else if (reg == REGISTER::B)
 	{
-		//reg will be B
 		int DATA = Register::BC();
 		++DATA;
 		Utility::_16Bit_Normalization(DATA);
 		Register::Main[REGISTER::B] = (DATA & 0xff00) >> 8;
 		Register::Main[REGISTER::C] = DATA & 0x00ff;
+	}
+	else//reg == REGISTER::SP
+	{
+		++Register::SP;
+		Utility::_16Bit_Normalization(Register::SP);
 	}
 
 	++Register::iPC;
@@ -735,7 +746,7 @@ bool Mnemonic::DCX(const std::pair<std::string, std::string>& operands)//No flag
 		Register::Main[REGISTER::D] = (DATA & 0xff00) >> 8;
 		Register::Main[REGISTER::E] = DATA & 0x00ff;
 	}
-	else
+	else if (reg == REGISTER::B)
 	{
 		//reg will be B
 		int DATA = Register::BC();
@@ -744,6 +755,12 @@ bool Mnemonic::DCX(const std::pair<std::string, std::string>& operands)//No flag
 		Register::Main[REGISTER::B] = (DATA & 0xff00) >> 8;
 		Register::Main[REGISTER::C] = DATA & 0x00ff;
 	}
+	else//reg == REGISTER::SP
+	{
+		--Register::SP;
+		Utility::_16Bit_Normalization(Register::SP);
+	}
+
 
 	++Register::iPC;
 	return ProgramManager::CanRunFurther();
@@ -1427,7 +1444,6 @@ bool Mnemonic::POP(const std::pair<std::string, std::string>& operands)
 	}
 	else // reg == REGISTER::PSW
 	{
-		int PSW = Register::PSW();
 		Register::Flag::FLAG = MemoryManager::Memory[Register::SP];
 		Register::ReverseSyncFLAG();
 		++Register::SP;
@@ -1440,6 +1456,84 @@ bool Mnemonic::POP(const std::pair<std::string, std::string>& operands)
 	++Register::iPC;
 
 	return ProgramManager::CanRunFurther();
+}
+
+bool Mnemonic::SPHL(const std::pair<std::string, std::string>& operands)
+{
+	Register::SP = Register::HL();
+	++Register::iPC;
+	return ProgramManager::CanRunFurther();
+}
+
+bool Mnemonic::XTHL(const std::pair<std::string, std::string>& operands)
+{
+	//M[SP] <=> L
+	//M[SP + 1] <=> H
+	int SP = Register::SP;
+	std::swap(Register::Main[REGISTER::L], MemoryManager::Memory[SP]);
+	++SP;
+	Utility::_16Bit_Normalization(SP); // it will overflow if sp + 1  = ffff to 0000
+	std::swap(Register::Main[REGISTER::H], MemoryManager::Memory[SP]);
+	++Register::iPC;
+	return ProgramManager::CanRunFurther();
+}
+
+bool Mnemonic::PCHL(const std::pair < std::string, std::string>& operands)
+{
+	/*
+	Program counter will sifht to the location pointed by HL.
+
+	The application will through error if :-
+	1)There exist no instruction at the location pointed by HL.
+	2)The Location pointed by HL is not the starting location of a instruction for eg:-
+
+	Let us consider a program given below
+		MVI H, 08H
+		MVI L, 01H
+		PCHL
+		HLT
+	If the loading location is 0800 the program in memory will be as follows:-
+
+	Adddress	OPCODE
+	0800		 26			[MVI_H]
+	0801		 08			[DATA]
+	0802		 2E			[MVI_L]
+	0803		 01			[DATA]
+	0804         E9			[PCHL]
+	0805		 76			[HLT]
+
+	In this case after executing PCHL, PC will point or store 0801 and Jump to that location, but at 0801 there is not
+	valid instruction because 8081 is containing Data, Thats why the application will through error in this case.
+	In above program the valid locations at which we can shift the PC are 0800, 08002, 0804, 0805
+	So be careful while using PCHL, HL should provide a valid location to PC.
+	*/
+
+	int HL = Register::HL();
+	//Using binary search to check if HL is pointing to any valid location(from where a instruction start)
+	int lb = 0, ub = ProgramManager::Program.size() - 1;
+	while (lb <= ub)
+	{
+		int mid = lb + (ub - lb) / 2;
+		if (ProgramManager::Program[mid].loading_address == HL)
+		{
+			Register::iPC = mid;
+			Register::PC = ProgramManager::Program[mid].loading_address;
+			return true;
+		}
+		else if (HL < ProgramManager::Program[mid].loading_address)
+		{
+			ub = mid - 1;
+		}
+		else
+		{
+			lb = mid + 1;
+		}
+	}
+
+	Register::PC = HL;
+	return Error::Throw(ERROR_TYPE::PCHL_ERROR, ProgramManager::Program[Register::iPC].line_number);
+
+
 }
 
 bool Mnemonic::HLT(const std::pair<std::string, std::string>& operands)//return false even on successful execcution But will change Program::HLT = true
@@ -1580,7 +1674,7 @@ bool ProgramManager::Read(const std::string filePath)
 		}
 		else
 		{
-			//This token should have to be a mnemonic
+			//This token must be a mnemonic
 			return Error::Throw(ERROR_TYPE::SYNTAX, line_number);
 		}
 
@@ -1618,12 +1712,12 @@ bool ProgramManager::Read(const std::string filePath)
 		//Second Operand
 		if (nTokenIndex < nTotalTokens)
 		{
-			std::string &s  = vTokens[nTokenIndex];
+			std::string& s = vTokens[nTokenIndex];
 			Converter::ToUpperString(s);
 			instruction.operands.second = s;
 			++nTokenIndex;
 		}
-		else if(bComma)
+		else if (bComma)
 		{
 			//There must be an opeands after comma
 			return Error::Throw(ERROR_TYPE::SYNTAX);
@@ -1665,7 +1759,7 @@ void ProgramManager::Run()
 
 bool ProgramManager::LoadProgramInMemory(const std::string& filePath, int loadingLocation)
 {
-	
+
 	if (!ProgramManager::Read(filePath))
 	{
 		return false;

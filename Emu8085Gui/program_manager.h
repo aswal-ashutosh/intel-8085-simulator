@@ -120,6 +120,10 @@ public:
 	static bool PUSH(Instruction&);
 	static bool POP(Instruction&);
 
+	//OTEHR INSTRUCTIONS
+	static bool SPHL(Instruction&);
+	static bool PCHL(Instruction&);
+	static bool XTHL(Instruction&);
 	static bool HLT(Instruction&);
 	static bool NOP(Instruction&);
 
@@ -245,6 +249,7 @@ std::map<std::string, OpcodeInfo> ProgramManager::OP_INFO =
 	{"DCX_B",		{0x0B, 1}},
 	{"DCX_D",		{0x1B, 1}},
 	{"DCX_H",		{0x2B, 1}},
+	{"DCX_SP",		{0x3B, 1}},
 	{"HLT",			{0x76, 1}},
 	{"INR_A",		{0x3C, 1}},
 	{"INR_B",		{0x04, 1}},
@@ -257,6 +262,7 @@ std::map<std::string, OpcodeInfo> ProgramManager::OP_INFO =
 	{"INX_B",		{0x03, 1}},
 	{"INX_D",		{0x13, 1}},
 	{"INX_H",		{0x23, 1}},
+	{"INX_SP",		{0x33, 1}},
 	{"JC",			{0xDA, 3}},
 	{"JM",			{0xFA, 3}},
 	{"JMP",			{0xC3, 3}},
@@ -409,6 +415,9 @@ std::map<std::string, OpcodeInfo> ProgramManager::OP_INFO =
 	{"POP_D",		{0xD1, 1}},
 	{"POP_H",		{0xE1, 1}},
 	{"POP_PSW",		{0xF1, 1}},
+	{"SPHL",		{0xF9, 1}},
+	{"PCHL",		{0xE9, 1}},
+	{"XTHL",		{0xE3, 1}},
 };
 
 
@@ -507,6 +516,9 @@ void ProgramManager::LoadProgramLoadingInstruction()
 	Load[MNEMONIC::NOP] = NOP;
 	Load[MNEMONIC::PUSH] = PUSH;
 	Load[MNEMONIC::POP] = POP;
+	Load[MNEMONIC::SPHL] = SPHL;
+	Load[MNEMONIC::PCHL] = PCHL;
+	Load[MNEMONIC::XTHL] = XTHL;
 }
 
 
@@ -966,7 +978,6 @@ bool ProgramManager::XCHG(Instruction& instruction)
 	}
 	MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
 	instruction.loading_address = CurrentLoadingLocation;
-
 	CurrentLoadingLocation += info.size;
 	return true;
 }
@@ -1386,6 +1397,7 @@ bool ProgramManager::INX(Instruction& instruction)
 	OK |= reg == REGISTER::H;
 	OK |= reg == REGISTER::D;
 	OK |= reg == REGISTER::B;
+	OK |= reg == REGISTER::SP;
 
 	if (OK)
 	{
@@ -1393,7 +1405,7 @@ bool ProgramManager::INX(Instruction& instruction)
 		{
 			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
-		//INX_H|D|B
+		//INX_H|D|B|SP
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
 		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
 		{
@@ -1465,6 +1477,7 @@ bool ProgramManager::DCX(Instruction& instruction)
 	OK |= reg == REGISTER::H;
 	OK |= reg == REGISTER::D;
 	OK |= reg == REGISTER::B;
+	OK |= reg == REGISTER::SP;
 
 	if (OK)
 	{
@@ -1472,7 +1485,7 @@ bool ProgramManager::DCX(Instruction& instruction)
 		{
 			ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
 		}
-		//DCX_H|D|B
+		//DCX_H|D|B|SP
 		OpcodeInfo info = OP_INFO[instruction.mnemonic + "_" + reg];
 		if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
 		{
@@ -2965,6 +2978,85 @@ bool ProgramManager::POP(Instruction& instruction)
 	return true;
 }
 
+
+bool ProgramManager::PCHL(Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 0))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
+	}
+
+	if (!instruction.label.empty())
+	{
+		ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
+	}
+	//PCHL
+	OpcodeInfo info = OP_INFO[instruction.mnemonic];
+	if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+	{
+		return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+	}
+	MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+	instruction.loading_address = CurrentLoadingLocation;
+	CurrentLoadingLocation += info.size;
+
+	return true;
+}
+
+
+
+bool ProgramManager::SPHL(Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 0))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
+	}
+
+	if (!instruction.label.empty())
+	{
+		ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
+	}
+	//SPHL
+	OpcodeInfo info = OP_INFO[instruction.mnemonic];
+	if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+	{
+		return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+	}
+	MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+	instruction.loading_address = CurrentLoadingLocation;
+	CurrentLoadingLocation += info.size;
+	return true;
+}
+
+
+bool ProgramManager::XTHL(Instruction& instruction)
+{
+	const std::pair<std::string, std::string>& operands = instruction.operands;
+
+	if (!Validator::ValidOperandCount(operands, 0))
+	{
+		return Error::Throw(ERROR_TYPE::INVALID_OPERANDS, instruction.line_number);
+	}
+
+	if (!instruction.label.empty())
+	{
+		ProgramManager::LabelsAddress[instruction.label] = CurrentLoadingLocation;
+	}
+	//XTHL
+	OpcodeInfo info = OP_INFO[instruction.mnemonic];
+	if (!ProgramManager::CanLoadInstruction(CurrentLoadingLocation, info.size))
+	{
+		return Error::Throw(ERROR_TYPE::CAN_NOT_LOAD_INSTRUCTION);
+	}
+	MemoryManager::SetMemory(CurrentLoadingLocation, info.opcode);
+	instruction.loading_address = CurrentLoadingLocation;
+	CurrentLoadingLocation += info.size;
+	return true;
+}
 
 
 bool ProgramManager::HLT(Instruction& instruction)

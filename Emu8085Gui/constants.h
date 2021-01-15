@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include <map>
+#include <set>
 
 namespace ERROR_TYPE
 {
@@ -22,6 +22,7 @@ namespace ERROR_TYPE
     const std::string RETURN_WITHOUT_CALL = "'Return' Statement Found When There Exist No Subroutine Call";
     const std::string INFINITE_LOOP_OR_RECURSIVE_CALL = "There May Be An Infinite Loop Or A Never Ending Recursion";
     const std::string CAN_NOT_LOAD_INSTRUCTION = "Not Enough Space To Load Program From Provided Loading Location.";
+    const std::string PCHL_ERROR = "PCHL Throughs Program Counter At A Location Which Is Not Containg Any Valid Instruction.";
 } // namespace ERROR_TYPE
 
 namespace PATH
@@ -102,6 +103,9 @@ namespace MNEMONIC
     const std::string HLT = "HLT";
     const std::string PUSH = "PUSH";
     const std::string POP = "POP";
+    const std::string SPHL = "SPHL";
+    const std::string PCHL = "PCHL";
+    const std::string XTHL = "XTHL";
 } // namespace MNEMONIC
 
 namespace REGISTER
@@ -151,3 +155,95 @@ namespace BUTTON
     const std::string DEBUG = "DEBUG";
     const std::string STOP = "STOP";
 } // namespace BUTTON
+
+
+namespace KEYWORDS
+{
+    const std::set<std::string> KEYS =
+    {
+         "MOV"      ,
+         "MVI"      ,
+         "LDA"      ,
+         "STA"      ,
+         "LHLD"     ,
+         "SHLD"     ,
+         "LXI"      ,
+         "LDAX"     ,
+         "STAX"     ,
+         "XCHG"     ,
+         "ADD"      ,
+         "ADI"      ,
+         "ADC"      ,
+         "ACI"      ,
+         "SUB"      ,
+         "SBB"      ,
+         "SUI"      ,
+         "SBI"      ,
+         "DAA"      ,
+         "INR"      ,
+         "INX"      ,
+         "DCR"      ,
+         "DCX"      ,
+         "DAD"      ,
+         "ANA"      ,
+         "ANI"      ,
+         "ORA"      ,
+         "ORI"      ,
+         "XRA"      ,
+         "XRI"      ,
+         "CMA"      ,
+         "RLC"      ,
+         "RAL"      ,
+         "RRC"      ,
+         "RAR"      ,
+         "STC"      ,
+         "CMC"      ,
+         "CMP"      ,
+         "CPI"      ,
+         "JMP"      ,
+         "JC"       ,
+         "JNC"      ,
+         "JZ"       ,
+         "JNZ"      ,
+         "JPE"      ,
+         "JPO"      ,
+         "JM"       ,
+         "JP"       ,
+         "CALL"     ,
+         "CNC"      ,
+         "CC"       ,
+         "CNZ"      ,
+         "CZ"       ,
+         "CPE"      ,
+         "CPO"      ,
+         "CP"       ,
+         "CM"       ,
+         "RET"      ,
+         "RNC"      ,
+         "RC"       ,
+         "RNZ"      ,
+         "RZ"       ,
+         "RPE"      ,
+         "RPO"      ,
+         "RP"       ,
+         "RM"       ,
+         "NOP"      ,
+         "HLT"      ,
+         "PUSH"     ,
+         "POP"      ,
+         "SPHL"     ,
+         "PCHL"     ,
+         "XTHL"     ,
+         "A"        ,
+         "B"        ,
+         "C"        ,
+         "D"        ,
+         "E"        ,
+         "H"        ,
+         "L"        ,
+         "M"        ,
+         "SP"       ,
+         "PSW"      ,
+    };
+}//namespace KEYWORDS
+

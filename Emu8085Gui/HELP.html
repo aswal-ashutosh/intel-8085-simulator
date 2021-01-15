@@ -19,7 +19,8 @@
                         </em>
                     </li>
                 </ol>
-            <br></p>
+                <br>
+            </p>
         </li>
 
         <li>
@@ -108,7 +109,7 @@
                     In order to jump/call to a specific line of code create a <strong>label</strong>.<br>
                     <strong>Label</strong> is any string(alpha-numberic) ending with <strong>':'</strong>,
                     for example: "LOOP:", "HERE:" etc.<br><br>
-                    <strong>Note:</strong> Label should not match any mnemonic i.e., "JNZ:", "MOV:", "mVi:" etc., All are be invalid labels<br>
+                    <strong>Note:</strong> Label should not match any Reserve Keyword in 8085 i.e., "JNZ:", "MOV:", "mvi:", "A:", "Call:", etc., All are be invalid labels<br>
                     <br>
                     <strong><u>Example of a program using label</u></strong><br><br>
                 </em>
@@ -259,9 +260,79 @@
         <li><strong> RPE</strong></li>
         <li><strong>  RP</strong></li>
         <li><strong>  RM</strong></li>
+        <li><strong>  PUSH</strong></li>
+        <li><strong>  POP</strong></li>
+        <li><strong>  SPHL</strong></li>
+        <li><strong>  PCHL</strong></li>
+        <li><strong>  XTHL</strong></li>
         <li><strong> HLT</strong></li>
         <li><strong> NOP</strong></li>
     </ol>
-    <hr>
+    <br><br>
+    <em><strong>Note:</strong> While using <strong>PCHL</strong> the application will through an erro if: <br></em>
+        <ol>
+            <li>
+                <em>There exist no instruction at the location pointed by HL.</em>
+            </li>
+            <li>
+                <p>
+                    <em>
+                        The Location pointed by HL is not the starting location of a instruction, for eg:<br>
+                        Let us consider a program given below<br><br>
+                    </em>
+                    MVI H, 08H<br>
+                    MVI L, 01H<br>
+                    PCHL<br>
+                    HLT<br><br>
+                    <em>If the loading location is 0800 the program in memory will be as follows:</em><br><br>
+                    <table width="50%">
+                        <tbody>
+                            <tr>
+                                <td><strong>ADDRESS</strong></td>
+                                <td><strong>OPCODE</strong></td>
+                            </tr>
+
+                            <tr>
+                                <td>0800</td>
+                                <td>26</td>
+                                <td>[MVI_H]</td>
+                            </tr>
+                            <tr>
+                                <td>0801</td>
+                                <td>08</td>
+                                <td>[DATA]</td>
+                            </tr>
+                            <tr>
+                                <td>0802</td>
+                                <td>2E</td>
+                                <td>[MVI_L]</td>
+                            </tr>
+                            <tr>
+                                <td>0803</td>
+                                <td>01</td>
+                                <td>[DATA]</td>
+                            </tr>
+                            <tr>
+                                <td>0804</td>
+                                <td>E9</td>
+                                <td>[PCHL]</td>
+                            </tr>
+                            <tr>
+                                <td>0805</td>
+                                <td>76</td>
+                                <td>[HLT]</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <em>
+                        In this case, after executing PCHL, PC will point or store 0801 and Jump to that location, but at 0801 there is not
+                        valid instruction because 8081 is containing Data, Thats why the application will through error in this case.
+                        In above program the valid locations at which we can shift the PC are 0800, 08002, 0804, 0805.
+                        So be careful while using PCHL, HL should provide a valid location to PC.
+                    </em>
+                <p>
+            </li>
+        </ol>
+        <hr>
 </BODY>
 </HTML>

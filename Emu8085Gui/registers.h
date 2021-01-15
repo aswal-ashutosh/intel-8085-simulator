@@ -172,3 +172,4 @@ void Register::Clear()
 		reg.second = 0;
 	}
 }
+
