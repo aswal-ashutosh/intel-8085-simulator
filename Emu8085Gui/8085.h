@@ -1,13 +1,6 @@
 #include<fstream>
 #include<sstream>
-#include<set>
-#include"constants.h"
 #include"time_manager.h"
-#include"validator.h"
-#include"converter.h"
-#include"memory_manager.h"
-#include"registers.h"
-#include"instruction.h"
 #include"program_manager.h"
 
 class Mnemonic

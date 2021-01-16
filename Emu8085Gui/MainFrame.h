@@ -57,12 +57,12 @@ private:
 	wxStaticBoxSizer* m_RegisterPanelStaticBoxSizer = nullptr;
 	std::map<std::string, wxTextCtrl*> m_MainRegister;
 	std::map<std::string, wxStaticText*> m_MainRegisterLabel;
-	wxTextCtrl* m_PC_TextCtrl;
-	wxStaticText* m_PC_StaticText;
-	wxTextCtrl* m_SP_TextCtrl;
-	wxStaticText* m_SP_StaticText;
-	wxTextCtrl* m_PSW_TextCtrl;
-	wxStaticText* m_PSW_StaticText;
+	wxTextCtrl* m_PC_TextCtrl = nullptr;
+	wxStaticText* m_PC_StaticText = nullptr;
+	wxTextCtrl* m_SP_TextCtrl = nullptr;
+	wxStaticText* m_SP_StaticText = nullptr;
+	wxTextCtrl* m_PSW_TextCtrl = nullptr;
+	wxStaticText* m_PSW_StaticText = nullptr;
 
 
 
