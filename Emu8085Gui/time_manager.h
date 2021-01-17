@@ -11,7 +11,7 @@ public:
 };
 
 std::chrono::steady_clock::time_point TimeManager::start;
-const std::chrono::milliseconds TimeManager::MAX_EXPECTED_TIME(5000);
+const std::chrono::milliseconds TimeManager::MAX_EXPECTED_TIME(3000);
 
 void TimeManager::Reset()
 {
