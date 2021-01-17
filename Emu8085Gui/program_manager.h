@@ -30,7 +30,7 @@ class ProgramManager
 public:
 	static std::map<std::string, int> iLabels;//It will map Label string to Index of instruction followed by it.
 	static std::vector<Instruction> Program;//It will contain a instruction and the address where it is loded.
-	static std::vector<int> CallStack;
+	static std::vector<int> iCallStack;
 	static std::set<std::string> JCallInstructions;
 
 	static std::map<std::string, bool (*)(Instruction&)> Load;
@@ -153,7 +153,7 @@ public:
 
 std::vector<Instruction> ProgramManager::Program;
 std::map<std::string, int> ProgramManager::iLabels;
-std::vector<int> ProgramManager::CallStack;
+std::vector<int> ProgramManager::iCallStack;
 std::map<std::string, std::vector<int>> ProgramManager::LabelPosition;
 std::map<std::string, int> ProgramManager::LabelsAddress;
 std::map<std::string, bool (*)(Instruction&)> ProgramManager::Load;
@@ -166,7 +166,7 @@ void ProgramManager::Clear()
 {
 	ProgramManager::Program.clear();
 	ProgramManager::iLabels.clear();
-	ProgramManager::CallStack.clear();
+	ProgramManager::iCallStack.clear();
 	ProgramManager::HALT = false;
 	ProgramManager::LabelPosition.clear();
 	ProgramManager::LabelsAddress.clear();

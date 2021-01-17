@@ -1059,8 +1059,18 @@ bool Mnemonic::JP(const std::pair<std::string, std::string>& operands)
 
 bool Mnemonic::CALL(const std::pair<std::string, std::string>& operands)
 {
-	ProgramManager::CallStack.push_back(Register::iPC + 1);
+	//For SP, Load current instruction (loading address) + (instruction size) to SP
+	int returnAddress = ProgramManager::Program[Register::iPC].loading_address + ProgramManager::OP_INFO[MNEMONIC::CALL].size;
+	--Register::SP;
+	Utility::_16Bit_Normalization(Register::SP);// may be SP become -1 (32Bit)
+	MemoryManager::SetMemory(Register::SP, (returnAddress & 0xff00) >> 8);
+	--Register::SP;
+	Utility::_16Bit_Normalization(Register::SP);// may be SP become -1 (32Bit)
+	MemoryManager::SetMemory(Register::SP, (returnAddress & 0x00ff));
+
+	ProgramManager::iCallStack.push_back(Register::iPC + 1);
 	Register::iPC = ProgramManager::iLabels[operands.first];
+
 	return ProgramManager::CanRunFurther();
 }
 
@@ -1073,7 +1083,16 @@ bool Mnemonic::CNC(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		ProgramManager::CallStack.push_back(Register::iPC + 1);
+		//For SP, Load current instruction (loading address) + (instruction size) to SP
+		int returnAddress = ProgramManager::Program[Register::iPC].loading_address + ProgramManager::OP_INFO[MNEMONIC::CNC].size;
+		--Register::SP;
+		Utility::_16Bit_Normalization(Register::SP);// may be SP become -1 (32Bit)
+		MemoryManager::SetMemory(Register::SP, (returnAddress & 0xff00) >> 8);
+		--Register::SP;
+		Utility::_16Bit_Normalization(Register::SP);// may be SP become -1 (32Bit)
+		MemoryManager::SetMemory(Register::SP, (returnAddress & 0x00ff));
+
+		ProgramManager::iCallStack.push_back(Register::iPC + 1);
 		Register::iPC = ProgramManager::iLabels[operands.first];
 	}
 	return ProgramManager::CanRunFurther();
@@ -1083,7 +1102,16 @@ bool Mnemonic::CC(const std::pair<std::string, std::string>& operands)
 {
 	if (Register::Flag::CY)
 	{
-		ProgramManager::CallStack.push_back(Register::iPC + 1);
+		//For SP, Load current instruction (loading address) + (instruction size) to SP
+		int returnAddress = ProgramManager::Program[Register::iPC].loading_address + ProgramManager::OP_INFO[MNEMONIC::CC].size;
+		--Register::SP;
+		Utility::_16Bit_Normalization(Register::SP);// may be SP become -1 (32Bit)
+		MemoryManager::SetMemory(Register::SP, (returnAddress & 0xff00) >> 8);
+		--Register::SP;
+		Utility::_16Bit_Normalization(Register::SP);// may be SP become -1 (32Bit)
+		MemoryManager::SetMemory(Register::SP, (returnAddress & 0x00ff));
+
+		ProgramManager::iCallStack.push_back(Register::iPC + 1);
 		Register::iPC = ProgramManager::iLabels[operands.first];
 	}
 	else
@@ -1097,10 +1125,18 @@ bool Mnemonic::CC(const std::pair<std::string, std::string>& operands)
 bool Mnemonic::CZ(const std::pair<std::string, std::string>& operands)
 {
 
-
 	if (Register::Flag::ZF)
 	{
-		ProgramManager::CallStack.push_back(Register::iPC + 1);
+		//For SP, Load current instruction (loading address) + (instruction size) to SP
+		int returnAddress = ProgramManager::Program[Register::iPC].loading_address + ProgramManager::OP_INFO[MNEMONIC::CZ].size;
+		--Register::SP;
+		Utility::_16Bit_Normalization(Register::SP);// may be SP become -1 (32Bit)
+		MemoryManager::SetMemory(Register::SP, (returnAddress & 0xff00) >> 8);
+		--Register::SP;
+		Utility::_16Bit_Normalization(Register::SP);// may be SP become -1 (32Bit)
+		MemoryManager::SetMemory(Register::SP, (returnAddress & 0x00ff));
+
+		ProgramManager::iCallStack.push_back(Register::iPC + 1);
 		Register::iPC = ProgramManager::iLabels[operands.first];
 	}
 	else
@@ -1120,7 +1156,16 @@ bool Mnemonic::CNZ(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		ProgramManager::CallStack.push_back(Register::iPC + 1);
+		//For SP, Load current instruction (loading address) + (instruction size) to SP
+		int returnAddress = ProgramManager::Program[Register::iPC].loading_address + ProgramManager::OP_INFO[MNEMONIC::CNZ].size;
+		--Register::SP;
+		Utility::_16Bit_Normalization(Register::SP);// may be SP become -1 (32Bit)
+		MemoryManager::SetMemory(Register::SP, (returnAddress & 0xff00) >> 8);
+		--Register::SP;
+		Utility::_16Bit_Normalization(Register::SP);// may be SP become -1 (32Bit)
+		MemoryManager::SetMemory(Register::SP, (returnAddress & 0x00ff));
+
+		ProgramManager::iCallStack.push_back(Register::iPC + 1);
 		Register::iPC = ProgramManager::iLabels[operands.first];
 	}
 	return ProgramManager::CanRunFurther();
@@ -1132,7 +1177,16 @@ bool Mnemonic::CPE(const std::pair<std::string, std::string>& operands)
 
 	if (Register::Flag::PF)
 	{
-		ProgramManager::CallStack.push_back(Register::iPC + 1);
+		//For SP, Load current instruction (loading address) + (instruction size) to SP
+		int returnAddress = ProgramManager::Program[Register::iPC].loading_address + ProgramManager::OP_INFO[MNEMONIC::CPE].size;
+		--Register::SP;
+		Utility::_16Bit_Normalization(Register::SP);// may be SP become -1 (32Bit)
+		MemoryManager::SetMemory(Register::SP, (returnAddress & 0xff00) >> 8);
+		--Register::SP;
+		Utility::_16Bit_Normalization(Register::SP);// may be SP become -1 (32Bit)
+		MemoryManager::SetMemory(Register::SP, (returnAddress & 0x00ff));
+
+		ProgramManager::iCallStack.push_back(Register::iPC + 1);
 		Register::iPC = ProgramManager::iLabels[operands.first];
 	}
 	else
@@ -1152,7 +1206,16 @@ bool Mnemonic::CPO(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		ProgramManager::CallStack.push_back(Register::iPC + 1);
+		//For SP, Load current instruction (loading address) + (instruction size) to SP
+		int returnAddress = ProgramManager::Program[Register::iPC].loading_address + ProgramManager::OP_INFO[MNEMONIC::CPO].size;
+		--Register::SP;
+		Utility::_16Bit_Normalization(Register::SP);// may be SP become -1 (32Bit)
+		MemoryManager::SetMemory(Register::SP, (returnAddress & 0xff00) >> 8);
+		--Register::SP;
+		Utility::_16Bit_Normalization(Register::SP);// may be SP become -1 (32Bit)
+		MemoryManager::SetMemory(Register::SP, (returnAddress & 0x00ff));
+
+		ProgramManager::iCallStack.push_back(Register::iPC + 1);
 		Register::iPC = ProgramManager::iLabels[operands.first];
 	}
 	return ProgramManager::CanRunFurther();
@@ -1168,7 +1231,16 @@ bool Mnemonic::CP(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		ProgramManager::CallStack.push_back(Register::iPC + 1);
+		//For SP, Load current instruction (loading address) + (instruction size) to SP
+		int returnAddress = ProgramManager::Program[Register::iPC].loading_address + ProgramManager::OP_INFO[MNEMONIC::CP].size;
+		--Register::SP;
+		Utility::_16Bit_Normalization(Register::SP);// may be SP become -1 (32Bit)
+		MemoryManager::SetMemory(Register::SP, (returnAddress & 0xff00) >> 8);
+		--Register::SP;
+		Utility::_16Bit_Normalization(Register::SP);// may be SP become -1 (32Bit)
+		MemoryManager::SetMemory(Register::SP, (returnAddress & 0x00ff));
+
+		ProgramManager::iCallStack.push_back(Register::iPC + 1);
 		Register::iPC = ProgramManager::iLabels[operands.first];
 	}
 	return ProgramManager::CanRunFurther();
@@ -1178,7 +1250,16 @@ bool Mnemonic::CM(const std::pair<std::string, std::string>& operands)
 {
 	if (Register::Flag::SF)
 	{
-		ProgramManager::CallStack.push_back(Register::iPC + 1);
+		//For SP, Load current instruction (loading address) + (instruction size) to SP
+		int returnAddress = ProgramManager::Program[Register::iPC].loading_address + ProgramManager::OP_INFO[MNEMONIC::CM].size;
+		--Register::SP;
+		Utility::_16Bit_Normalization(Register::SP);// may be SP become -1 (32Bit)
+		MemoryManager::SetMemory(Register::SP, (returnAddress & 0xff00) >> 8);
+		--Register::SP;
+		Utility::_16Bit_Normalization(Register::SP);// may be SP become -1 (32Bit)
+		MemoryManager::SetMemory(Register::SP, (returnAddress & 0x00ff));
+
+		ProgramManager::iCallStack.push_back(Register::iPC + 1);
 		Register::iPC = ProgramManager::iLabels[operands.first];
 	}
 	else
@@ -1190,19 +1271,20 @@ bool Mnemonic::CM(const std::pair<std::string, std::string>& operands)
 
 bool Mnemonic::RET(const std::pair<std::string, std::string>& operands)
 {
-	if (ProgramManager::CallStack.empty())//There can't be a return instruction if we don't have any address to return. 
+	if (ProgramManager::iCallStack.empty())//There can't be a return instruction if we don't have any address to return. 
 	{
 		return Error::Throw(ERROR_TYPE::RETURN_WITHOUT_CALL);
 	}
-
-	Register::iPC = ProgramManager::CallStack.back();
-	ProgramManager::CallStack.pop_back();
+	Register::SP += 2;
+	Utility::_16Bit_Normalization(Register::SP);
+	Register::iPC = ProgramManager::iCallStack.back();
+	ProgramManager::iCallStack.pop_back();
 	return ProgramManager::CanRunFurther();
 }
 
 bool Mnemonic::RNC(const std::pair<std::string, std::string>& operands)
 {
-	if (ProgramManager::CallStack.empty())//There can't be a return instruction if we don't have any address to return. 
+	if (ProgramManager::iCallStack.empty())//There can't be a return instruction if we don't have any address to return. 
 	{
 		return Error::Throw(ERROR_TYPE::RETURN_WITHOUT_CALL);
 	}
@@ -1213,23 +1295,27 @@ bool Mnemonic::RNC(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		Register::iPC = ProgramManager::CallStack.back();
-		ProgramManager::CallStack.pop_back();
+		Register::SP += 2;
+		Utility::_16Bit_Normalization(Register::SP);
+		Register::iPC = ProgramManager::iCallStack.back();
+		ProgramManager::iCallStack.pop_back();
 	}
 	return ProgramManager::CanRunFurther();
 }
 
 bool Mnemonic::RC(const std::pair<std::string, std::string>& operands)
 {
-	if (ProgramManager::CallStack.empty())//There can't be a return instruction if we don't have any address to return. 
+	if (ProgramManager::iCallStack.empty())//There can't be a return instruction if we don't have any address to return. 
 	{
 		return Error::Throw(ERROR_TYPE::RETURN_WITHOUT_CALL);
 	}
 
 	if (Register::Flag::CY)
 	{
-		Register::iPC = ProgramManager::CallStack.back();
-		ProgramManager::CallStack.pop_back();
+		Register::SP += 2;
+		Utility::_16Bit_Normalization(Register::SP);
+		Register::iPC = ProgramManager::iCallStack.back();
+		ProgramManager::iCallStack.pop_back();
 	}
 	else
 	{
@@ -1240,15 +1326,17 @@ bool Mnemonic::RC(const std::pair<std::string, std::string>& operands)
 
 bool Mnemonic::RZ(const std::pair<std::string, std::string>& operands)
 {
-	if (ProgramManager::CallStack.empty())//There can't be a return instruction if we don't have any address to return. 
+	if (ProgramManager::iCallStack.empty())//There can't be a return instruction if we don't have any address to return. 
 	{
 		return Error::Throw(ERROR_TYPE::RETURN_WITHOUT_CALL);
 	}
 
 	if (Register::Flag::ZF)
 	{
-		Register::iPC = ProgramManager::CallStack.back();
-		ProgramManager::CallStack.pop_back();
+		Register::SP += 2;
+		Utility::_16Bit_Normalization(Register::SP);
+		Register::iPC = ProgramManager::iCallStack.back();
+		ProgramManager::iCallStack.pop_back();
 	}
 	else
 	{
@@ -1259,7 +1347,7 @@ bool Mnemonic::RZ(const std::pair<std::string, std::string>& operands)
 
 bool Mnemonic::RNZ(const std::pair<std::string, std::string>& operands)
 {
-	if (ProgramManager::CallStack.empty())//There can't be a return instruction if we don't have any address to return. 
+	if (ProgramManager::iCallStack.empty())//There can't be a return instruction if we don't have any address to return. 
 	{
 		return Error::Throw(ERROR_TYPE::RETURN_WITHOUT_CALL);
 	}
@@ -1270,8 +1358,10 @@ bool Mnemonic::RNZ(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		Register::iPC = ProgramManager::CallStack.back();
-		ProgramManager::CallStack.pop_back();
+		Register::SP += 2;
+		Utility::_16Bit_Normalization(Register::SP);
+		Register::iPC = ProgramManager::iCallStack.back();
+		ProgramManager::iCallStack.pop_back();
 	}
 	return ProgramManager::CanRunFurther();
 }
@@ -1279,15 +1369,17 @@ bool Mnemonic::RNZ(const std::pair<std::string, std::string>& operands)
 
 bool Mnemonic::RPE(const std::pair<std::string, std::string>& operands)
 {
-	if (ProgramManager::CallStack.empty())//There can't be a return instruction if we don't have any address to return. 
+	if (ProgramManager::iCallStack.empty())//There can't be a return instruction if we don't have any address to return. 
 	{
 		return Error::Throw(ERROR_TYPE::RETURN_WITHOUT_CALL);
 	}
 
 	if (Register::Flag::PF)
 	{
-		Register::iPC = ProgramManager::CallStack.back();
-		ProgramManager::CallStack.pop_back();
+		Register::SP += 2;
+		Utility::_16Bit_Normalization(Register::SP);
+		Register::iPC = ProgramManager::iCallStack.back();
+		ProgramManager::iCallStack.pop_back();
 	}
 	else
 	{
@@ -1298,7 +1390,7 @@ bool Mnemonic::RPE(const std::pair<std::string, std::string>& operands)
 
 bool Mnemonic::RPO(const std::pair<std::string, std::string>& operands)
 {
-	if (ProgramManager::CallStack.empty())//There can't be a return instruction if we don't have any address to return. 
+	if (ProgramManager::iCallStack.empty())//There can't be a return instruction if we don't have any address to return. 
 	{
 		return Error::Throw(ERROR_TYPE::RETURN_WITHOUT_CALL);
 	}
@@ -1309,23 +1401,27 @@ bool Mnemonic::RPO(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		Register::iPC = ProgramManager::CallStack.back();
-		ProgramManager::CallStack.pop_back();
+		Register::SP += 2;
+		Utility::_16Bit_Normalization(Register::SP);
+		Register::iPC = ProgramManager::iCallStack.back();
+		ProgramManager::iCallStack.pop_back();
 	}
 	return ProgramManager::CanRunFurther();
 }
 
 bool Mnemonic::RM(const std::pair<std::string, std::string>& operands)
 {
-	if (ProgramManager::CallStack.empty())//There can't be a return instruction if we don't have any address to return. 
+	if (ProgramManager::iCallStack.empty())//There can't be a return instruction if we don't have any address to return. 
 	{
 		return Error::Throw(ERROR_TYPE::RETURN_WITHOUT_CALL);
 	}
 
 	if (Register::Flag::SF)
 	{
-		Register::iPC = ProgramManager::CallStack.back();
-		ProgramManager::CallStack.pop_back();
+		Register::SP += 2;
+		Utility::_16Bit_Normalization(Register::SP);
+		Register::iPC = ProgramManager::iCallStack.back();
+		ProgramManager::iCallStack.pop_back();
 	}
 	else
 	{
@@ -1336,7 +1432,7 @@ bool Mnemonic::RM(const std::pair<std::string, std::string>& operands)
 
 bool Mnemonic::RP(const std::pair<std::string, std::string>& operands)
 {
-	if (ProgramManager::CallStack.empty())//There can't be a return instruction if we don't have any address to return. 
+	if (ProgramManager::iCallStack.empty())//There can't be a return instruction if we don't have any address to return. 
 	{
 		return Error::Throw(ERROR_TYPE::RETURN_WITHOUT_CALL);
 	}
@@ -1347,8 +1443,10 @@ bool Mnemonic::RP(const std::pair<std::string, std::string>& operands)
 	}
 	else
 	{
-		Register::iPC = ProgramManager::CallStack.back();
-		ProgramManager::CallStack.pop_back();
+		Register::SP += 2;
+		Utility::_16Bit_Normalization(Register::SP);
+		Register::iPC = ProgramManager::iCallStack.back();
+		ProgramManager::iCallStack.pop_back();
 	}
 	return ProgramManager::CanRunFurther();
 }
