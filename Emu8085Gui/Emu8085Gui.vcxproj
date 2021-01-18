@@ -34,7 +34,7 @@
     <ClInclude Include="validator.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Emulator.cpp" />
+    <ClCompile Include="Simulator.cpp" />
     <ClCompile Include="MainFrame.cpp" />
   </ItemGroup>
   <ItemGroup>
