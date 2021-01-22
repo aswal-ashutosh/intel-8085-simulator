@@ -62,12 +62,12 @@ int Register::DE()
 	return (Main[REGISTER::D] << 8) | Main[REGISTER::E];
 }
 
-int Register::PSW()
+int Register::PSW()// Return 16 bit value consisting of A & Flag Register
 {
 	return (Register::Main[REGISTER::A] << 8) | Register::Flag::FLAG;
 }
 
-void Register::SyncFLAG()// Return 16 bit value consisting of A & Flag Register
+void Register::SyncFLAG()
 {	
 	/*
 		Flag Register Structure => [S][Z][-][AC][-][P][-][CY]
