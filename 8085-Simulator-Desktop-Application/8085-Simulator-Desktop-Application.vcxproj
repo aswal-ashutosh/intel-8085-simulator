@@ -48,8 +48,9 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{73149816-4427-4ac3-99a4-d3f7e4ae3f82}</ProjectGuid>
-    <RootNamespace>Emu8085Gui</RootNamespace>
+    <RootNamespace>8085-Simulator-Desktop-Application</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>8085-Simulator-Desktop-Application</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
