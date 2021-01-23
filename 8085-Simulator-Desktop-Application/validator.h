@@ -68,9 +68,5 @@ bool Validator::ValidOperandCount(const std::pair<std::string, std::string>& ope
 
 bool Validator::IsValidRegister(const std::string& expected_register)
 {
-	if ((int)expected_register.size() != 1)
-	{
-		return false;
-	}
 	return (expected_register == REGISTER::A || expected_register == REGISTER::B || expected_register == REGISTER::C || expected_register == REGISTER::D || expected_register == REGISTER::E || expected_register == REGISTER::H || expected_register == REGISTER::L);
 }
