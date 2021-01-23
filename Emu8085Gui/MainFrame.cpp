@@ -292,24 +292,10 @@ void MainFrame::OnSetLoadingLocation(wxCommandEvent& envet)
 	else
 	{
 		std::string address = ToString(m_ProgramLoadingPanelTextCtrl->GetValue());
-		int nAddress = 0;
-		bool OK = true;
-		if (!Validator::IsValidHex(address))
+		if (Validator::IsValidHex(address))
 		{
-			OK = false;
-		}
-		else
-		{
-			nAddress = Converter::HexToDec(address);
-			if (nAddress < 0x0000 && nAddress > 0xffff)
-			{
-				OK = false;
-			}
-		}
-
-		if (OK)
-		{
-			m_nLoadingLocation = nAddress;
+			//No need to check for overflow as user can't put more than 4 characters in this text field.
+			m_nLoadingLocation = Converter::HexToDec(address);
 			Converter::ToUpperString(address);
 			Utility::_16Bit(address);
 			m_ProgramLoadingPanelCurrentLocationTextCtrl->Clear();
