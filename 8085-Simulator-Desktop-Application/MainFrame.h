@@ -4,7 +4,6 @@
 #include<wx/stc/stc.h>
 #include<wx/listctrl.h>
 #include"wx/html/htmlwin.h"
-#include"wx/activityindicator.h"
 #include<map>
 #include"constants.h"
 
