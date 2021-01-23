@@ -22,7 +22,7 @@
     <ClInclude Include="8085.h" />
     <ClInclude Include="constants.h" />
     <ClInclude Include="converter.h" />
-    <ClInclude Include="Emulator.h" />
+    <ClInclude Include="Simulator.h" />
     <ClInclude Include="error_handler.h" />
     <ClInclude Include="instruction.h" />
     <ClInclude Include="MainFrame.h" />

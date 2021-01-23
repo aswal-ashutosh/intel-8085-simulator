@@ -3,12 +3,12 @@
 #include"MainFrame.h"
 #include<wx\wx.h>
 
-class Emulator : public wxApp
+class Simulator : public wxApp
 {
 private:
 	MainFrame* m_MainWindow = nullptr;
 public:
-	Emulator();
-	~Emulator();
+	Simulator();
+	~Simulator();
 	virtual bool OnInit();
 };

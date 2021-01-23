@@ -1,18 +1,18 @@
-#include "Emulator.h"
+#include "Simulator.h"
 
-wxIMPLEMENT_APP(Emulator);
+wxIMPLEMENT_APP(Simulator);
 
-Emulator::Emulator()
+Simulator::Simulator()
 {
 
 }
 
-Emulator::~Emulator()
+Simulator::~Simulator()
 {
 
 }
 
-bool Emulator::OnInit()
+bool Simulator::OnInit()
 {
 	this->m_MainWindow = new MainFrame();
 	this->m_MainWindow->Show();
