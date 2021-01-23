@@ -1629,7 +1629,7 @@ bool Mnemonic::PCHL(const std::pair < std::string, std::string>& operands)
 
 bool Mnemonic::HLT(const std::pair<std::string, std::string>& operands)//return false even on successful execcution But will change Program::HLT = true
 {
-	ProgramManager::HALT = true;
+	ProgramManager::_HLT = true;
 	Register::PC = ProgramManager::Program[Register::iPC].loading_address + 0x0001;
 	Utility::_16Bit_Normalization(Register::PC);
 	return false;

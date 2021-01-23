@@ -447,7 +447,7 @@ void MainFrame::Run8085(const std::string& filePath)
 		UpdateFlagRegister();
 		UpdateRegisters();
 		UpdateMemory();
-		if (ProgramManager::HALT)
+		if (ProgramManager::_HLT)
 		{
 			wxMessageBox(MESSAGE::SUCCESSFUL_EXECUTION, DIALOG::SUCCESS);
 		}
@@ -488,7 +488,7 @@ void MainFrame::OnExecute(wxCommandEvent& event)
 		m_EditBox->MarkerAdd(ProgramManager::Program[Register::iPC].line_number - 1, 0);
 		m_EditBox->MarkerSetBackground(0, *wxRED);
 	}
-	else if (ProgramManager::HALT)//HLT get executed
+	else if (ProgramManager::_HLT)//HLT get executed
 	{
 		UpdateFlagRegister();
 		UpdateRegisters();

@@ -38,7 +38,7 @@ public:
 	static std::map<std::string, std::vector<int>> LabelPosition;
 	static std::map<std::string, int> LabelsAddress;
 	static int CurrentLoadingLocation;
-	static bool HALT;
+	static bool _HLT;
 
 
 	static bool MOV(Instruction&);
@@ -158,8 +158,8 @@ std::map<std::string, std::vector<int>> ProgramManager::LabelPosition;
 std::map<std::string, int> ProgramManager::LabelsAddress;
 std::map<std::string, bool (*)(Instruction&)> ProgramManager::Load;
 
-bool ProgramManager::HALT;
-int ProgramManager::CurrentLoadingLocation;
+bool ProgramManager::_HLT = false;
+int ProgramManager::CurrentLoadingLocation = 0;
 
 
 void ProgramManager::Clear()
@@ -167,7 +167,7 @@ void ProgramManager::Clear()
 	ProgramManager::Program.clear();
 	ProgramManager::iLabels.clear();
 	ProgramManager::iCallStack.clear();
-	ProgramManager::HALT = false;
+	ProgramManager::_HLT = false;
 	ProgramManager::LabelPosition.clear();
 	ProgramManager::LabelsAddress.clear();
 }
