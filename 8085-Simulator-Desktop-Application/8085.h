@@ -582,20 +582,18 @@ bool Mnemonic::DAA(const std::pair<std::string, std::string>& operands)
 {
 
 	int LSN = Register::Main[REGISTER::A] & 0x0f;
-	int MSN = (Register::Main[REGISTER::A] & 0xf0) >> 4;
 
-	if ((LSN > 9 || Register::Flag::AC) && (MSN > 9 || Register::Flag::CY))
-	{
-		Register::Main[REGISTER::A] += 0x66;
-		Register::Flag::CY = true;
-		Register::Flag::AC = true;
-	}
-	else if (LSN > 9 || Register::Flag::AC)
+	if ((LSN > 9 || Register::Flag::AC))
 	{
 		Register::Main[REGISTER::A] += 0x06;
 		Register::Flag::AC = true;
 	}
-	else if (MSN > 9 || Register::Flag::CY)
+	
+	int MSN = (Register::Main[REGISTER::A] & 0xf0) >> 4;
+	//If carry is already set than don't change it, else check for its status(May be it become set after 0x06 in LSN).
+	Register::Flag::CY = Register::Flag::CY ? true : Register::Main[REGISTER::A] & (1 << 8);
+
+	if (MSN > 9 || Register::Flag::CY)
 	{
 		Register::Main[REGISTER::A] += 0x60;
 		Register::Flag::CY = true;
