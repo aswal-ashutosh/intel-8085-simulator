@@ -969,8 +969,8 @@ bool Mnemonic::CMP(const std::pair<std::string, std::string>& operands)
 	Register::Flag::AC = LSN_A + LSN_R > 0xf;
 
 	Register::Flag::CY = A < R;
-	Register::Flag::SF = A < R;
 	Register::Flag::ZF = A == R;
+	Register::Flag::SF = temp & (1 << 7);
 
 	Register::SyncFLAG();
 	++Register::iPC;
@@ -992,7 +992,7 @@ bool Mnemonic::CPI(const std::pair<std::string, std::string>& operands)
 	Register::Flag::AC = LSN_A + LSN_R > 0xf;
 
 	Register::Flag::CY = A < DATA;
-	Register::Flag::SF = A < DATA;
+	Register::Flag::SF = temp & (1 << 7);
 	Register::Flag::ZF = A == DATA;
 	Register::SyncFLAG();
 	++Register::iPC;
