@@ -4,5 +4,5 @@
 The whole application is written in C++.
 
 ## Screenshots
-<img src="https://github.com/Aswal-Ashutosh/8085-Simulator-Desktop-Application/blob/master/Screenshots/8085.JPG" width="790" height="790">
-<img src="https://github.com/Aswal-Ashutosh/8085-Simulator-Desktop-Application/blob/master/Screenshots/8085Debug.JPG" width="790" height="790">
+![8085](https://github.com/Aswal-Ashutosh/8085-Simulator-Desktop-Application/blob/master/Screenshots/8085.JPG)
+![8085DibugMode](https://github.com/Aswal-Ashutosh/8085-Simulator-Desktop-Application/blob/master/Screenshots/8085Debug.JPG)
